@@ -47,8 +47,11 @@ def _same_show(a: Event, b: Event) -> bool:
             return False
     if _similar(_title_key(a.title), _title_key(b.title)) < 0.8:
         return False
+    # Même lieu : coordonnées proches OU nom de salle proche (les sources géocodent
+    # parfois la même salle à plusieurs centaines de mètres d'écart)
     if a.lat is not None and b.lat is not None and a.lon is not None and b.lon is not None:
-        return haversine_km(a.lat, a.lon, b.lat, b.lon) <= 0.5
+        if haversine_km(a.lat, a.lon, b.lat, b.lon) <= 0.5:
+            return True
     va, vb = normalize_text(a.venue), normalize_text(b.venue)
     return not va or not vb or _similar(va, vb) >= 0.6
 

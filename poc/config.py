@@ -15,6 +15,7 @@ class City:
     lat: float
     lon: float
     radius_km: float
+    pilot: bool = True  # False = testée ponctuellement, seulement via --cities
 
 
 # Villes pilotes (décision D3). La zone rurale est un choix provisoire : à ajuster.
@@ -23,6 +24,7 @@ CITIES = [
     City("bordeaux", "Bordeaux", 44.8378, -0.5792, 10),
     City("avignon", "Avignon", 43.9493, 4.8055, 10),
     City("figeac", "Figeac (zone rurale)", 44.6086, 2.0317, 30),
+    City("ales", "Alès", 44.1250, 4.0819, 15, pilot=False),
 ]
 
 

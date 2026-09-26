@@ -109,7 +109,8 @@ def bbox(lat: float, lon: float, radius_km: float) -> tuple[float, float, float,
 
 
 def normalize_text(s: str) -> str:
-    s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"[^\w\s]+", " ", s or "")  # ponctuation → espace (avant la perte des ’ « » …)
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
     s = re.sub(r"[^a-z0-9 ]+", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
@@ -118,12 +119,13 @@ LIVE_KEYWORDS = [
     "theatre", "spectacle", "humour", "humoriste", "one man", "one woman", "stand up", "comedie",
     "cafe theatre", "concert", "musique", "opera", "operette", "danse", "ballet", "cirque",
     "marionnette", "conte", "cabaret", "magie", "magicien", "impro", "mime", "clown",
-    "arts de la rue", "lecture", "recital", "chanson", "jazz", "festival", "piece",
+    "arts de la rue", "recital", "chanson", "jazz", "festival", "piece",
     "arts & theatre", "music", "comedy", "theatre",
 ]
 NOT_LIVE_KEYWORDS = [
     "exposition", "visite", "atelier", "conference", "marche", "brocante", "vide grenier",
-    "salon", "randonnee", "sport", "match", "cinema", "projection", "stage",
+    "salon", "randonnee", "sport", "match", "cinema", "projection", "stage", "club lecture",
+    "the dansant", "boum", "bal", "baleti", "soiree salsa", "science", "mediatheque",
 ]
 
 

@@ -42,7 +42,8 @@ def main() -> None:
         return
 
     names = args.sources.split(",") if args.sources else list(SOURCES)
-    cities = [c for c in CITIES if not args.cities or c.slug in args.cities.split(",")]
+    wanted = args.cities.split(",") if args.cities else None
+    cities = [c for c in CITIES if (c.slug in wanted if wanted else c.pilot)]
     start, end = args.date, args.date + timedelta(days=args.days - 1)
     print(f"Fenêtre : {start} → {end} · jour de référence {args.date} · villes : "
           f"{', '.join(c.slug for c in cities)}\n")
