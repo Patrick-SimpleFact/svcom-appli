@@ -38,6 +38,7 @@ class Event:
     url: str = ""
     updated_at: str = ""
     is_live_show: bool | None = None
+    sold_out: bool | None = None  # None = information non fournie par la source
 
     @classmethod
     def columns(cls) -> list[str]:
@@ -78,7 +79,8 @@ def redact(url: str) -> str:
     """Masque les clés d'API dans une URL avant de l'afficher."""
     url = re.sub(r"(apikey|key|api_key)=[^&]+", r"\1=***", url, flags=re.I)
     url = re.sub(r"/apikey/[^/]+", "/apikey/***", url)
-    return re.sub(r"(/webservice/[^/]+/)[^/?]+", r"\1***", url)
+    url = re.sub(r"(/webservice/[^/]+/)[^/?]+", r"\1***", url)
+    return re.sub(r"(/publisher/\d+/)[0-9a-f]{20,}", r"\1***", url)
 
 
 # --- Géographie et texte ----------------------------------------------------
@@ -89,6 +91,14 @@ def haversine_km(lat1, lon1, lat2, lon2) -> float:
     dp, dl = p2 - p1, math.radians(lon2 - lon1)
     a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
     return 2 * r * math.asin(math.sqrt(a))
+
+
+def assign_city(lat: float | None, lon: float | None, town: str, cities) -> "City | None":
+    """Ville pilote dont le rayon contient le point ; à défaut de coordonnées, par nom de commune."""
+    if lat is not None and lon is not None:
+        return next((c for c in cities if haversine_km(lat, lon, c.lat, c.lon) <= c.radius_km), None)
+    t = f" {normalize_text(town)} "
+    return next((c for c in cities if f" {normalize_text(c.name.split(' (')[0])} " in t), None)
 
 
 def bbox(lat: float, lon: float, radius_km: float) -> tuple[float, float, float, float]:

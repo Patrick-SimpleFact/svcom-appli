@@ -1,128 +1,95 @@
-"""DATAtourisme — flux créé sur la plateforme Diffuseur (catégorie Fête et manifestation).
+"""DATAtourisme — export quotidien national des événements (FMA) publié par ADN Tourisme
+sur data.gouv.fr (Licence Ouverte 2.0). Aucun compte ni clé nécessaire.
 
-Formats acceptés : archive ZIP du format « JSON » (index.json + un fichier par objet) ou
-fichier JSON-LD unique (@graph). Les clés sont lues sans leur préfixe (schema:, rdfs:…)
-pour résister aux variantes de format.
+L'URL du fichier change chaque jour : on la résout via l'API data.gouv.fr.
+Limite connue : l'export ne contient que des dates (périodes), pas d'horaires.
 """
 
+import csv
 import io
-import json
-import zipfile
+import re
 from datetime import date, timedelta
 
-from ..common import Event, guess_live_show, http_get
-from ..config import City, env
-from ._feeds import assign_city
+from ..common import Event, assign_city, guess_live_show, http_get, http_json
+from ..config import City
 
 NAME = "datatourisme"
-REQUIRED_ENV = ["DATATOURISME_API_KEY", "DATATOURISME_FLUX_ID"]
-FLUX_URL = "https://diffuseur.datatourisme.fr/webservice/{flux}/{key}"
+REQUIRED_ENV: list[str] = []
+DATASET_API = "https://www.data.gouv.fr/api/1/datasets/5b598be088ee387c0c353714/"
+RESOURCE_TITLE = "datatourisme-fma.csv"
 
 # Classes de l'ontologie DATAtourisme relevant du spectacle vivant
 LIVE_TYPES = {"ShowEvent", "TheaterEvent", "Concert", "DanceEvent", "CircusEvent", "Opera",
-              "ComedyEvent", "MusicEvent", "Recital", "StreetArtShow", "PuppetShow", "Festival"}
+              "ComedyEvent", "Recital", "StreetArtShow", "PuppetShow", "Festival"}
+GENERIC_TYPES = {"Event", "EntertainmentAndEvent", "PointOfInterest", "CulturalEvent", "Product"}
 
 
-def _objects() -> list[dict]:
-    raw = http_get(FLUX_URL.format(flux=env("DATATOURISME_FLUX_ID"), key=env("DATATOURISME_API_KEY")),
-                   timeout=600)
-    if raw[:2] == b"PK":
-        with zipfile.ZipFile(io.BytesIO(raw)) as z:
-            return [json.loads(z.read(n)) for n in z.namelist()
-                    if n.endswith(".json") and not n.endswith("index.json")]
-    data = json.loads(raw)
-    if isinstance(data, dict):
-        return data.get("@graph", [data])
-    return data
-
-
-def get(obj, name: str):
-    """obj[name] en ignorant les préfixes d'espace de noms."""
-    if not isinstance(obj, dict):
-        return None
-    for k, v in obj.items():
-        if k.split(":")[-1] == name:
-            return v
-    return None
-
-
-def first(v):
-    """Première valeur scalaire : gère listes, {"fr": [...]}, {"@value": ...}."""
-    while isinstance(v, (list, dict)):
-        if isinstance(v, list):
-            if not v:
-                return None
-            v = v[0]
-        else:
-            v = v.get("fr", v.get("@value", next(iter(v.values()), None)))
-    return v
-
-
-def as_list(v) -> list:
-    return v if isinstance(v, list) else ([] if v is None else [v])
+def _rows() -> list[dict]:
+    resources = http_json(DATASET_API)["resources"]
+    url = next(r["url"] for r in resources if r["title"] == RESOURCE_TITLE)
+    text = http_get(url, timeout=600).decode("utf-8-sig")
+    return list(csv.DictReader(io.StringIO(text)))
 
 
 def fetch(cities: list[City], start: date, end: date) -> list[Event]:
-    objs = _objects()
-    print(f"  {len(objs)} objets dans le flux")
+    rows = _rows()
+    print(f"  {len(rows)} événements dans l'export national")
     events = []
-    for o in objs:
-        events += _to_events(o, cities, start, end)
+    for r in rows:
+        events += _to_events(r, cities, start, end)
     return events
 
 
-def _to_events(o: dict, cities: list[City], start: date, end: date) -> list[Event]:
-    place = (as_list(get(o, "isLocatedAt")) or [{}])[0]
-    geo = get(place, "geo") or {}
-    geo = geo[0] if isinstance(geo, list) and geo else geo
-    lat, lon = first(get(geo, "latitude")), first(get(geo, "longitude"))
-    lat = float(lat) if lat not in (None, "") else None
-    lon = float(lon) if lon not in (None, "") else None
-    addr = (as_list(get(place, "address")) or [{}])[0]
-    town = first(get(addr, "addressLocality")) or ""
+def _float(s: str) -> float | None:
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _to_events(r: dict, cities: list[City], start: date, end: date) -> list[Event]:
+    lat, lon = _float(r["Latitude"]), _float(r["Longitude"])
+    zip_code, _, town = r["Code_postal_et_commune"].partition("#")
     city = assign_city(lat, lon, town, cities)
     if not city:
         return []
 
-    types = [t.split(":")[-1] for t in as_list(o.get("@type"))]
-    title = first(get(o, "label")) or ""
-    live = bool(LIVE_TYPES & set(types)) or guess_live_show(title, " ".join(types))
-    homepage = ""
-    for c in as_list(get(o, "hasBookingContact")) + as_list(get(o, "hasContact")):
-        homepage = homepage or first(get(c, "homepage")) or ""
+    types = [t.split("#")[-1].split("/")[-1] for t in r["Categories_de_POI"].split("|")]
+    specific = [t for t in dict.fromkeys(types) if t not in GENERIC_TYPES]
+    title = r["Nom_du_POI"]
+    link = re.search(r"https?://[^\s<>#]+", r["Contacts_du_POI"])
     base = dict(
         source=NAME,
-        source_id=first(get(o, "identifier")) or o.get("@id", ""),
+        source_id=r["URI_ID_du_POI"].rsplit("/", 1)[-1],
         city=city.slug,
         title=title,
-        venue=first(get(place, "name")) or "",
-        address=" ".join(filter(None, [first(get(addr, "streetAddress")),
-                                       first(get(addr, "postalCode")), town])),
+        address=" ".join(filter(None, [r["Adresse_postale"], zip_code, town])),
         lat=lat,
         lon=lon,
-        category=", ".join(t for t in types if t not in ("Event", "EntertainmentAndEvent",
-                                                          "PointOfInterest", "PlaceOfInterest")),
-        url=homepage,
-        updated_at=first(get(o, "lastUpdate")) or "",
-        is_live_show=live,
+        category=", ".join(specific),
+        url=link.group(0) if link else "",
+        updated_at=r["Date_de_mise_a_jour"],
+        is_live_show=bool(LIVE_TYPES & set(types)) or guess_live_show(title, " ".join(specific)),
     )
 
-    out = []
-    for period in as_list(get(o, "takesPlaceAt")):
-        ds, de = first(get(period, "startDate")), first(get(period, "endDate")) or first(get(period, "startDate"))
-        if not ds:
+    out, days = [], set()
+    for period in filter(None, r["Periodes_regroupees"].split("|")):
+        a, _, b = period.partition("<->")
+        try:
+            d, last = max(date.fromisoformat(a), start), min(date.fromisoformat(b or a), end)
+        except ValueError:
             continue
-        t = (first(get(period, "startTime")) or "")[:5]
-        d, last = max(date.fromisoformat(ds[:10]), start), min(date.fromisoformat(de[:10]), end)
-        while d <= last:  # une ligne par jour de la période tombant dans la fenêtre
-            out.append(Event(**base, start=f"{d.isoformat()}T{t}" if t else d.isoformat()))
+        while d <= last:  # une ligne par jour couvert (les périodes peuvent se chevaucher)
+            if d not in days:
+                days.add(d)
+                out.append(Event(**base, start=d.isoformat()))
             d += timedelta(days=1)
     return out
 
 
 def inspect() -> str:
-    objs = _objects()
-    lines = [f"{len(objs)} objets.", ""]
-    for o in objs[:2]:
-        lines += [json.dumps(o, ensure_ascii=False, indent=1)[:3000], ""]
+    rows = _rows()
+    lines = [f"{len(rows)} lignes. Colonnes : {', '.join(rows[0].keys())}", ""]
+    for r in rows[:2]:
+        lines += [f"  {k} = {v[:150]}" for k, v in r.items() if v] + [""]
     return "\n".join(lines)

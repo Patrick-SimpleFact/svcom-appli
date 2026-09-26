@@ -13,9 +13,12 @@ PAGE_SIZE = 200  # l'API refuse size * page > 1000
 
 
 def fetch(cities: list[City], start: date, end: date) -> list[Event]:
-    events = []
-    for city in cities:
-        events += _fetch_city(city, start, end)
+    # Jour par jour : l'API plafonne à 1000 résultats par recherche (dépassé à Paris sur 7 jours)
+    events, day = [], start
+    while day <= end:
+        for city in cities:
+            events += _fetch_city(city, day, day)
+        day += timedelta(days=1)
     return events
 
 

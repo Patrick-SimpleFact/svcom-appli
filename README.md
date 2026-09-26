@@ -19,8 +19,8 @@ Options utiles :
 | `--cities paris,bordeaux` | limiter aux villes citées |
 | `--inspect billetreduc` | afficher la structure brute d'un flux (billetreduc, fnac, datatourisme) |
 
-Sources : `billetreduc` et `fnac` (flux Awin), `datatourisme`, `openagenda`, `ticketmaster`,
-`paris_qfap` (sans clé). Une source sans clé est ignorée.
+Sources : `billetreduc` et `fnac` (flux Awin), `openagenda`, `ticketmaster`, et sans clé
+`datatourisme` (export national quotidien sur data.gouv.fr, dates sans horaires) et `paris_qfap`. Une source sans clé est ignorée.
 
 Villes pilotes et rayons : `poc/config.py`.
 
