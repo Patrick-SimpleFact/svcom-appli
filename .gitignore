@@ -1,0 +1,15 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Sorties du POC (données tierces, régénérables)
+poc/out/
+
+# macOS / Google Drive
+.DS_Store
+Icon?
+*.gdoc
