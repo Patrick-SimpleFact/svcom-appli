@@ -37,7 +37,7 @@ app/
 5. **Dates** : stockées en UTC (`timestamptz`) ; le fuseau du lieu sert à calculer `date_locale` et « ce soir ». L'application tourne en UTC (`config/app.php`).
 6. **Positions** : PostGIS, type `geography(Point, 4326)` ; distances en mètres.
 7. **Secrets** : uniquement dans `.env` (jamais commité) ; `.env.example` liste les variables sans valeur secrète.
-8. **Modèles** : `$fillable` explicite (jamais `$guarded = []`), casts déclarés.
+8. **Modèles** : `$fillable` explicite (jamais `$guarded = []`), casts déclarés ; trait `IdentifiantNumerique` (adresse invalide → « introuvable ») et, s'ils sont modifiables à la main, trait `Journalise` (journal des actions, F7.1).
 9. **Style** : Laravel Pint (`./vendor/bin/pint`) avant chaque commit.
 
 ### Tests
