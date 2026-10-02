@@ -26,7 +26,10 @@ class CollecterSource implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 4 * 3600;
 
-    public function __construct(public Source $source) {}
+    public function __construct(
+        public Source $source,
+        public ?string $version = null,
+    ) {}
 
     /** @return list<int> */
     public function backoff(): array
@@ -41,7 +44,7 @@ class CollecterSource implements ShouldBeUnique, ShouldQueue
 
     public function handle(ExecuterCollecte $executer): void
     {
-        $executer->handle($this->source, $this->attempts());
+        $executer->handle($this->source, $this->attempts(), version: $this->version);
     }
 
     /** Après le dernier essai : la collecte est abandonnée (l'alerte e-mail viendra à l'étape A03). */

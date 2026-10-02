@@ -22,13 +22,14 @@ class ExecuterCollecte
     /**
      * @param  callable(AnnonceNormalisee): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
      */
-    public function handle(Source $source, int $essai = 1, ?callable $traiterAnnonce = null): Collecte
+    public function handle(Source $source, int $essai = 1, ?callable $traiterAnnonce = null, ?string $version = null): Collecte
     {
         $collecte = Collecte::create([
             'source_id' => $source->id,
             'debut' => now(),
             'statut' => StatutCollecte::EnCours,
             'essai' => $essai,
+            'version_detectee' => $version,
         ]);
 
         try {

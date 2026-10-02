@@ -4,6 +4,7 @@ namespace App\Collecte\Connecteurs;
 
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\Connecteur;
+use App\Collecte\DetecteVersion;
 use App\Collecte\LigneIllisible;
 use App\Models\Source;
 use Carbon\CarbonImmutable;
@@ -14,8 +15,14 @@ use RuntimeException;
  * Connecteur de démonstration et de test : produit trois annonces d'exemple.
  * Avec `simuler_echec` dans la configuration de la source, il échoue comme une source indisponible.
  */
-class ConnecteurFactice implements Connecteur
+class ConnecteurFactice implements Connecteur, DetecteVersion
 {
+    /** Version fictive qui change toutes les heures (ou celle imposée dans la configuration, pour les tests). */
+    public function versionDisponible(Source $source): ?string
+    {
+        return $source->config['version'] ?? 'demo-'.now('Europe/Paris')->format('Y-m-d-H').'h';
+    }
+
     public function telecharger(Source $source): string
     {
         if ($source->config['simuler_echec'] ?? false) {

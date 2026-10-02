@@ -63,6 +63,7 @@ php artisan villes:importer          # 34 969 communes, outre-mer compris (≈ 5
 php artisan lieux:importer-ministere # 1 434 lieux de spectacle du Ministère (≈ 5 s)
 php artisan admin:creer <email> <nom>   # premier compte du back-office
 php artisan queue:work               # tâches de fond (collectes) : à laisser tourner dans un terminal
+php artisan schedule:work            # tâches planifiées (détection toutes les 30 min, purge) : idem, dans un 2e terminal
 php artisan test
 ```
 

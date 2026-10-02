@@ -43,6 +43,7 @@ class CollecteResource extends Resource
                 TextColumn::make('essai')->label('Essai')->formatStateUsing(fn (int $state): string => "{$state} / 4"),
                 TextColumn::make('duree')->label('Durée')
                     ->state(fn (Collecte $record): string => $record->fin ? max(1, (int) round($record->debut->diffInSeconds($record->fin))).' s' : '…'),
+                TextColumn::make('version_detectee')->label('Version')->placeholder('—')->toggleable(),
                 TextColumn::make('nb_recus')->label('Annonces lues')->numeric(),
                 TextColumn::make('nb_illisibles')->label('Illisibles')->numeric(),
                 TextColumn::make('erreur')->wrap()->limit(120)->placeholder('—'),
