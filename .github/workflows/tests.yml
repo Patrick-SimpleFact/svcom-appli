@@ -1,0 +1,52 @@
+name: Tests du back-office
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backoffice
+
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: spettacoli
+          POSTGRES_PASSWORD: spettacoli
+          POSTGRES_DB: spettacoli_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U spettacoli -d spettacoli_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, intl
+          coverage: none
+
+      - name: Extensions PostgreSQL
+        env:
+          PGPASSWORD: spettacoli
+        run: psql -h 127.0.0.1 -p 5433 -U spettacoli -d spettacoli_test -c "CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS unaccent;"
+
+      - name: Dépendances
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Configuration
+        run: cp .env.example .env && php artisan key:generate
+
+      - name: Style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Tests
+        run: php artisan test
