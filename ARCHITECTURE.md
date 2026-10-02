@@ -58,6 +58,9 @@ docker compose up -d                 # base (depuis la racine)
 cd backoffice
 composer install && cp .env.example .env && php artisan key:generate   # première fois
 php artisan migrate
+php artisan db:seed                  # genres et réglages de départ (relançable sans risque)
+php artisan villes:importer          # 34 969 communes, outre-mer compris (≈ 5 s)
+php artisan admin:creer <email> <nom>   # premier compte du back-office
 php artisan test
 ```
 
