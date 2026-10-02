@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             GenresSeeder::class,
             ParametresSeeder::class,
+            SourcesSeeder::class,
+            ReglesFiltrageSeeder::class,
         ]);
     }
 }
