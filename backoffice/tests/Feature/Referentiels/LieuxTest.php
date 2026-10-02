@@ -99,10 +99,10 @@ it('refuse de fusionner un lieu avec lui-même', function () {
 
 it('corrige la position d’un lieu depuis le back-office et la verrouille', function () {
     $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
-    $lieu = Lieu::factory()->create(['precision_position' => PrecisionPosition::Commune]);
+    $lieu = Lieu::factory()->create(['precision_position' => PrecisionPosition::Commune, 'position' => new Point(43.95, 4.81)]);
 
     Livewire::test(EditLieu::class, ['record' => $lieu->getKey()])
-        ->assertFormSet(['latitude' => $lieu->position->latitude])
+        ->assertFormSet(['latitude' => 43.95, 'longitude' => 4.81])
         ->fillForm(['latitude' => '43.9465', 'longitude' => '4.8079', 'precision_position' => PrecisionPosition::Exacte->value])
         ->call('save')
         ->assertHasNoFormErrors();
@@ -156,4 +156,14 @@ it('propose les lieux à conserver dans la fenêtre de fusion', function () {
         ->assertHasNoActionErrors();
 
     expect($doublon->fresh()->fusionne_dans_id)->toBe($conserve->id);
+});
+
+it('rattache à Paris un lieu déclaré dans un arrondissement', function () {
+    $paris = Ville::create(['nom' => 'Paris', 'nom_normalise' => 'paris', 'code_insee' => '75056', 'departement' => '75', 'position' => new Point(48.8589, 2.347), 'fuseau_horaire' => 'Europe/Paris']);
+
+    app(ImporterLieuxMinistere::class)->handle(csvBasilic([
+        ['Nom' => 'Théâtre de l’Atelier', 'code_insee' => '75118', 'Type équipement ou lieu' => 'Théâtre', 'Identifiant_deps_a_partir_de_2022' => 'THPR_75118_1', 'Latitude' => '48.8838', 'Longitude' => '2.3418'],
+    ]));
+
+    expect(Lieu::firstWhere('ref_ministere', 'THPR_75118_1')->ville_id)->toBe($paris->id);
 });

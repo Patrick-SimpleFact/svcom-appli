@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lieu extends Model
 {
@@ -64,6 +65,24 @@ class Lieu extends Model
         return Attribute::make(
             set: fn (string $valeur): array => ['nom' => $valeur, 'nom_normalise' => Texte::normaliser($valeur)],
         );
+    }
+
+    protected static function booted(): void
+    {
+        // La position et la ville sont recopiées sur les représentations : on les garde à jour.
+        static::updated(function (Lieu $lieu) {
+            if ($lieu->wasChanged(['position', 'ville_id'])) {
+                $lieu->representations()->update([
+                    'position' => $lieu->position?->versEwkt(),
+                    'ville_id' => $lieu->ville_id,
+                ]);
+            }
+        });
+    }
+
+    public function representations(): HasMany
+    {
+        return $this->hasMany(Representation::class);
     }
 
     public function ville(): BelongsTo

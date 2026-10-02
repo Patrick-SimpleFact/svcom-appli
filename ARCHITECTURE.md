@@ -34,7 +34,7 @@ app/
 2. **Une action = un verbe métier** : classe avec une méthode publique `handle(...)`, qui valide ses entrées et lève une exception explicite en cas de problème. Les contrôleurs, écrans Filament et tâches de fond **appellent des actions**, ils ne contiennent pas de logique métier.
 3. **Énumérations PHP** pour tout statut ou liste fermée ; jamais de chaîne écrite en dur dans le code.
 4. **Prix** : `decimal(8,2)` en base, cast `decimal:2`. `null` = inconnu, jamais 0 par défaut.
-5. **Dates** : stockées en UTC (`timestamptz`) ; le fuseau du lieu sert à calculer `date_locale` et « ce soir ». L'application tourne en UTC (`config/app.php`).
+5. **Dates** : stockées en UTC (`timestamptz`) ; le fuseau du lieu sert à calculer `date_locale` et « ce soir ». L'application tourne en UTC (`config/app.php`). Tout modèle qui reçoit des heures locales utilise le trait **`DatesEnUtc`** (sinon une heure de La Réunion serait enregistrée comme une heure UTC).
 6. **Positions** : PostGIS, type `geography(Point, 4326)` ; distances en mètres.
 7. **Secrets** : uniquement dans `.env` (jamais commité) ; `.env.example` liste les variables sans valeur secrète.
 8. **Modèles** : `$fillable` explicite (jamais `$guarded = []`), casts déclarés ; trait `IdentifiantNumerique` (adresse invalide → « introuvable ») et, s'ils sont modifiables à la main, trait `Journalise` (journal des actions, F7.1).

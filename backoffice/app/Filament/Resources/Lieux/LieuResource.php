@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Lieux;
 use App\Filament\Resources\Lieux\Pages\CreateLieu;
 use App\Filament\Resources\Lieux\Pages\EditLieu;
 use App\Filament\Resources\Lieux\Pages\ListLieux;
+use App\Filament\Resources\Lieux\RelationManagers\RepresentationsRelationManager;
 use App\Filament\Resources\Lieux\Schemas\LieuForm;
 use App\Filament\Resources\Lieux\Tables\LieuxTable;
 use App\Models\Lieu;
@@ -42,6 +43,13 @@ class LieuResource extends Resource
     public static function table(Table $table): Table
     {
         return LieuxTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RepresentationsRelationManager::class,
+        ];
     }
 
     /** Pas de suppression : on masque ou on fusionne (F7.5, F7.8). */

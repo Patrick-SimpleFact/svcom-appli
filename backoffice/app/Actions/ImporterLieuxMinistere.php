@@ -6,6 +6,7 @@ use App\Enums\PrecisionPosition;
 use App\Enums\TypeLieu;
 use App\Models\Lieu;
 use App\Models\Ville;
+use App\Support\CodeInsee;
 use App\Support\Point;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -51,7 +52,7 @@ class ImporterLieuxMinistere
                     continue;
                 }
 
-                $villeId = $villes[$ligne['code_insee'] ?? ''] ?? null;
+                $villeId = $villes[CodeInsee::commune($ligne['code_insee'] ?? null) ?? ''] ?? null;
 
                 $valeurs = [
                     'nom' => trim($ligne['Nom']),
