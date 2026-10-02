@@ -25,6 +25,7 @@ class Representation extends Model
 
     /** @use HasFactory<RepresentationFactory> */
     use HasFactory;
+
     use IdentifiantNumerique;
     use Journalise;
 
