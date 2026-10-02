@@ -1,0 +1,26 @@
+# Base de données locale de Spettacoli (développement uniquement).
+# PostgreSQL 17 + PostGIS 3.5. Port 5433 pour ne pas gêner une autre base sur 5432.
+# Démarrer : docker compose up -d · Arrêter : docker compose stop
+services:
+  postgres:
+    image: postgis/postgis:17-3.5
+    container_name: spettacoli-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      # Identifiants locaux, sans valeur en dehors du poste de développement.
+      POSTGRES_USER: spettacoli
+      POSTGRES_PASSWORD: spettacoli
+      POSTGRES_DB: spettacoli
+    volumes:
+      - spettacoli-pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spettacoli -d spettacoli"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  spettacoli-pgdata:
