@@ -6,6 +6,7 @@ use App\Enums\StatutCollecte;
 use App\Models\Concerns\IdentifiantNumerique;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class Collecte extends Model
 {
@@ -13,7 +14,7 @@ class Collecte extends Model
 
     protected $fillable = [
         'source_id', 'version_detectee', 'debut', 'fin', 'statut', 'essai',
-        'nb_recus', 'nb_retenus', 'nb_nouveaux', 'nb_retires', 'erreur', 'fichier_brut',
+        'nb_recus', 'nb_illisibles', 'nb_retenus', 'nb_nouveaux', 'nb_retires', 'erreur', 'fichier_brut',
     ];
 
     protected function casts(): array
@@ -28,5 +29,13 @@ class Collecte extends Model
     public function source(): BelongsTo
     {
         return $this->belongsTo(Source::class);
+    }
+
+    /** Contenu du fichier brut, s'il est encore conservé. */
+    public function contenuBrut(): ?string
+    {
+        $disque = Storage::disk(config('collecte.disque_bruts'));
+
+        return $this->fichier_brut && $disque->exists($this->fichier_brut) ? $disque->get($this->fichier_brut) : null;
     }
 }

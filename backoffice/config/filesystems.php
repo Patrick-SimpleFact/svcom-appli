@@ -38,6 +38,14 @@ return [
             'report' => false,
         ],
 
+        // Fichiers bruts téléchargés auprès des sources, gardés 30 jours (COLLECTE §1).
+        // En ligne (L01) : stockage Cellar de Clever Cloud.
+        'collecte' => [
+            'driver' => 'local',
+            'root' => storage_path('app/collecte'),
+            'throw' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

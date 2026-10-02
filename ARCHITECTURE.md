@@ -20,7 +20,7 @@ SPETTACOLI/
 ```
 app/
 ├── Actions/             une classe = un verbe métier (PublierCollecte, FusionnerLieux…)
-├── Collecte/            moteur de collecte (bloc 2) et Connecteurs/ (un par source, bloc 3)
+├── Collecte/            moteur de collecte : AnnonceNormalisee (format commun), Connecteur (contrat), RegistreConnecteurs, Connecteurs/ (un par source, déclaré dans config/collecte.php)
 ├── Enums/               tous les statuts et listes fermées (StatutRepresentation, TypeSource…)
 ├── Filament/            écrans du back-office
 ├── Http/Controllers/Api/V1/   API de l'app (bloc 5)
@@ -62,6 +62,7 @@ php artisan db:seed                  # genres et réglages de départ (relançab
 php artisan villes:importer          # 34 969 communes, outre-mer compris (≈ 5 s)
 php artisan lieux:importer-ministere # 1 434 lieux de spectacle du Ministère (≈ 5 s)
 php artisan admin:creer <email> <nom>   # premier compte du back-office
+php artisan queue:work               # tâches de fond (collectes) : à laisser tourner dans un terminal
 php artisan test
 ```
 

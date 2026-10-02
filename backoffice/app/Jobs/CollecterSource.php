@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Actions\ExecuterCollecte;
+use App\Enums\StatutCollecte;
+use App\Models\Collecte;
+use App\Models\Source;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Throwable;
+
+/**
+ * Tâche de fond : collecte d'une source, avec 4 essais (15 min, 30 min, 1 h d'écart, F7.2)
+ * et jamais deux collectes en même temps pour une même source.
+ */
+class CollecterSource implements ShouldBeUnique, ShouldQueue
+{
+    use Queueable;
+
+    public int $tries = 4;
+
+    /** La collecte la plus longue (flux national) reste bien en dessous. */
+    public int $timeout = 1800;
+
+    public int $uniqueFor = 4 * 3600;
+
+    public function __construct(public Source $source) {}
+
+    /** @return list<int> */
+    public function backoff(): array
+    {
+        return config('collecte.delais_essais_secondes');
+    }
+
+    public function uniqueId(): string
+    {
+        return 'collecte-source-'.$this->source->id;
+    }
+
+    public function handle(ExecuterCollecte $executer): void
+    {
+        $executer->handle($this->source, $this->attempts());
+    }
+
+    /** Après le dernier essai : la collecte est abandonnée (l'alerte e-mail viendra à l'étape A03). */
+    public function failed(?Throwable $erreur): void
+    {
+        Collecte::where('source_id', $this->source->id)
+            ->where('statut', StatutCollecte::Echouee)
+            ->latest('id')
+            ->first()
+            ?->update(['statut' => StatutCollecte::Abandonnee]);
+    }
+}
