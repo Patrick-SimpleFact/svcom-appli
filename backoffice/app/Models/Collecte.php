@@ -14,7 +14,7 @@ class Collecte extends Model
 
     protected $fillable = [
         'source_id', 'version_detectee', 'debut', 'fin', 'statut', 'essai',
-        'nb_recus', 'nb_illisibles', 'nb_retenus', 'nb_nouveaux', 'nb_retires', 'erreur', 'fichier_brut',
+        'nb_recus', 'nb_illisibles', 'nb_retenus', 'nb_exclus', 'nb_a_trier', 'nb_nouveaux', 'nb_retires', 'erreur', 'fichier_brut',
     ];
 
     protected function casts(): array

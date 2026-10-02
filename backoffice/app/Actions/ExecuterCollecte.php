@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\LigneIllisible;
 use App\Collecte\RegistreConnecteurs;
+use App\Enums\IssueFiltrage;
 use App\Enums\StatutCollecte;
 use App\Models\Collecte;
 use App\Models\Source;
@@ -12,8 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture (COLLECTE §1).
- * Les étapes suivantes (tri, lieux, genres, doublons, publication) arrivent aux étapes K03 à K08.
+ * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage (COLLECTE §1, §5).
+ * Les étapes suivantes (lieux, genres, doublons, publication) arrivent aux étapes K04 à K08.
  */
 class ExecuterCollecte
 {
@@ -40,19 +41,26 @@ class ExecuterCollecte
             Storage::disk(config('collecte.disque_bruts'))->put($chemin, $brut);
             $collecte->update(['fichier_brut' => $chemin]);
 
-            $recus = 0;
-            $illisibles = 0;
+            $trier = app(TrierAnnonce::class); // une instance par collecte : listes de mots lues une fois
+            $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
             foreach ($connecteur->lire($brut, $source) as $element) {
                 if ($element instanceof LigneIllisible) {
-                    $illisibles++;
+                    $compteurs['nb_illisibles']++;
 
                     continue;
                 }
 
-                $recus++;
+                $compteurs['nb_recus']++;
 
-                if ($traiterAnnonce !== null) {
+                $issue = $trier->handle($element, $source);
+                $compteurs[match ($issue) {
+                    IssueFiltrage::Garde => 'nb_retenus',
+                    IssueFiltrage::Exclu => 'nb_exclus',
+                    IssueFiltrage::ATrier => 'nb_a_trier',
+                }]++;
+
+                if ($issue === IssueFiltrage::Garde && $traiterAnnonce !== null) {
                     $traiterAnnonce($element);
                 }
             }
@@ -60,8 +68,7 @@ class ExecuterCollecte
             $collecte->update([
                 'statut' => StatutCollecte::Reussie,
                 'fin' => now(),
-                'nb_recus' => $recus,
-                'nb_illisibles' => $illisibles,
+                ...$compteurs,
             ]);
         } catch (Throwable $erreur) {
             $collecte->update([

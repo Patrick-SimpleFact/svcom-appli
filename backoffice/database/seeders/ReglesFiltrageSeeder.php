@@ -16,12 +16,15 @@ class ReglesFiltrageSeeder extends Seeder
         'cafe theatre', 'concert', 'opera', 'operette', 'danse', 'ballet', 'cirque', 'marionnette',
         'conte', 'cabaret', 'magie', 'magicien', 'impro', 'mime', 'clown', 'arts de la rue', 'recital',
         'chanson', 'jazz', 'piece', 'comedie musicale',
+        // catégories des sources en anglais (Ticketmaster « Arts & Theatre », DATAtourisme « TheaterEvent »…)
+        'theater', 'dance', 'music', 'comedy',
     ];
 
     public const EXCLURE = [
         'exposition', 'visite', 'atelier', 'conference', 'marche', 'brocante', 'vide grenier', 'salon',
         'randonnee', 'sport', 'match', 'cinema', 'projection', 'stage', 'club lecture', 'the dansant',
         'boum', 'baleti', 'soiree salsa', 'science', 'mediatheque', 'parcours de l art',
+        'bibliotheque', 'fete de la science',
     ];
 
     public function run(): void

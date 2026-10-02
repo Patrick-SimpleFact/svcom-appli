@@ -9,6 +9,7 @@ use App\Models\Admin;
 use App\Models\Collecte;
 use App\Models\Source;
 use Carbon\CarbonImmutable;
+use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Database\Seeders\SourcesSeeder;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -18,7 +19,7 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     Storage::fake('collecte');
-    $this->seed(SourceFacticeSeeder::class);
+    $this->seed([SourceFacticeSeeder::class, ReglesFiltrageSeeder::class]);
     $this->source = Source::firstWhere('code', 'factice');
 });
 
@@ -48,7 +49,7 @@ it('collecte une source : fichier brut gardé, annonces comptées, lignes illisi
     $collecte = app(ExecuterCollecte::class)->handle($this->source);
 
     expect($collecte->statut)->toBe(StatutCollecte::Reussie)
-        ->and($collecte->nb_recus)->toBe(2)
+        ->and($collecte->nb_recus)->toBe(4)
         ->and($collecte->nb_illisibles)->toBe(1)
         ->and($collecte->fin)->not->toBeNull();
 
@@ -57,7 +58,7 @@ it('collecte une source : fichier brut gardé, annonces comptées, lignes illisi
         ->and($collecte->contenuBrut())->toContain('Exemple de comédie');
 });
 
-it('transmet chaque annonce lisible à la suite de la chaîne', function () {
+it('transmet chaque annonce gardée à la suite de la chaîne', function () {
     $titres = [];
 
     app(ExecuterCollecte::class)->handle($this->source, traiterAnnonce: function (AnnonceNormalisee $annonce) use (&$titres) {

@@ -12,7 +12,7 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * Connecteur de démonstration et de test : produit trois annonces d'exemple.
+ * Connecteur de démonstration et de test : produit cinq annonces d'exemple (gardées, à trier, exclue, illisible).
  * Avec `simuler_echec` dans la configuration de la source, il échoue comme une source indisponible.
  */
 class ConnecteurFactice implements Connecteur, DetecteVersion
@@ -34,6 +34,8 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
         return json_encode([
             ['id' => 'F-1', 'titre' => 'Exemple de comédie', 'debut' => $demain->toIso8601String(), 'lieu' => 'Théâtre du Chêne noir', 'ville' => 'Avignon', 'prix' => 18, 'lien' => 'https://exemple.fr/1'],
             ['id' => 'F-2', 'titre' => 'Exemple de concert', 'debut' => $demain->addDay()->toIso8601String(), 'lieu' => 'La Manutention', 'ville' => 'Avignon', 'prix' => 12, 'lien' => 'https://exemple.fr/2'],
+            ['id' => 'F-4', 'titre' => 'Soirée surprise', 'debut' => $demain->toIso8601String(), 'lieu' => 'La Manutention', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/4'], // douteux : à trier
+            ['id' => 'F-5', 'titre' => 'Exposition de photographies', 'debut' => $demain->toIso8601String(), 'lieu' => 'Maison Jean Vilar', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/5'], // exclu
             ['id' => 'F-3', 'titre' => '', 'debut' => $demain->toIso8601String(), 'lieu' => 'Lieu inconnu', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/3'], // illisible : sans titre
         ], JSON_UNESCAPED_UNICODE);
     }

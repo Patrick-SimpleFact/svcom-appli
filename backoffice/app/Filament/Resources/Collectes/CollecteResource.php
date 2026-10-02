@@ -46,6 +46,9 @@ class CollecteResource extends Resource
                 TextColumn::make('version_detectee')->label('Version')->placeholder('—')->toggleable(),
                 TextColumn::make('nb_recus')->label('Annonces lues')->numeric(),
                 TextColumn::make('nb_illisibles')->label('Illisibles')->numeric(),
+                TextColumn::make('nb_retenus')->label('Gardées')->numeric(),
+                TextColumn::make('nb_exclus')->label('Exclues')->numeric(),
+                TextColumn::make('nb_a_trier')->label('À trier')->numeric(),
                 TextColumn::make('erreur')->wrap()->limit(120)->placeholder('—'),
             ])
             ->filters([

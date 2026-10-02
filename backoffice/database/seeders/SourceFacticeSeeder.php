@@ -21,7 +21,7 @@ class SourceFacticeSeeder extends Seeder
             'type_lien' => TypeLienSource::Direct,
             'actif' => false,
             'config' => ['simuler_echec' => false],
-            'remarques' => 'Source de test : trois annonces d’exemple, dont une illisible. Cocher « simuler un échec » pour voir les nouveaux essais.',
+            'remarques' => 'Source de test : cinq annonces d’exemple (deux gardées, une à trier, une exclue, une illisible). Cocher « simuler un échec » pour voir les nouveaux essais.',
         ]);
     }
 }
