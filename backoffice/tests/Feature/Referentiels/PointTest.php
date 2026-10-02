@@ -16,3 +16,9 @@ it('relit exactement une position enregistrée par PostGIS', function () {
 it('refuse une position impossible', function () {
     new Point(120, 4);
 })->throws(InvalidArgumentException::class);
+
+it('lit aussi le texte EWKT', function () {
+    $point = Point::depuisEwkt('SRID=4326;POINT(4.8333000 43.9416000)');
+
+    expect($point->latitude)->toBe(43.9416)->and($point->longitude)->toBe(4.8333);
+});

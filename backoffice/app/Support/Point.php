@@ -24,6 +24,16 @@ final readonly class Point
         return sprintf('SRID=4326;POINT(%.7F %.7F)', $this->longitude, $this->latitude);
     }
 
+    /** Lit le texte EWKT (valeur en mémoire juste après un enregistrement). */
+    public static function depuisEwkt(string $ewkt): self
+    {
+        if (! preg_match('/POINT\s*\(\s*(-?[\d.]+)\s+(-?[\d.]+)\s*\)/i', $ewkt, $m)) {
+            throw new InvalidArgumentException("Position illisible : {$ewkt}");
+        }
+
+        return new self(latitude: (float) $m[2], longitude: (float) $m[1]);
+    }
+
     /** Lit la valeur renvoyée par PostgreSQL (EWKB en hexadécimal). */
     public static function depuisEwkb(string $hex): self
     {

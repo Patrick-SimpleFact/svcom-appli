@@ -15,7 +15,12 @@ class PointGeographique implements CastsAttributes
 {
     public function get(Model $model, string $key, mixed $value, array $attributes): ?Point
     {
-        return $value === null ? null : Point::depuisEwkb($value);
+        return match (true) {
+            $value === null => null,
+            $value instanceof Point => $value,
+            str_contains(strtoupper($value), 'POINT') => Point::depuisEwkt($value),
+            default => Point::depuisEwkb($value),
+        };
     }
 
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed

@@ -60,8 +60,11 @@ composer install && cp .env.example .env && php artisan key:generate   # premiè
 php artisan migrate
 php artisan db:seed                  # genres et réglages de départ (relançable sans risque)
 php artisan villes:importer          # 34 969 communes, outre-mer compris (≈ 5 s)
+php artisan lieux:importer-ministere # 1 434 lieux de spectacle du Ministère (≈ 5 s)
 php artisan admin:creer <email> <nom>   # premier compte du back-office
 php artisan test
 ```
+
+⚠️ Ne jamais lancer `migrate:fresh` ou `db:wipe` sur la base de développement : elle contient le compte admin (double authentification) et les réglages faits dans le back-office. Les tests utilisent leur propre base (`spettacoli_test`).
 
 Adresse locale : **http://spettacoli.test** (lien Herd créé par `herd link spettacoli` dans `backoffice/`).
