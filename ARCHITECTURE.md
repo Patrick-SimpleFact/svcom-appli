@@ -20,7 +20,7 @@ SPETTACOLI/
 ```
 app/
 ├── Actions/             une classe = un verbe métier (PublierCollecte, FusionnerLieux…)
-├── Collecte/            moteur de collecte : AnnonceNormalisee (format commun), Connecteur (contrat), RegistreConnecteurs, Connecteurs/ (un par source, déclaré dans config/collecte.php), FiltreSpectacleVivant (score gardé / exclu / à trier), ComparaisonLieux et BaseAdresseNationale (rattachement des lieux)
+├── Collecte/            moteur de collecte : AnnonceNormalisee (format commun), Connecteur (contrat), RegistreConnecteurs, Connecteurs/ (un par source, déclaré dans config/collecte.php), FiltreSpectacleVivant (score gardé / exclu / à trier), ComparaisonLieux et BaseAdresseNationale (rattachement des lieux), ClasseurGenres (genre d’une annonce)
 ├── Enums/               tous les statuts et listes fermées (StatutRepresentation, TypeSource…)
 ├── Filament/            écrans du back-office
 ├── Http/Controllers/Api/V1/   API de l'app (bloc 5)
@@ -58,7 +58,7 @@ docker compose up -d                 # base (depuis la racine)
 cd backoffice
 composer install && cp .env.example .env && php artisan key:generate   # première fois
 php artisan migrate
-php artisan db:seed                  # genres et réglages de départ (relançable sans risque)
+php artisan db:seed                  # genres, réglages, mots de tri et de genre de départ (relançable sans risque)
 php artisan villes:importer          # 34 969 communes, outre-mer compris (≈ 5 s)
 php artisan lieux:importer-ministere # 1 434 lieux de spectacle du Ministère (≈ 5 s)
 php artisan admin:creer <email> <nom>   # premier compte du back-office
