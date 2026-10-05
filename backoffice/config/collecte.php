@@ -2,6 +2,7 @@
 
 use App\Collecte\Connecteurs\ConnecteurBilletReduc;
 use App\Collecte\Connecteurs\ConnecteurFactice;
+use App\Collecte\Connecteurs\ConnecteurFnac;
 
 return [
     /*
@@ -12,6 +13,7 @@ return [
         'factice' => ConnecteurFactice::class,
         'factice_bis' => ConnecteurFactice::class,
         'billetreduc' => ConnecteurBilletReduc::class,
+        'fnac' => ConnecteurFnac::class,
     ],
 
     // Disque des fichiers bruts et durée de conservation (jours).

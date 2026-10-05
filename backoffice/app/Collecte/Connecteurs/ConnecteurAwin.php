@@ -44,20 +44,34 @@ abstract class ConnecteurAwin implements Connecteur, DetecteVersion
 
     public function lire(string $contenuBrut, Source $source): iterable
     {
-        foreach ($this->lignesCsv($this->decompresser($contenuBrut)) as $numero => $ligne) {
-            if ($ligne === null) {
-                yield new LigneIllisible("Ligne {$numero} : nombre de colonnes incorrect.");
+        // Le flux compressé est lu ligne à ligne, sans être décompressé d'un bloc (Fnac : ≈ 200 Mo une fois décompressé).
+        $fichier = tempnam(sys_get_temp_dir(), 'awin');
+        file_put_contents($fichier, $contenuBrut);
 
-                continue;
-            }
+        try {
+            $flux = str_starts_with($contenuBrut, "\x1f\x8b") ? gzopen($fichier, 'rb') : fopen($fichier, 'rb');
 
-            try {
-                foreach ($this->annonces($ligne) as $annonce) {
-                    yield $annonce; // pas de « yield from » : il reprendrait les clés 0, 1… de chaque ligne
+            foreach ($this->lignesDuFlux($flux) as $numero => $ligne) {
+                if ($ligne === null) {
+                    yield new LigneIllisible("Ligne {$numero} : nombre de colonnes incorrect.");
+
+                    continue;
                 }
-            } catch (InvalidArgumentException|Throwable $erreur) {
-                yield new LigneIllisible("Ligne {$numero} : ".$erreur->getMessage(), $ligne['merchant_product_id'] ?? null);
+
+                try {
+                    foreach ($this->annonces($ligne) as $annonce) {
+                        yield $annonce; // pas de « yield from » : il reprendrait les clés 0, 1… de chaque ligne
+                    }
+                } catch (InvalidArgumentException|Throwable $erreur) {
+                    yield new LigneIllisible("Ligne {$numero} : ".$erreur->getMessage(), $ligne['merchant_product_id'] ?? null);
+                }
             }
+        } finally {
+            if (isset($flux) && is_resource($flux)) {
+                fclose($flux);
+            }
+
+            @unlink($fichier);
         }
     }
 
@@ -91,12 +105,6 @@ abstract class ConnecteurAwin implements Connecteur, DetecteVersion
         throw new RuntimeException("Aucun flux Awin accessible pour l'annonceur {$annonceur}.");
     }
 
-    private function decompresser(string $contenu): string
-    {
-        // Fichier gzip (signature 1f 8b) ; sinon déjà décompressé.
-        return str_starts_with($contenu, "\x1f\x8b") ? gzdecode($contenu) : $contenu;
-    }
-
     /**
      * CSV standard d'Awin (virgule, guillemets doublés) lu ligne à ligne. Pas de détection automatique du séparateur :
      * elle se trompait sur le flux Fnac et décalait des lignes (leçon du POC).
@@ -106,10 +114,24 @@ abstract class ConnecteurAwin implements Connecteur, DetecteVersion
     protected function lignesCsv(string $csv): iterable
     {
         $flux = fopen('php://temp', 'r+');
-        fwrite($flux, preg_replace('/^\xEF\xBB\xBF/', '', $csv));
+        fwrite($flux, $csv);
         rewind($flux);
 
+        yield from $this->lignesDuFlux($flux);
+
+        fclose($flux);
+    }
+
+    /** @return iterable<int, array<string, string>|null> */
+    private function lignesDuFlux($flux): iterable
+    {
         $entetes = fgetcsv($flux, separator: ',', enclosure: '"', escape: '');
+
+        if ($entetes === false) {
+            return;
+        }
+
+        $entetes[0] = preg_replace('/^\xEF\xBB\xBF/', '', $entetes[0]); // marque d'ordre des octets
         $numero = 1;
 
         while (($valeurs = fgetcsv($flux, separator: ',', enclosure: '"', escape: '')) !== false) {
@@ -121,8 +143,6 @@ abstract class ConnecteurAwin implements Connecteur, DetecteVersion
 
             yield $numero => count($valeurs) === count($entetes) ? array_combine($entetes, $valeurs) : null;
         }
-
-        fclose($flux);
     }
 
     /** Nombre décimal du flux, ou null si vide ou nul (la Fnac met 0.0 pour « inconnu »). */

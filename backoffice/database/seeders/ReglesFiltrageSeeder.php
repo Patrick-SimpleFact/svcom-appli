@@ -25,6 +25,8 @@ class ReglesFiltrageSeeder extends Seeder
         'randonnee', 'sport', 'match', 'cinema', 'projection', 'stage', 'club lecture', 'the dansant',
         'boum', 'baleti', 'soiree salsa', 'science', 'mediatheque', 'parcours de l art',
         'bibliotheque', 'fete de la science',
+        // catégories Fnac hors spectacle (validé par Patrick le 05/10/2026, N02)
+        'parc d attraction', 'aquarium', 'musee', 'tourisme', 'zoo', 'croisiere',
     ];
 
     public function run(): void

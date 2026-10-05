@@ -68,7 +68,8 @@ class Representation extends Model
     /** Copie la position et la ville du lieu, et le genre du spectacle (SCHEMA §10 point 2). */
     public function recopierLieuEtGenre(): void
     {
-        if ($this->isDirty('lieu_id') || $this->position === null) {
+        // Valeur brute : lire la position (objet) la ferait réécrire à chaque sauvegarde, même inchangée.
+        if ($this->isDirty('lieu_id') || blank($this->attributes['position'] ?? null)) {
             $lieu = $this->lieu;
             $this->position = $lieu?->position;
             $this->ville_id = $lieu?->ville_id;
