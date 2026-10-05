@@ -17,4 +17,9 @@ return [
 
     // Nouveaux essais après un échec : 15 min, 30 min, 1 h (F7.2).
     'delais_essais_secondes' => [900, 1800, 3600],
+
+    // Rattachement des lieux (COLLECTE §4, F7.5).
+    'rapprochement_lieux_metres' => 200,
+    'geocodage_url' => env('GEOCODAGE_URL', 'https://data.geopf.fr/geocodage/search'), // Base Adresse Nationale
+    'geocodage_score_minimal' => 0.5,
 ];

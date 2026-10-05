@@ -17,12 +17,14 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Filament\Actions\CreateAction;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->seed([ReglesFiltrageSeeder::class, SourceFacticeSeeder::class]);
     $this->source = Source::firstWhere('code', 'factice');
+    Http::fake(['data.geopf.fr/*' => Http::response(['features' => []])]);
 });
 
 function annonce(string $titre, array $categories = [], ?string $description = null, string $id = 'A-1'): AnnonceNormalisee
@@ -108,9 +110,9 @@ it('compte gardées, exclues et à trier sans bloquer la collecte', function () 
     });
 
     expect($collecte->only(['nb_recus', 'nb_retenus', 'nb_exclus', 'nb_a_trier']))
-        ->toBe(['nb_recus' => 4, 'nb_retenus' => 2, 'nb_exclus' => 1, 'nb_a_trier' => 1])
-        ->and($transmises)->toBe(['Exemple de comédie', 'Exemple de concert'])
-        ->and(ElementATraiter::sole()->donnees['titre'])->toBe('Soirée surprise');
+        ->toBe(['nb_recus' => 6, 'nb_retenus' => 4, 'nb_exclus' => 1, 'nb_a_trier' => 1])
+        ->and($transmises)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour'])
+        ->and(ElementATraiter::where('file', FileATraiter::ATrier)->sole()->donnees['titre'])->toBe('Soirée surprise');
 });
 
 it('ajoute un mot depuis le back-office, écrit sans accents ni majuscules', function () {

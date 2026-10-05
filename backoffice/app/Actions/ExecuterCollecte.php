@@ -8,20 +8,21 @@ use App\Collecte\RegistreConnecteurs;
 use App\Enums\IssueFiltrage;
 use App\Enums\StatutCollecte;
 use App\Models\Collecte;
+use App\Models\Lieu;
 use App\Models\Source;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage (COLLECTE §1, §5).
- * Les étapes suivantes (lieux, genres, doublons, publication) arrivent aux étapes K04 à K08.
+ * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage,
+ * rattachement des lieux (COLLECTE §1, §4, §5). Les étapes suivantes (genres, doublons, publication) arrivent aux étapes K05 à K08.
  */
 class ExecuterCollecte
 {
     public function __construct(private RegistreConnecteurs $registre) {}
 
     /**
-     * @param  callable(AnnonceNormalisee): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
+     * @param  callable(AnnonceNormalisee, Lieu): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
      */
     public function handle(Source $source, int $essai = 1, ?callable $traiterAnnonce = null, ?string $version = null): Collecte
     {
@@ -42,6 +43,7 @@ class ExecuterCollecte
             $collecte->update(['fichier_brut' => $chemin]);
 
             $trier = app(TrierAnnonce::class); // une instance par collecte : listes de mots lues une fois
+            $rattacher = app(RattacherLieu::class); // idem : lieux déjà résolus gardés en mémoire
             $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
             foreach ($connecteur->lire($brut, $source) as $element) {
@@ -60,8 +62,14 @@ class ExecuterCollecte
                     IssueFiltrage::ATrier => 'nb_a_trier',
                 }]++;
 
-                if ($issue === IssueFiltrage::Garde && $traiterAnnonce !== null) {
-                    $traiterAnnonce($element);
+                if ($issue !== IssueFiltrage::Garde) {
+                    continue;
+                }
+
+                $lieu = $rattacher->handle($element, $source);
+
+                if ($traiterAnnonce !== null) {
+                    $traiterAnnonce($element, $lieu);
                 }
             }
 
