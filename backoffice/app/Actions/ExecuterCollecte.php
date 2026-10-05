@@ -51,6 +51,7 @@ class ExecuterCollecte
             $enregistrer = app(EnregistrerOffre::class);
             $dedoublonner = app(DedoublonnerOffre::class); // idem : lieux proches calculés une fois
             $rattacherSpectacle = app(RattacherSpectacle::class);
+            $offresVues = [];
             $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
             foreach ($connecteur->lire($brut, $source) as $element) {
@@ -76,6 +77,7 @@ class ExecuterCollecte
                 $lieu = $rattacher->handle($element, $source);
                 $genre = $classer->handle($element, $source);
                 [$offre, $seanceChangee] = $enregistrer->handle($element, $source, $lieu, $genre);
+                $offresVues[] = $offre->id;
 
                 if ($seanceChangee) {
                     $dedoublonner->handle($offre);
@@ -91,8 +93,9 @@ class ExecuterCollecte
                 }
             }
 
-            $publication = app(PublierSource::class)->handle($source, $collecte);
+            $publication = app(PublierSource::class)->handle($source, $offresVues);
 
+            $source->update(['dernier_contact_le' => now()]);
             $collecte->update([
                 'statut' => StatutCollecte::Reussie,
                 'fin' => now(),

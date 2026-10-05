@@ -51,7 +51,7 @@ class DetecterMisesAJour
 
         if ($connecteur instanceof DetecteVersion) {
             $version = $connecteur->versionDisponible($source);
-            $source->update(['derniere_verification_le' => now(), 'derniere_version_vue' => $version, 'erreur_detection' => null]);
+            $source->update(['derniere_verification_le' => now(), 'dernier_contact_le' => now(), 'derniere_version_vue' => $version, 'erreur_detection' => null]);
 
             $derniereCollectee = Collecte::where('source_id', $source->id)
                 ->where('statut', StatutCollecte::Reussie)
@@ -68,7 +68,7 @@ class DetecterMisesAJour
         }
 
         if ($connecteur instanceof CollecteParIntervalle) {
-            $source->update(['derniere_verification_le' => now(), 'erreur_detection' => null]);
+            $source->update(['derniere_verification_le' => now(), 'dernier_contact_le' => now(), 'erreur_detection' => null]);
 
             [$debut, $fin] = $connecteur->plageHoraire();
             $heure = now('Europe/Paris')->hour;

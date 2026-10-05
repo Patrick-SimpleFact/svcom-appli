@@ -42,7 +42,7 @@ beforeEach(function () {
 
     $this->collecter = fn (Source $source) => app(ExecuterCollecte::class)->handle($source);
     // Republie les offres déjà en base, sans relire le flux (qui remettrait ses propres valeurs).
-    $this->republier = fn (Source $source) => app(PublierSource::class)->handle($source, Collecte::create(['source_id' => $source->id, 'debut' => now()->subMinutes(5), 'statut' => StatutCollecte::EnCours]));
+    $this->republier = fn (Source $source) => app(PublierSource::class)->handle($source, Offre::where('source_id', $source->id)->pluck('id')->all());
     $this->offre = fn (string $id) => Offre::firstWhere('identifiant_externe', $id);
 });
 

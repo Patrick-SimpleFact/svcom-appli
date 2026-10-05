@@ -20,7 +20,7 @@ class Source extends Model
     protected $fillable = [
         'code', 'nom', 'logo_url', 'type_acces', 'licence', 'mention_obligatoire',
         'type_lien', 'actif', 'zone', 'fiabilite', 'config', 'remarques',
-        'derniere_verification_le', 'derniere_version_vue', 'erreur_detection',
+        'derniere_verification_le', 'dernier_contact_le', 'derniere_version_vue', 'erreur_detection',
     ];
 
     protected function casts(): array
@@ -33,6 +33,7 @@ class Source extends Model
             'fiabilite' => 'array',
             'config' => 'array',
             'derniere_verification_le' => 'datetime',
+            'dernier_contact_le' => 'datetime',
         ];
     }
 

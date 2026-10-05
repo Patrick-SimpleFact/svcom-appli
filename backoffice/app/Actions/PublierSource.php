@@ -4,7 +4,6 @@ namespace App\Actions;
 
 use App\Enums\StatutRepresentation;
 use App\Enums\TypeRepresentation;
-use App\Models\Collecte;
 use App\Models\Offre;
 use App\Models\Representation;
 use App\Models\Source;
@@ -18,37 +17,64 @@ use Illuminate\Support\Facades\DB;
  * état à moitié importé ; une collecte qui échoue en route ne change rien au catalogue).
  * Valeurs retenues (§8.1) : horaire et lieu de la source la plus fiable pour ce champ ; prix min/max et « complet »
  * calculés sur toutes les offres ; description la plus longue. Un champ corrigé à la main n'est jamais écrasé (F7.8).
+ * Retraits (K08b) : une offre à venir absente de la collecte est « disparue » ; une représentation qui n'a plus
+ * aucune offre est retirée (elle revient si une offre réapparaît).
  */
 class PublierSource
 {
     private const RANG_FIABILITE = ['elevee' => 3, 'moyenne' => 2, 'faible' => 1];
 
-    /** @return array{nb_nouveaux: int, nb_mis_a_jour: int} */
-    public function handle(Source $source, Collecte $collecte): array
+    /**
+     * @param  list<int>  $offresVues  offres lues pendant cette collecte (les autres offres de la source ont disparu du flux)
+     * @return array{nb_nouveaux: int, nb_mis_a_jour: int, nb_retires: int}
+     */
+    public function handle(Source $source, array $offresVues): array
     {
-        return DB::transaction(function () use ($source, $collecte) {
-            $compteurs = ['nb_nouveaux' => 0, 'nb_mis_a_jour' => 0];
+        return DB::transaction(function () use ($source, $offresVues) {
+            $vues = Offre::whereKey($offresVues)->whereNull('disparue_le')->get();
 
-            $premieres = Offre::where('source_id', $source->id)
-                ->whereNull('disparue_le')
-                ->where('vue_le', '>=', $collecte->debut)
-                ->get()
-                ->map(fn (Offre $offre) => $offre->meme_seance_que_id ?? $offre->id)
-                ->unique();
+            // Offres à venir absentes de cette collecte : disparues du flux (une séance passée sort seule du flux, on la garde).
+            $disparues = $this->marquerDisparues(Offre::where('source_id', $source->id)->whereNotIn('id', $offresVues));
 
-            foreach ($premieres as $premiereId) {
-                $resultat = $this->publierSeance($premiereId);
-
-                if ($resultat !== null) {
-                    $compteurs[$resultat]++;
-                }
-            }
-
-            return $compteurs;
+            return $this->publierGroupes($vues->merge($disparues));
         });
     }
 
-    /** @return 'nb_nouveaux'|'nb_mis_a_jour'|null */
+    /**
+     * Marque disparues les offres à venir de la requête, et renvoie celles qui l'ont été.
+     *
+     * @return Collection<int, Offre>
+     */
+    public function marquerDisparues($requete): Collection
+    {
+        $offres = $requete->whereNull('disparue_le')->where('date_locale', '>=', today()->toDateString())->get();
+        Offre::whereKey($offres->modelKeys())->update(['disparue_le' => now()]);
+
+        return $offres;
+    }
+
+    /**
+     * Republie les groupes de séances de ces offres.
+     *
+     * @param  Collection<int, Offre>  $offres
+     * @return array{nb_nouveaux: int, nb_mis_a_jour: int, nb_retires: int}
+     */
+    public function publierGroupes(Collection $offres): array
+    {
+        $compteurs = ['nb_nouveaux' => 0, 'nb_mis_a_jour' => 0, 'nb_retires' => 0];
+
+        foreach ($offres->map(fn (Offre $offre) => $offre->meme_seance_que_id ?? $offre->id)->unique() as $premiereId) {
+            $resultat = $this->publierSeance($premiereId);
+
+            if ($resultat !== null) {
+                $compteurs[$resultat]++;
+            }
+        }
+
+        return $compteurs;
+    }
+
+    /** @return 'nb_nouveaux'|'nb_mis_a_jour'|'nb_retires'|null */
     private function publierSeance(int $premiereId): ?string
     {
         $offres = Offre::with('source', 'lieu')
@@ -57,9 +83,13 @@ class PublierSource
             ->orderBy('id')
             ->get();
 
+        if ($offres->isEmpty()) {
+            return $this->retirer($premiereId);
+        }
+
         $spectacleId = $offres->firstWhere('id', $premiereId)?->spectacle_id ?? $offres->whereNotNull('spectacle_id')->first()?->spectacle_id;
 
-        if ($offres->isEmpty() || $spectacleId === null) {
+        if ($spectacleId === null) {
             return null;
         }
 
@@ -86,7 +116,8 @@ class PublierSource
         // Un champ corrigé à la main l'emporte toujours ; le statut (annulée, masquée) n'est jamais changé par la collecte.
         $representation->fill(array_filter($valeurs, fn ($v, string $champ) => ! $representation->estVerrouille($champ), ARRAY_FILTER_USE_BOTH));
 
-        if ($nouvelle) {
+        // Nouvelle, ou retirée puis revenue dans un flux : programmée (sauf statut fixé à la main).
+        if ($nouvelle || ($representation->statut === StatutRepresentation::Retiree && ! $representation->estVerrouille('statut'))) {
             $representation->statut = StatutRepresentation::Programmee;
         }
 
@@ -101,6 +132,33 @@ class PublierSource
             $changee => 'nb_mis_a_jour',
             default => null,
         };
+    }
+
+    /**
+     * Plus aucune billetterie ne vend la séance : sa représentation est retirée (COLLECTE §8.2),
+     * sauf si elle a été corrigée à la main ou si son statut a été fixé à la main (annulée, masquée).
+     *
+     * @return 'nb_retires'|null
+     */
+    private function retirer(int $premiereId): ?string
+    {
+        $representationId = Offre::where(fn ($q) => $q->whereKey($premiereId)->orWhere('meme_seance_que_id', $premiereId))
+            ->whereNotNull('representation_id')
+            ->orderBy('id')
+            ->value('representation_id');
+        $representation = $representationId ? Representation::find($representationId) : null;
+
+        $encoreVendue = $representation !== null
+            && Offre::where('representation_id', $representation->id)->whereNull('disparue_le')->exists();
+
+        if ($representation === null || $encoreVendue || $representation->statut !== StatutRepresentation::Programmee
+            || ($representation->champs_verrouilles ?? []) !== []) {
+            return null;
+        }
+
+        $representation->update(['statut' => StatutRepresentation::Retiree]);
+
+        return 'nb_retires';
     }
 
     /**
