@@ -18,7 +18,7 @@ use Throwable;
 /**
  * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage,
  * rattachement des lieux, genre, enregistrement de l'offre, regroupement des séances et rattachement au spectacle
- * (COLLECTE §1, §4 à §7). La publication (représentations) arrive à l'étape K08.
+ * puis publication des représentations, en une fois, si tout s'est bien passé (COLLECTE §1, §4 à §8).
  */
 class ExecuterCollecte
 {
@@ -91,10 +91,13 @@ class ExecuterCollecte
                 }
             }
 
+            $publication = app(PublierSource::class)->handle($source, $collecte);
+
             $collecte->update([
                 'statut' => StatutCollecte::Reussie,
                 'fin' => now(),
                 ...$compteurs,
+                ...$publication,
             ]);
         } catch (Throwable $erreur) {
             $collecte->update([

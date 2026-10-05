@@ -49,6 +49,8 @@ class CollecteResource extends Resource
                 TextColumn::make('nb_retenus')->label('Gardées')->numeric(),
                 TextColumn::make('nb_exclus')->label('Exclues')->numeric(),
                 TextColumn::make('nb_a_trier')->label('À trier')->numeric(),
+                TextColumn::make('nb_nouveaux')->label('Représentations nouvelles')->numeric(),
+                TextColumn::make('nb_mis_a_jour')->label('Mises à jour')->numeric(),
                 TextColumn::make('erreur')->wrap()->limit(120)->placeholder('—'),
             ])
             ->filters([

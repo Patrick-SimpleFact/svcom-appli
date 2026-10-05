@@ -55,7 +55,7 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
     }
 
     /**
-     * Seconde billetterie de démonstration (déduplication, K06) : les mêmes séances écrites autrement.
+     * Seconde billetterie de démonstration (déduplication, K06) : les mêmes séances écrites autrement, et un conte de catégorie inconnue.
      * Comédie : 15 min d'écart → fusionnée, mais « à contrôler » ; concert : identique → fusionné ;
      * pièce : 45 min d'écart → « doublon probable ».
      */
@@ -66,6 +66,8 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
         return [
             ['id' => 'B-1', 'titre' => 'Exemple de comédie – Théâtre du Chêne Noir', 'debut' => $demain->addMinutes(15)->toIso8601String(), ...$chene, 'prix' => 16, 'lien' => 'https://exemple.fr/b1'],
             ['id' => 'B-2', 'titre' => 'EXEMPLE DE CONCERT', 'debut' => $demain->addDay()->toIso8601String(), 'lieu' => 'La Manutention', 'adresse' => '4 rue des Escaliers Sainte-Anne', 'cp' => '84000', 'ville' => 'Avignon', 'prix' => 14, 'lien' => 'https://exemple.fr/b2'],
+            // Genre : catégorie inconnue → « Autres » + « À classer » ; la classer reclasse le spectacle publié (K05, K08a).
+            ['id' => 'B-12', 'titre' => 'La Belle au bois dormant', 'categories' => ['Conte musical'], 'debut' => $demain->addDays(4)->toIso8601String(), ...$chene, 'prix' => 12, 'lien' => 'https://exemple.fr/b12'],
             ['id' => 'B-6', 'titre' => 'Exemple de pièce de théâtre', 'debut' => $demain->addMinutes(45)->toIso8601String(), 'lieu' => 'Théâtre de l’Observance', 'adresse' => '10 rue de l’Observance', 'cp' => '84000', 'ville' => 'Avignon', 'prix' => 15, 'lien' => 'https://exemple.fr/b6'],
         ];
     }

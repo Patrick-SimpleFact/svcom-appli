@@ -8,6 +8,7 @@ use App\Enums\TypeRepresentation;
 use App\Models\Concerns\DatesEnUtc;
 use App\Models\Concerns\IdentifiantNumerique;
 use App\Models\Concerns\Journalise;
+use App\Models\Concerns\VerrouilleCorrections;
 use App\Support\Point;
 use Carbon\CarbonInterface;
 use Database\Factories\RepresentationFactory;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Une représentation = un spectacle × un lieu × une date : c'est ce que l'app cherche et affiche.
@@ -28,13 +30,14 @@ class Representation extends Model
 
     use IdentifiantNumerique;
     use Journalise;
+    use VerrouilleCorrections;
 
     /** Une séance commencée avant cette heure (locale) compte pour la soirée de la veille (F2.2). */
     public const HEURE_FIN_DE_SOIREE = 4;
 
     protected $fillable = [
         'spectacle_id', 'lieu_id', 'type', 'debut', 'fin', 'date_locale',
-        'prix_min', 'prix_max', 'gratuit', 'complet', 'statut',
+        'prix_min', 'prix_max', 'gratuit', 'complet', 'statut', 'champs_verrouilles',
     ];
 
     protected function casts(): array
@@ -50,6 +53,7 @@ class Representation extends Model
             'prix_max' => 'decimal:2',
             'gratuit' => 'boolean',
             'complet' => 'boolean',
+            'champs_verrouilles' => 'array',
         ];
     }
 
@@ -89,6 +93,12 @@ class Representation extends Model
         }
 
         $this->date_locale = $local->toDateString();
+    }
+
+    /** Offres des billetteries qui vendent cette séance (F5.4). */
+    public function offres(): HasMany
+    {
+        return $this->hasMany(Offre::class);
     }
 
     public function spectacle(): BelongsTo
