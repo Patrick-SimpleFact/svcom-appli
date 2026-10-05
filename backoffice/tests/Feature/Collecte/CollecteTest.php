@@ -11,6 +11,7 @@ use App\Models\Source;
 use Carbon\CarbonImmutable;
 use Database\Seeders\GenresSeeder;
 use Database\Seeders\MotsGenresSeeder;
+use Database\Seeders\ParametresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Database\Seeders\SourcesSeeder;
@@ -22,7 +23,7 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     Storage::fake('collecte');
-    $this->seed([GenresSeeder::class, MotsGenresSeeder::class, SourceFacticeSeeder::class, ReglesFiltrageSeeder::class]);
+    $this->seed([GenresSeeder::class, MotsGenresSeeder::class, ParametresSeeder::class, SourceFacticeSeeder::class, ReglesFiltrageSeeder::class]);
     $this->source = Source::firstWhere('code', 'factice');
     Http::fake(['data.geopf.fr/*' => Http::response(['features' => []])]);
 });

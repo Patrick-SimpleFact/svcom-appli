@@ -10,20 +10,22 @@ use App\Enums\IssueFiltrage;
 use App\Enums\StatutCollecte;
 use App\Models\Collecte;
 use App\Models\Lieu;
+use App\Models\Offre;
 use App\Models\Source;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
  * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage,
- * rattachement des lieux, genre (COLLECTE §1, §4, §5, §6). Les étapes suivantes (doublons, publication) arrivent aux étapes K06 à K08.
+ * rattachement des lieux, genre, enregistrement de l'offre et regroupement des séances (COLLECTE §1, §4 à §7).
+ * Les étapes suivantes (spectacles, publication) arrivent aux étapes K07 et K08.
  */
 class ExecuterCollecte
 {
     public function __construct(private RegistreConnecteurs $registre) {}
 
     /**
-     * @param  callable(AnnonceNormalisee, Lieu, ResultatGenre): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
+     * @param  callable(AnnonceNormalisee, Lieu, ResultatGenre, Offre): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
      */
     public function handle(Source $source, int $essai = 1, ?callable $traiterAnnonce = null, ?string $version = null): Collecte
     {
@@ -46,6 +48,8 @@ class ExecuterCollecte
             $trier = app(TrierAnnonce::class); // une instance par collecte : listes de mots lues une fois
             $rattacher = app(RattacherLieu::class); // idem : lieux déjà résolus gardés en mémoire
             $classer = app(ClasserAnnonce::class); // idem : correspondances et mots de genre lus une fois
+            $enregistrer = app(EnregistrerOffre::class);
+            $dedoublonner = app(DedoublonnerOffre::class); // idem : lieux proches calculés une fois
             $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
             foreach ($connecteur->lire($brut, $source) as $element) {
@@ -70,9 +74,14 @@ class ExecuterCollecte
 
                 $lieu = $rattacher->handle($element, $source);
                 $genre = $classer->handle($element, $source);
+                [$offre, $seanceChangee] = $enregistrer->handle($element, $source, $lieu, $genre);
+
+                if ($seanceChangee) {
+                    $dedoublonner->handle($offre);
+                }
 
                 if ($traiterAnnonce !== null) {
-                    $traiterAnnonce($element, $lieu, $genre);
+                    $traiterAnnonce($element, $lieu, $genre, $offre);
                 }
             }
 

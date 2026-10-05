@@ -20,7 +20,7 @@ SPETTACOLI/
 ```
 app/
 ├── Actions/             une classe = un verbe métier (PublierCollecte, FusionnerLieux…)
-├── Collecte/            moteur de collecte : AnnonceNormalisee (format commun), Connecteur (contrat), RegistreConnecteurs, Connecteurs/ (un par source, déclaré dans config/collecte.php), FiltreSpectacleVivant (score gardé / exclu / à trier), ComparaisonLieux et BaseAdresseNationale (rattachement des lieux), ClasseurGenres (genre d’une annonce)
+├── Collecte/            moteur de collecte : AnnonceNormalisee (format commun), Connecteur (contrat), RegistreConnecteurs, Connecteurs/ (un par source, déclaré dans config/collecte.php), FiltreSpectacleVivant (score gardé / exclu / à trier), ComparaisonLieux et BaseAdresseNationale (rattachement des lieux), ClasseurGenres (genre d’une annonce), ComparaisonSeances (déduplication)
 ├── Enums/               tous les statuts et listes fermées (StatutRepresentation, TypeSource…)
 ├── Filament/            écrans du back-office
 ├── Http/Controllers/Api/V1/   API de l'app (bloc 5)
