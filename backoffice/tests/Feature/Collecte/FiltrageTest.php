@@ -113,8 +113,8 @@ it('compte gardées, exclues et à trier sans bloquer la collecte', function () 
     });
 
     expect($collecte->only(['nb_recus', 'nb_retenus', 'nb_exclus', 'nb_a_trier']))
-        ->toBe(['nb_recus' => 7, 'nb_retenus' => 5, 'nb_exclus' => 1, 'nb_a_trier' => 1])
-        ->and($transmises)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour', 'Le Petit Prince'])
+        ->toBe(['nb_recus' => 10, 'nb_retenus' => 8, 'nb_exclus' => 1, 'nb_a_trier' => 1])
+        ->and($transmises)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour', 'Le Petit Prince', 'Exemple de comédie', 'Concert', 'Concert'])
         ->and(ElementATraiter::where('file', FileATraiter::ATrier)->sole()->donnees['titre'])->toBe('Soirée surprise');
 });
 

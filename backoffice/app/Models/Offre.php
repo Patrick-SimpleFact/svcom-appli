@@ -17,7 +17,7 @@ class Offre extends Model
 
     protected $fillable = [
         'source_id', 'identifiant_externe', 'representation_id', 'lieu_id', 'genre_id', 'jeune_public', 'debut',
-        'heure_connue', 'date_locale', 'titre_comparable', 'meme_seance_que_id', 'lien', 'prix_min', 'prix_max',
+        'heure_connue', 'date_locale', 'titre_comparable', 'meme_seance_que_id', 'spectacle_id', 'lien', 'prix_min', 'prix_max',
         'complet', 'donnees_normalisees', 'empreinte', 'vue_le', 'disparue_le',
     ];
 
@@ -55,6 +55,11 @@ class Offre extends Model
     public function genre(): BelongsTo
     {
         return $this->belongsTo(Genre::class);
+    }
+
+    public function spectacle(): BelongsTo
+    {
+        return $this->belongsTo(Spectacle::class);
     }
 
     /** Première offre du groupe : les offres d'une même séance pointent toutes vers elle (K06). */

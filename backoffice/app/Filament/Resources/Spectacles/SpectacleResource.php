@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Spectacles;
 
 use App\Filament\Resources\Spectacles\Pages\ListSpectacles;
 use App\Filament\Resources\Spectacles\Pages\ViewSpectacle;
+use App\Filament\Resources\Spectacles\RelationManagers\OffresRelationManager;
 use App\Filament\Resources\Spectacles\RelationManagers\RepresentationsRelationManager;
 use App\Models\Genre;
 use App\Models\Spectacle;
@@ -57,6 +58,7 @@ class SpectacleResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with('genre')
                 ->withCount(['representations as a_venir' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())])
+                ->withCount(['offres as seances_collectees' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())])
                 ->withMin(['representations as prochaine' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())], 'date_locale'))
             ->defaultSort('prochaine')
             ->columns([
@@ -65,6 +67,7 @@ class SpectacleResource extends Resource
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->where('titre_normalise', 'like', '%'.Texte::normaliser($search).'%')),
                 TextColumn::make('genre.libelle')->label('Genre')->badge(),
                 TextColumn::make('a_venir')->label('Représentations à venir')->numeric(),
+                TextColumn::make('seances_collectees')->label('Séances collectées')->numeric()->sortable(),
                 TextColumn::make('prochaine')->label('Prochaine')->date('d/m/Y')->sortable()->placeholder('—'),
                 TextColumn::make('demo')->label('')->badge()->formatStateUsing(fn (bool $state): string => $state ? 'Démo' : '')->color('gray'),
             ])
@@ -77,7 +80,7 @@ class SpectacleResource extends Resource
 
     public static function getRelations(): array
     {
-        return [RepresentationsRelationManager::class];
+        return [RepresentationsRelationManager::class, OffresRelationManager::class];
     }
 
     public static function canCreate(): bool
