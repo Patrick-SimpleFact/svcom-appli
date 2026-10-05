@@ -42,7 +42,7 @@ beforeEach(function () {
 
     $this->collecter = fn (Source $source) => app(ExecuterCollecte::class)->handle($source);
     // Republie les offres déjà en base, sans relire le flux (qui remettrait ses propres valeurs).
-    $this->republier = fn (Source $source) => app(PublierSource::class)->handle($source, Offre::where('source_id', $source->id)->pluck('id')->all());
+    $this->republier = fn (Source $source) => app(PublierSource::class)->handle($source, null, Offre::where('source_id', $source->id)->pluck('id')->all());
     $this->offre = fn (string $id) => Offre::firstWhere('identifiant_externe', $id);
 });
 
@@ -184,4 +184,26 @@ it('affiche les compteurs de publication dans l’écran Collectes', function ()
     $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
 
     $this->get('/admin/collectes')->assertOk()->assertSee('Représentations nouvelles');
+});
+
+it('publie au passage suivant les séances préparées par une collecte interrompue avant sa publication', function () {
+    ($this->collecter)($this->factice);
+    Offre::query()->update(['representation_id' => null]); // comme si la publication n'avait jamais eu lieu
+    Representation::query()->delete();
+
+    $collecte = ($this->collecter)($this->factice); // flux identique : aucune offre n'a changé
+
+    expect($collecte->nb_nouveaux)->toBe(8)
+        ->and(Offre::where('source_id', $this->factice->id)->whereNull('representation_id')->count())->toBe(0);
+});
+
+it('garde la salle donnée par la billetterie sur la représentation', function () {
+    ($this->collecter)($this->factice);
+    $offre = ($this->offre)('F-1');
+    $offre->update(['donnees_normalisees' => [...$offre->donnees_normalisees, 'lieu_nom' => 'Théâtre du Chêne noir - salle Léo Ferré']]);
+
+    ($this->republier)($this->factice);
+
+    expect($offre->fresh()->representation->salle)->toBe('Salle Léo Ferré')
+        ->and(($this->offre)('F-2')->representation->salle)->toBeNull();
 });

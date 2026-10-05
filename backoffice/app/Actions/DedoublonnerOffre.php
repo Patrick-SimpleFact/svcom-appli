@@ -34,6 +34,14 @@ class DedoublonnerOffre
     /** @var array<int, list<int>> lieux considérés comme le même, par lieu (calculés une fois par collecte) */
     private array $lieuxProches = [];
 
+    /** @var array<int, Collection> décisions manuelles par offre (pendant cette collecte) */
+    private array $decisions = [];
+
+    private ?bool $decisionsExistent = null;
+
+    /** @var array<string, mixed> réglages lus une fois par collecte */
+    private array $reglages = [];
+
     public function __construct(
         private ComparaisonSeances $seances,
         private ComparaisonLieux $lieux,
@@ -72,7 +80,7 @@ class DedoublonnerOffre
         foreach ($this->candidates($offre) as $candidate) {
             $groupe = $candidate->meme_seance_que_id ?? $candidate->id;
 
-            if ($separees->intersect($this->membresDuGroupe($groupe))->isNotEmpty()) {
+            if ($separees->isNotEmpty() && $separees->intersect($this->membresDuGroupe($groupe))->isNotEmpty()) {
                 continue; // séparées à la main : jamais réunies, même par un autre membre du groupe
             }
 
@@ -89,7 +97,7 @@ class DedoublonnerOffre
             $meilleure = $fusions->sortBy([['ressemblance', 'desc'], ['ecart', 'asc']])->first();
             $offre->update(['meme_seance_que_id' => $meilleure['candidate']->meme_seance_que_id ?? $meilleure['candidate']->id]);
 
-            if (($meilleure['ecart'] ?? 0) > 0 && Parametre::valeur('controle_fusions_actif')) {
+            if (($meilleure['ecart'] ?? 0) > 0 && $this->reglage('controle_fusions_actif')) {
                 $this->signaler(FileATraiter::FusionAControler, $meilleure['candidate'], $offre, $meilleure);
             }
 
@@ -111,14 +119,22 @@ class DedoublonnerOffre
             : null;
         $ressemblance = $this->seances->ressemblanceTitres($offre->titre_comparable, $candidate->titre_comparable);
 
+        // Une billetterie ne vend jamais deux fois la même séance à deux heures différentes (11:30 et 12:15 au Kido
+        // Comedy Club = deux séances). Même heure : rapprochables (ex. catégories de places vendues séparément).
+        if ($offre->source_id === $candidate->source_id && $ecart !== null && $ecart > 0) {
+            return ['candidate' => $candidate, 'decision' => null, 'ecart' => $ecart, 'ressemblance' => round($ressemblance, 2)];
+        }
+
         $niveaux = [
-            $this->seances->niveauHeure($ecart, (int) Parametre::valeur('dedoublonnage_ecart_minutes')),
+            $this->seances->niveauHeure($ecart, (int) $this->reglage('dedoublonnage_ecart_minutes'), (int) $this->reglage('dedoublonnage_ecart_probable_minutes')),
             $this->seances->niveauTitre($ressemblance),
         ];
 
         $decision = match (true) {
             in_array(ComparaisonSeances::FAIBLE, $niveaux, true) => null,
-            in_array(ComparaisonSeances::LIMITE, $niveaux, true) => self::PROBABLE,
+            // Une même billetterie n'annonce pas deux fois la même séance sous deux titres voisins
+            // (« Paname Comedy Club » / « Paname Diner Comedy » : deux plateaux) : pas de doublon probable entre ses offres.
+            in_array(ComparaisonSeances::LIMITE, $niveaux, true) => $offre->source_id === $candidate->source_id ? null : self::PROBABLE,
             default => self::FUSION,
         };
 
@@ -172,9 +188,7 @@ class DedoublonnerOffre
 
     private function fusionDecidee(Offre $offre): ?Offre
     {
-        $decision = DecisionDedoublonnage::where('type', TypeDecisionDedoublonnage::Fusionner)
-            ->where(fn ($q) => $q->where('offre_a_id', $offre->id)->orWhere('offre_b_id', $offre->id))
-            ->first();
+        $decision = $this->decisionsDe($offre)->firstWhere('type', TypeDecisionDedoublonnage::Fusionner);
 
         if ($decision === null) {
             return null;
@@ -188,11 +202,27 @@ class DedoublonnerOffre
 
     private function separationsDecidees(Offre $offre): Collection
     {
-        return DecisionDedoublonnage::where('type', TypeDecisionDedoublonnage::Separer)
-            ->where(fn ($q) => $q->where('offre_a_id', $offre->id)->orWhere('offre_b_id', $offre->id))
-            ->get()
+        return $this->decisionsDe($offre)
+            ->where('type', TypeDecisionDedoublonnage::Separer)
             ->toBase()
             ->map(fn (DecisionDedoublonnage $d) => $d->offre_a_id === $offre->id ? $d->offre_b_id : $d->offre_a_id);
+    }
+
+    private function reglage(string $cle): mixed
+    {
+        return $this->reglages[$cle] ??= Parametre::valeur($cle);
+    }
+
+    /** Décisions manuelles concernant l'offre, lues en une requête (rien à lire tant qu'aucune décision n'existe). */
+    private function decisionsDe(Offre $offre): Collection
+    {
+        $this->decisionsExistent ??= DecisionDedoublonnage::exists();
+
+        if (! $this->decisionsExistent) {
+            return collect();
+        }
+
+        return $this->decisions[$offre->id] ??= DecisionDedoublonnage::where('offre_a_id', $offre->id)->orWhere('offre_b_id', $offre->id)->get();
     }
 
     /** Ajoute la paire à une file de la boîte de travail (une seule fois par paire). */

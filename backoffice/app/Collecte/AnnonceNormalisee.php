@@ -36,6 +36,9 @@ final readonly class AnnonceNormalisee
         public bool $gratuit = false,
         public bool $complet = false,
         public ?CarbonImmutable $misAJourSource = null,
+        // Identifiant du spectacle chez la source, quand elle publie une annonce par séance (BilletRéduc) :
+        // le tri et la file « À classer » raisonnent alors par spectacle, pas par séance.
+        public ?string $identifiantSpectacle = null,
     ) {
         if (trim($identifiantExterne) === '') {
             throw new InvalidArgumentException('Annonce sans identifiant externe.');
@@ -79,7 +82,14 @@ final readonly class AnnonceNormalisee
             'complet' => $this->complet,
             'lien' => $this->lien,
             'mis_a_jour_source' => $this->misAJourSource?->toIso8601String(),
+            'identifiant_spectacle' => $this->identifiantSpectacle,
         ];
+    }
+
+    /** Clé du spectacle chez la source (l'annonce elle-même si la source ne publie pas d'identifiant de spectacle). */
+    public function cleSpectacle(): string
+    {
+        return $this->identifiantSpectacle ?? $this->identifiantExterne;
     }
 
     /** Empreinte du contenu : change dès qu'une information change (détection des modifications, COLLECTE §3). */

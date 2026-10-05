@@ -28,7 +28,7 @@ class RepresentationsRelationManager extends RelationManager
                 TextColumn::make('date_locale')->label('Jour')->date('D d/m/Y'),
                 TextColumn::make('debut')->label('Heure')
                     ->state(fn (Representation $r): string => $r->debut?->setTimezone($r->lieu?->fuseau_horaire ?? 'Europe/Paris')->format('H:i') ?? 'à confirmer'),
-                TextColumn::make('lieu.nom')->label('Lieu')->wrap(),
+                TextColumn::make('lieu.nom')->label('Lieu')->wrap()->description(fn (Representation $r): ?string => $r->salle),
                 TextColumn::make('lieu.ville.nom')->label('Ville'),
                 TextColumn::make('statut')->badge(),
             ]);

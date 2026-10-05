@@ -36,7 +36,7 @@ class Representation extends Model
     public const HEURE_FIN_DE_SOIREE = 4;
 
     protected $fillable = [
-        'spectacle_id', 'lieu_id', 'type', 'debut', 'fin', 'date_locale',
+        'spectacle_id', 'lieu_id', 'salle', 'type', 'debut', 'fin', 'date_locale',
         'prix_min', 'prix_max', 'gratuit', 'complet', 'statut', 'champs_verrouilles',
     ];
 

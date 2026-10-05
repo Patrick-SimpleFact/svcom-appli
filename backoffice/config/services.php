@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // Awin (BilletRéduc, Fnac) : adresse secrète de la liste des flux du compte éditeur (COLLECTE §3).
+    'awin' => [
+        'liste_flux' => env('AWIN_FEEDLIST_URL'),
+    ],
+
 ];

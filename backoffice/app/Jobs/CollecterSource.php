@@ -21,8 +21,8 @@ class CollecterSource implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 4;
 
-    /** La collecte la plus longue (flux national) reste bien en dessous. */
-    public int $timeout = 1800;
+    /** La première collecte d'un gros flux (BilletRéduc : 98 000 séances) peut prendre une heure ; les suivantes, quelques minutes. */
+    public int $timeout = 7200;
 
     public int $uniqueFor = 4 * 3600;
 

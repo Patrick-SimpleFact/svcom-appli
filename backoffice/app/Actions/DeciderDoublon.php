@@ -15,7 +15,8 @@ use InvalidArgumentException;
 /**
  * Décision manuelle sur deux offres (COLLECTE §7.2) : « fusionner » (même séance) ou « séparer » (séances différentes).
  * Elle est mémorisée et réappliquée à chaque collecte ; une séparation n'est jamais annulée par la machine.
- * Les éléments des files « Doublons probables » et « Fusions à contrôler » concernant cette paire sont traités.
+ * Les éléments des files « Doublons probables » et « Fusions à contrôler » concernant cette paire sont traités,
+ * et les séances concernées sont republiées aussitôt.
  */
 class DeciderDoublon
 {
@@ -35,6 +36,9 @@ class DeciderDoublon
             );
 
             $type === TypeDecisionDedoublonnage::Fusionner ? $this->fusionner($a, $b) : $this->separer($a, $b);
+
+            // La décision s'applique tout de suite au catalogue, sans attendre la prochaine collecte.
+            app(PublierSource::class)->publierGroupes(collect([$a->fresh(), $b->fresh()]));
 
             ElementATraiter::whereIn('file', [FileATraiter::DoublonProbable, FileATraiter::FusionAControler])
                 ->where('statut', StatutElement::EnAttente)

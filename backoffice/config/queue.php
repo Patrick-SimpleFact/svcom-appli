@@ -40,7 +40,8 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            // Au-delà de la durée maximale d'une collecte (CollecterSource::$timeout = 2 h), sinon elle serait relancée en double.
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 7500),
             'after_commit' => false,
         ],
 

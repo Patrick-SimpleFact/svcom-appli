@@ -1,5 +1,6 @@
 <?php
 
+use App\Collecte\Connecteurs\ConnecteurBilletReduc;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 
 return [
@@ -10,6 +11,7 @@ return [
     'connecteurs' => [
         'factice' => ConnecteurFactice::class,
         'factice_bis' => ConnecteurFactice::class,
+        'billetreduc' => ConnecteurBilletReduc::class,
     ],
 
     // Disque des fichiers bruts et durée de conservation (jours).

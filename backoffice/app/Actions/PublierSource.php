@@ -2,8 +2,10 @@
 
 namespace App\Actions;
 
+use App\Collecte\ComparaisonLieux;
 use App\Enums\StatutRepresentation;
 use App\Enums\TypeRepresentation;
+use App\Models\Collecte;
 use App\Models\Offre;
 use App\Models\Representation;
 use App\Models\Source;
@@ -24,19 +26,33 @@ class PublierSource
 {
     private const RANG_FIABILITE = ['elevee' => 3, 'moyenne' => 2, 'faible' => 1];
 
+    /** Paquets d'identifiants : PostgreSQL limite une requête à 65 535 paramètres. */
+    private const TAILLE_PAQUET = 5000;
+
     /**
-     * @param  list<int>  $offresVues  offres lues pendant cette collecte (les autres offres de la source ont disparu du flux)
+     * @param  Collecte|null  $collecte  collecte réussie : les offres à venir de la source qu'elle n'a pas vues ont disparu
+     *                                   du flux (null : aucune disparition, simple republication)
+     * @param  list<int>  $aRepublier  offres nouvelles, modifiées ou jamais publiées
      * @return array{nb_nouveaux: int, nb_mis_a_jour: int, nb_retires: int}
      */
-    public function handle(Source $source, array $offresVues): array
+    public function handle(Source $source, ?Collecte $collecte, array $aRepublier): array
     {
-        return DB::transaction(function () use ($source, $offresVues) {
-            $vues = Offre::whereKey($offresVues)->whereNull('disparue_le')->get();
+        return DB::transaction(function () use ($source, $collecte, $aRepublier) {
+            $premieres = collect();
 
-            // Offres à venir absentes de cette collecte : disparues du flux (une séance passée sort seule du flux, on la garde).
-            $disparues = $this->marquerDisparues(Offre::where('source_id', $source->id)->whereNotIn('id', $offresVues));
+            foreach (array_chunk($aRepublier, self::TAILLE_PAQUET) as $paquet) {
+                $premieres = $premieres->merge(Offre::whereKey($paquet)->whereNull('disparue_le')
+                    ->selectRaw('coalesce(meme_seance_que_id, id) as premiere')->pluck('premiere'));
+            }
 
-            return $this->publierGroupes($vues->merge($disparues));
+            // Offres à venir que cette collecte n'a pas vues : disparues du flux (une séance passée sort seule du flux, on la garde).
+            if ($collecte !== null) {
+                $disparues = $this->marquerDisparues(Offre::where('source_id', $source->id)
+                    ->where(fn ($q) => $q->whereNull('derniere_collecte_id')->orWhere('derniere_collecte_id', '!=', $collecte->id)));
+                $premieres = $premieres->merge($disparues->map(fn (Offre $o) => $o->meme_seance_que_id ?? $o->id));
+            }
+
+            return $this->publierPremieres($premieres->unique());
         });
     }
 
@@ -47,8 +63,11 @@ class PublierSource
      */
     public function marquerDisparues($requete): Collection
     {
-        $offres = $requete->whereNull('disparue_le')->where('date_locale', '>=', today()->toDateString())->get();
-        Offre::whereKey($offres->modelKeys())->update(['disparue_le' => now()]);
+        $offres = $requete->whereNull('disparue_le')->where('date_locale', '>=', today()->toDateString())->get(['id', 'meme_seance_que_id']);
+
+        foreach ($offres->chunk(self::TAILLE_PAQUET) as $paquet) {
+            Offre::whereKey($paquet->modelKeys())->update(['disparue_le' => now()]);
+        }
 
         return $offres;
     }
@@ -61,10 +80,21 @@ class PublierSource
      */
     public function publierGroupes(Collection $offres): array
     {
+        return $this->publierPremieres($offres->map(fn (Offre $offre) => $offre->meme_seance_que_id ?? $offre->id)->unique());
+    }
+
+    /**
+     * Republie les groupes de séances désignés par leur première offre.
+     *
+     * @param  iterable<int>  $premieres
+     * @return array{nb_nouveaux: int, nb_mis_a_jour: int, nb_retires: int}
+     */
+    private function publierPremieres(iterable $premieres): array
+    {
         $compteurs = ['nb_nouveaux' => 0, 'nb_mis_a_jour' => 0, 'nb_retires' => 0];
 
-        foreach ($offres->map(fn (Offre $offre) => $offre->meme_seance_que_id ?? $offre->id)->unique() as $premiereId) {
-            $resultat = $this->publierSeance($premiereId);
+        foreach ($premieres as $premiereId) {
+            $resultat = $this->publierSeance((int) $premiereId);
 
             if ($resultat !== null) {
                 $compteurs[$resultat]++;
@@ -104,6 +134,7 @@ class PublierSource
         $valeurs = [
             'spectacle_id' => $spectacleId,
             'lieu_id' => $lieu->lieu_id,
+            'salle' => app(ComparaisonLieux::class)->salle($lieu->donnees_normalisees['lieu_nom'] ?? null, $lieu->lieu?->nom ?? ''),
             'type' => $horaire->heure_connue ? TypeRepresentation::Seance : TypeRepresentation::Jour,
             'debut' => $horaire->heure_connue ? $horaire->debut : null,
             'date_locale' => $horaire->date_locale, // recalculée à partir de l'heure pour une séance

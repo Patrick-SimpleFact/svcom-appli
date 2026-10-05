@@ -14,17 +14,26 @@ use App\Models\Source;
  * Étape « filtrage » de la chaîne (COLLECTE §5) : gardé, exclu ou mis de côté dans la file « À trier ».
  * Une annonce à trier n'est pas publiée, mais ne bloque pas la collecte (F7.2).
  * Une décision prise dans la file pour cette annonce l'emporte sur le score.
+ * Une source qui publie une annonce par séance est triée une fois par spectacle (`cleSpectacle`).
  */
 class TrierAnnonce
 {
+    /** @var array<string, IssueFiltrage> spectacles déjà triés pendant cette collecte */
+    private array $memoire = [];
+
     public function __construct(private FiltreSpectacleVivant $filtre) {}
 
     public function handle(AnnonceNormalisee $annonce, Source $source): IssueFiltrage
     {
+        return $this->memoire["{$source->id}:{$annonce->cleSpectacle()}"] ??= $this->trier($annonce, $source);
+    }
+
+    private function trier(AnnonceNormalisee $annonce, Source $source): IssueFiltrage
+    {
         $element = ElementATraiter::where('file', FileATraiter::ATrier)
             ->where('cible_type', $source->getMorphClass())
             ->where('cible_id', $source->id)
-            ->where('donnees->identifiant_externe', $annonce->identifiantExterne)
+            ->where('donnees->identifiant_externe', $annonce->cleSpectacle())
             ->first();
 
         if ($element?->statut === StatutElement::Traite && isset($element->decision['issue']) && empty($element->decision['automatique'])) {
@@ -42,7 +51,7 @@ class TrierAnnonce
                 'decision' => null,
                 'traite_le' => null,
                 'donnees' => [
-                    'identifiant_externe' => $annonce->identifiantExterne,
+                    'identifiant_externe' => $annonce->cleSpectacle(),
                     'titre' => $annonce->titre,
                     'categories_source' => $annonce->categoriesSource,
                     'description' => $annonce->description ? mb_strimwidth($annonce->description, 0, 500, '…') : null,
