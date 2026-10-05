@@ -86,6 +86,7 @@ it('reconnaît les cas difficiles du POC', function (string $titreA, string $tit
     'titre complété' => ['Edmond', 'Edmond de Alexis Michalik'],
     'sous-titre du lieu' => ['Mamouchka', 'Mamouchka – Théâtre du Chêne Noir'],
     'accents et ponctuation' => ['Le Prénom', 'LE PRENOM'],
+    'titre court identique (vu sur BilletRéduc, N01)' => ['Fred.', 'FRED'],
 ]);
 
 it('ne fusionne pas deux spectacles différents au même endroit et à la même heure', function () {
@@ -130,6 +131,43 @@ it('laisse séparés les cas limites et les met dans « Doublons probables »', 
 
     expect($b->meme_seance_que_id)->toBeNull()
         ->and(elementsDeLaFile(FileATraiter::DoublonProbable)->sole()->donnees['ecart_minutes'])->toBe(45);
+});
+
+it('ne rapproche jamais deux séances d’une même billetterie à des heures différentes (Kido Comedy Club)', function () {
+    $seances = collect(['11:30', '12:15', '17:00', '18:30'])->map(
+        fn (string $heure, int $i) => ($this->offre)($this->billetreduc, "KIDO-{$i}", 'Kido Comedy Club & Restaurant', "2026-10-11 {$heure}"),
+    );
+    $fnac = ($this->offre)($this->fnac, 'FN-1', 'Kido Comedy Club', '2026-10-11 12:15');
+
+    expect($seances->map(fn (Offre $o) => $o->fresh()->meme_seance_que_id)->filter())->toBeEmpty()
+        ->and(ElementATraiter::whereIn('file', [FileATraiter::DoublonProbable, FileATraiter::FusionAControler])->get()
+            ->filter(fn ($e) => Offre::find($e->donnees['offre_a_id'])->source_id === Offre::find($e->donnees['offre_b_id'])->source_id))->toBeEmpty()
+        // la même séance vendue par une autre billetterie est bien reconnue
+        ->and($fnac->meme_seance_que_id)->toBe($seances[1]->id);
+});
+
+it('ne met jamais en doublon probable deux plateaux d’une même billetterie (titres voisins, même heure)', function () {
+    ($this->offre)($this->billetreduc, 'BR-1', 'Paname Comedy Club', '2026-10-17 20:30');
+    $b = ($this->offre)($this->billetreduc, 'BR-2', 'Paname Diner Comedy', '2026-10-17 20:30');
+
+    expect($b->meme_seance_que_id)->toBeNull()
+        ->and(ElementATraiter::count())->toBe(0);
+});
+
+it('fusionne deux offres d’une même billetterie à la même heure (catégories de places)', function () {
+    $a = ($this->offre)($this->fnac, 'FN-1', 'Edmond', '2026-10-17 20:30');
+    $b = ($this->offre)($this->fnac, 'FN-2', 'Edmond - Carré Or', '2026-10-17 20:30');
+
+    expect($b->meme_seance_que_id)->toBe($a->id);
+});
+
+it('suit le réglage de l’écart maximal d’un doublon probable', function () {
+    Parametre::firstWhere('cle', 'dedoublonnage_ecart_probable_minutes')->update(['valeur' => 40]);
+
+    ($this->offre)($this->billetreduc, 'BR-1', 'Edmond', '2026-10-17 20:30');
+    ($this->offre)($this->fnac, 'FN-1', 'Edmond', '2026-10-17 21:15'); // 45 min : au-delà de 40
+
+    expect(ElementATraiter::count())->toBe(0);
 });
 
 it('ne rapproche rien au-delà d’une heure d’écart, un autre jour ou dans un lieu éloigné', function () {

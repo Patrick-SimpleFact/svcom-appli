@@ -53,6 +53,11 @@ class ComparaisonSeances
             return 0.0;
         }
 
+        // Titres identiques, même très courts (« Fred. ») : la règle « l'un contient l'autre » ci-dessous les refuserait.
+        if ($a === $b) {
+            return 1.0;
+        }
+
         // Mot masqué : « les c*ns » correspond à « les cons ».
         foreach ([[$a, $b], [$b, $a]] as [$masque, $autre]) {
             if (str_contains($masque, '*') && preg_match('/^'.str_replace('\*', '[a-z]*', preg_quote($masque, '/')).'$/', $autre)) {
@@ -80,11 +85,11 @@ class ComparaisonSeances
     }
 
     /** Écart d'heure en minutes (null si l'une des deux annonces n'a pas d'heure : critère non bloquant). */
-    public function niveauHeure(?int $ecartMinutes, int $ecartMaxMinutes): string
+    public function niveauHeure(?int $ecartMinutes, int $ecartMaxMinutes, int $ecartProbableMinutes = 60): string
     {
         return match (true) {
             $ecartMinutes === null, $ecartMinutes <= $ecartMaxMinutes => self::NET,
-            $ecartMinutes <= 60 => self::LIMITE,
+            $ecartMinutes <= $ecartProbableMinutes => self::LIMITE,
             default => self::FAIBLE,
         };
     }

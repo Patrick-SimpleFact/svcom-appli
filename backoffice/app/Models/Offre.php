@@ -18,7 +18,7 @@ class Offre extends Model
     protected $fillable = [
         'source_id', 'identifiant_externe', 'representation_id', 'lieu_id', 'genre_id', 'jeune_public', 'debut',
         'heure_connue', 'date_locale', 'titre_comparable', 'meme_seance_que_id', 'spectacle_id', 'lien', 'prix_min', 'prix_max',
-        'complet', 'donnees_normalisees', 'empreinte', 'vue_le', 'disparue_le',
+        'complet', 'donnees_normalisees', 'empreinte', 'vue_le', 'derniere_collecte_id', 'disparue_le',
     ];
 
     protected function casts(): array

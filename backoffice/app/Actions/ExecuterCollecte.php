@@ -12,6 +12,7 @@ use App\Models\Collecte;
 use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Source;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -22,6 +23,8 @@ use Throwable;
  */
 class ExecuterCollecte
 {
+    private const TAILLE_LOT = 500;
+
     public function __construct(private RegistreConnecteurs $registre) {}
 
     /**
@@ -51,10 +54,21 @@ class ExecuterCollecte
             $enregistrer = app(EnregistrerOffre::class);
             $dedoublonner = app(DedoublonnerOffre::class); // idem : lieux proches calculés une fois
             $rattacherSpectacle = app(RattacherSpectacle::class);
-            $offresVues = [];
+            $offresARepublier = [];
             $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
+            // Écritures groupées par lots (une transaction pour 500 annonces) : bien plus rapide sur les gros flux.
+            $niveau = DB::transactionLevel();
+            DB::beginTransaction();
+            $dansLeLot = 0;
+
             foreach ($connecteur->lire($brut, $source) as $element) {
+                if (++$dansLeLot === self::TAILLE_LOT) {
+                    DB::commit();
+                    DB::beginTransaction();
+                    $dansLeLot = 0;
+                }
+
                 if ($element instanceof LigneIllisible) {
                     $compteurs['nb_illisibles']++;
 
@@ -76,8 +90,12 @@ class ExecuterCollecte
 
                 $lieu = $rattacher->handle($element, $source);
                 $genre = $classer->handle($element, $source);
-                [$offre, $seanceChangee] = $enregistrer->handle($element, $source, $lieu, $genre);
-                $offresVues[] = $offre->id;
+                [$offre, $seanceChangee, $contenuChange] = $enregistrer->handle($element, $source, $lieu, $genre, $collecte);
+
+                // À republier : ce qui a changé, et ce qui n'a jamais été publié (collecte précédente interrompue).
+                if ($contenuChange || $offre->representation_id === null) {
+                    $offresARepublier[] = $offre->id;
+                }
 
                 if ($seanceChangee) {
                     $dedoublonner->handle($offre);
@@ -93,7 +111,9 @@ class ExecuterCollecte
                 }
             }
 
-            $publication = app(PublierSource::class)->handle($source, $offresVues);
+            DB::commit();
+
+            $publication = app(PublierSource::class)->handle($source, $collecte, $offresARepublier);
 
             $source->update(['dernier_contact_le' => now()]);
             $collecte->update([
@@ -103,6 +123,10 @@ class ExecuterCollecte
                 ...$publication,
             ]);
         } catch (Throwable $erreur) {
+            while (DB::transactionLevel() > ($niveau ?? DB::transactionLevel())) {
+                DB::rollBack(); // le lot en cours est annulé ; les offres des lots précédents restent préparées (non publiées)
+            }
+
             $collecte->update([
                 'statut' => StatutCollecte::Echouee,
                 'fin' => now(),

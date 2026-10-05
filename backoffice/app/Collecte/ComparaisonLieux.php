@@ -48,6 +48,21 @@ class ComparaisonLieux
         return $pourcentage >= 85;
     }
 
+    /**
+     * Salle précisée dans le nom de lieu donné par une source, si le lieu du catalogue ne la nomme pas déjà :
+     * « Théâtre de l'Observance - salle 1 » → « Salle 1 » ; « Paradise République - Salle O » → « Salle O ».
+     */
+    public function salle(?string $nomSource, string $nomLieu): ?string
+    {
+        if (! preg_match('/\b(salle|studio)\b\s*([[:alnum:]’\'.-]+(?:\s+[[:alnum:]’\'.-]+)?)?/iu', (string) $nomSource, $m)) {
+            return null;
+        }
+
+        $salle = trim(mb_convert_case(mb_substr($m[1], 0, 1), MB_CASE_UPPER).mb_substr($m[1], 1).' '.trim($m[2] ?? ''));
+
+        return str_contains(Texte::normaliser($nomLieu), Texte::normaliser($salle)) ? null : mb_substr($salle, 0, 60);
+    }
+
     /** Adresse ramenée à une forme comparable : « 4 r. Esc. Ste-Anne » = « 4 rue des Escaliers Sainte-Anne ». */
     public function adresseNormalisee(?string $adresse): string
     {

@@ -49,13 +49,13 @@ class ClasserAnnonce
 
         $donnees = $element?->donnees ?? ['categorie' => $categorie, 'nb_annonces' => 0, 'exemples' => [], 'identifiants' => []];
 
-        // Une même annonce revue à chaque collecte n'est comptée qu'une fois.
-        if (in_array($annonce->identifiantExterne, $donnees['identifiants'], true)) {
+        // Une même annonce (ou un même spectacle, pour une source qui publie par séance) n'est comptée qu'une fois.
+        if (in_array($annonce->cleSpectacle(), $donnees['identifiants'], true)) {
             return;
         }
 
         if (count($donnees['identifiants']) < self::IDENTIFIANTS_MAX) {
-            $donnees['identifiants'][] = $annonce->identifiantExterne;
+            $donnees['identifiants'][] = $annonce->cleSpectacle();
         }
         $donnees['nb_annonces'] = count($donnees['identifiants']);
 
