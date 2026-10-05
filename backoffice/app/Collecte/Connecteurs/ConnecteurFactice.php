@@ -12,7 +12,7 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * Connecteur de démonstration et de test : produit huit annonces d'exemple (gardées, à trier, exclue, illisible).
+ * Connecteur de démonstration et de test : produit onze annonces d'exemple (gardées, à trier, exclue, illisible).
  * Avec `simuler_echec` dans la configuration de la source, il échoue comme une source indisponible.
  */
 class ConnecteurFactice implements Connecteur, DetecteVersion
@@ -43,6 +43,11 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
             ['id' => 'F-7', 'titre' => 'Exemple de spectacle d’humour', 'debut' => $demain->toIso8601String(), 'lieu' => 'Salle des fêtes', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/7'],
             // Genre : catégorie inconnue, aucun mot de genre dans le titre → « Autres » + file « À classer ».
             ['id' => 'F-8', 'titre' => 'Le Petit Prince', 'categories' => ['Spectacle pour enfants'], 'debut' => $demain->toIso8601String(), 'lieu' => 'Théâtre du Chêne noir', 'adresse' => '8 bis rue Sainte-Catherine', 'cp' => '84000', 'ville' => 'Avignon', 'prix' => 10, 'lien' => 'https://exemple.fr/8'],
+            // Spectacles : la comédie part en tournée à Marseille (même titre, même source → même spectacle) ;
+            // « Concert » dans deux lieux d'Avignon → deux spectacles (titre générique).
+            ['id' => 'F-9', 'titre' => 'Exemple de comédie', 'debut' => $demain->addDays(3)->toIso8601String(), 'lieu' => 'Le Quai du Rire', 'ville' => 'Marseille', 'cp' => '13001', 'prix' => 20, 'lien' => 'https://exemple.fr/9'],
+            ['id' => 'F-10', 'titre' => 'Concert', 'debut' => $demain->addDays(2)->toIso8601String(), 'lieu' => 'La Manutention', 'adresse' => '4 rue des Escaliers Sainte-Anne', 'cp' => '84000', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/10'],
+            ['id' => 'F-11', 'titre' => 'Concert', 'debut' => $demain->addDays(2)->toIso8601String(), 'lieu' => 'Salle des fêtes', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/11'],
             ['id' => 'F-4', 'titre' => 'Soirée surprise', 'debut' => $demain->toIso8601String(), 'lieu' => 'La Manutention', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/4'], // douteux : à trier
             ['id' => 'F-5', 'titre' => 'Exposition de photographies', 'debut' => $demain->toIso8601String(), 'lieu' => 'Maison Jean Vilar', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/5'], // exclu
             ['id' => 'F-3', 'titre' => '', 'debut' => $demain->toIso8601String(), 'lieu' => 'Lieu inconnu', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/3'], // illisible : sans titre

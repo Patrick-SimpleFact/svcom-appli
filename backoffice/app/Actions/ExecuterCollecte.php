@@ -17,8 +17,8 @@ use Throwable;
 
 /**
  * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage,
- * rattachement des lieux, genre, enregistrement de l'offre et regroupement des séances (COLLECTE §1, §4 à §7).
- * Les étapes suivantes (spectacles, publication) arrivent aux étapes K07 et K08.
+ * rattachement des lieux, genre, enregistrement de l'offre, regroupement des séances et rattachement au spectacle
+ * (COLLECTE §1, §4 à §7). La publication (représentations) arrive à l'étape K08.
  */
 class ExecuterCollecte
 {
@@ -50,6 +50,7 @@ class ExecuterCollecte
             $classer = app(ClasserAnnonce::class); // idem : correspondances et mots de genre lus une fois
             $enregistrer = app(EnregistrerOffre::class);
             $dedoublonner = app(DedoublonnerOffre::class); // idem : lieux proches calculés une fois
+            $rattacherSpectacle = app(RattacherSpectacle::class);
             $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
             foreach ($connecteur->lire($brut, $source) as $element) {
@@ -78,6 +79,11 @@ class ExecuterCollecte
 
                 if ($seanceChangee) {
                     $dedoublonner->handle($offre);
+                }
+
+                if ($seanceChangee || $offre->spectacle_id === null) {
+                    $rattacherSpectacle->handle($offre->fresh());
+                    $offre->refresh();
                 }
 
                 if ($traiterAnnonce !== null) {

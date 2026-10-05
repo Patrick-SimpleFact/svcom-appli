@@ -55,6 +55,12 @@ class Spectacle extends Model
         return Attribute::make(set: fn (string $valeur): array => ['titre' => $valeur, 'titre_normalise' => Texte::normaliser($valeur)]);
     }
 
+    /** Séances collectées rattachées à ce spectacle (K07), avant leur publication en représentations (K08). */
+    public function offres(): HasMany
+    {
+        return $this->hasMany(Offre::class);
+    }
+
     public function genre(): BelongsTo
     {
         return $this->belongsTo(Genre::class);

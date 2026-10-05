@@ -62,6 +62,12 @@ class DeciderDoublon
 
         Offre::where('meme_seance_que_id', $groupeB)->update(['meme_seance_que_id' => $groupeA]);
         Offre::whereKey($groupeB)->update(['meme_seance_que_id' => $groupeA]);
+
+        // Une même séance, donc un même spectacle : celui du groupe de A (K07).
+        $spectacle = Offre::whereKey($groupeA)->value('spectacle_id');
+        if ($spectacle !== null) {
+            Offre::where(fn ($q) => $q->whereKey($groupeA)->orWhere('meme_seance_que_id', $groupeA))->update(['spectacle_id' => $spectacle]);
+        }
     }
 
     /** Si A et B sont dans le même groupe, celle qui n'en est pas la première en sort. */

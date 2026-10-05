@@ -54,7 +54,7 @@ it('collecte une source : fichier brut gardé, annonces comptées, lignes illisi
     $collecte = app(ExecuterCollecte::class)->handle($this->source);
 
     expect($collecte->statut)->toBe(StatutCollecte::Reussie)
-        ->and($collecte->nb_recus)->toBe(7)
+        ->and($collecte->nb_recus)->toBe(10)
         ->and($collecte->nb_illisibles)->toBe(1)
         ->and($collecte->fin)->not->toBeNull();
 
@@ -70,7 +70,7 @@ it('transmet chaque annonce gardée à la suite de la chaîne', function () {
         $titres[] = $annonce->titre;
     });
 
-    expect($titres)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour', 'Le Petit Prince']);
+    expect($titres)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour', 'Le Petit Prince', 'Exemple de comédie', 'Concert', 'Concert']);
 });
 
 it('marque la collecte en échec avec l’erreur, puis la laisse réessayer', function () {
