@@ -19,7 +19,9 @@ class ComparaisonSeances
     /** Marque provisoire d'une lettre masquée, qui traverse la normalisation sans être confondue avec un vrai mot. */
     private const MASQUE = 'zqxmasquezqx';
 
-    private const MOTS_VIDES = ['le', 'la', 'les', 'l', 'un', 'une', 'des', 'de', 'du', 'd', 'et', 'a', 'au'];
+    private const MOTS_VIDES = ['le', 'la', 'les', 'l', 'un', 'une', 'des', 'de', 'du', 'd', 'et', 'a', 'au',
+        // ajoutés par les billetteries autour du vrai titre (N02) : « Harold Barbé dans Relax Max », « Naïm - Chapitre 3 - Tournée »
+        'dans', 'tournee'];
 
     /** Titre ramené à une forme comparable : sans le nom du lieu ajouté en sous-titre, sans accents ni mots vides. */
     public function titreComparable(string $titre, ?string $lieu = null, ?string $ville = null): string
