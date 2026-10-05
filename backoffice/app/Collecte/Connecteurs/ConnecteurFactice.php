@@ -31,6 +31,10 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
 
         $demain = CarbonImmutable::now('Europe/Paris')->addDay()->setTime(20, 30);
 
+        if (($source->config['jeu'] ?? null) === 'bis') {
+            return json_encode($this->jeuBis($demain), JSON_UNESCAPED_UNICODE);
+        }
+
         return json_encode([
             // Lieux : adresse seule (géocodée), coordonnées 0,0 comme la Fnac, lieu absent du référentiel, lieu sans adresse.
             ['id' => 'F-1', 'titre' => 'Exemple de comédie', 'debut' => $demain->toIso8601String(), 'lieu' => 'Théâtre du Chêne noir', 'adresse' => '8 bis rue Sainte-Catherine', 'cp' => '84000', 'ville' => 'Avignon', 'prix' => 18, 'lien' => 'https://exemple.fr/1'],
@@ -43,6 +47,22 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
             ['id' => 'F-5', 'titre' => 'Exposition de photographies', 'debut' => $demain->toIso8601String(), 'lieu' => 'Maison Jean Vilar', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/5'], // exclu
             ['id' => 'F-3', 'titre' => '', 'debut' => $demain->toIso8601String(), 'lieu' => 'Lieu inconnu', 'ville' => 'Avignon', 'lien' => 'https://exemple.fr/3'], // illisible : sans titre
         ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Seconde billetterie de démonstration (déduplication, K06) : les mêmes séances écrites autrement.
+     * Comédie : 15 min d'écart → fusionnée, mais « à contrôler » ; concert : identique → fusionné ;
+     * pièce : 45 min d'écart → « doublon probable ».
+     */
+    private function jeuBis(CarbonImmutable $demain): array
+    {
+        $chene = ['lieu' => 'Théâtre du Chêne noir', 'adresse' => '8 bis rue Sainte-Catherine', 'cp' => '84000', 'ville' => 'Avignon'];
+
+        return [
+            ['id' => 'B-1', 'titre' => 'Exemple de comédie – Théâtre du Chêne Noir', 'debut' => $demain->addMinutes(15)->toIso8601String(), ...$chene, 'prix' => 16, 'lien' => 'https://exemple.fr/b1'],
+            ['id' => 'B-2', 'titre' => 'EXEMPLE DE CONCERT', 'debut' => $demain->addDay()->toIso8601String(), 'lieu' => 'La Manutention', 'adresse' => '4 rue des Escaliers Sainte-Anne', 'cp' => '84000', 'ville' => 'Avignon', 'prix' => 14, 'lien' => 'https://exemple.fr/b2'],
+            ['id' => 'B-6', 'titre' => 'Exemple de pièce de théâtre', 'debut' => $demain->addMinutes(45)->toIso8601String(), 'lieu' => 'Théâtre de l’Observance', 'adresse' => '10 rue de l’Observance', 'cp' => '84000', 'ville' => 'Avignon', 'prix' => 15, 'lien' => 'https://exemple.fr/b6'],
+        ];
     }
 
     public function lire(string $contenuBrut, Source $source): iterable
