@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\LigneIllisible;
 use App\Collecte\RegistreConnecteurs;
+use App\Collecte\ResultatGenre;
 use App\Enums\IssueFiltrage;
 use App\Enums\StatutCollecte;
 use App\Models\Collecte;
@@ -15,14 +16,14 @@ use Throwable;
 
 /**
  * Un passage de collecte d'une source : téléchargement, conservation du fichier brut, lecture, filtrage,
- * rattachement des lieux (COLLECTE §1, §4, §5). Les étapes suivantes (genres, doublons, publication) arrivent aux étapes K05 à K08.
+ * rattachement des lieux, genre (COLLECTE §1, §4, §5, §6). Les étapes suivantes (doublons, publication) arrivent aux étapes K06 à K08.
  */
 class ExecuterCollecte
 {
     public function __construct(private RegistreConnecteurs $registre) {}
 
     /**
-     * @param  callable(AnnonceNormalisee, Lieu): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
+     * @param  callable(AnnonceNormalisee, Lieu, ResultatGenre): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
      */
     public function handle(Source $source, int $essai = 1, ?callable $traiterAnnonce = null, ?string $version = null): Collecte
     {
@@ -44,6 +45,7 @@ class ExecuterCollecte
 
             $trier = app(TrierAnnonce::class); // une instance par collecte : listes de mots lues une fois
             $rattacher = app(RattacherLieu::class); // idem : lieux déjà résolus gardés en mémoire
+            $classer = app(ClasserAnnonce::class); // idem : correspondances et mots de genre lus une fois
             $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
 
             foreach ($connecteur->lire($brut, $source) as $element) {
@@ -67,9 +69,10 @@ class ExecuterCollecte
                 }
 
                 $lieu = $rattacher->handle($element, $source);
+                $genre = $classer->handle($element, $source);
 
                 if ($traiterAnnonce !== null) {
-                    $traiterAnnonce($element, $lieu);
+                    $traiterAnnonce($element, $lieu, $genre);
                 }
             }
 

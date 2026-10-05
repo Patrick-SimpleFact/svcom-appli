@@ -9,6 +9,8 @@ use App\Models\Admin;
 use App\Models\Collecte;
 use App\Models\Source;
 use Carbon\CarbonImmutable;
+use Database\Seeders\GenresSeeder;
+use Database\Seeders\MotsGenresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Database\Seeders\SourcesSeeder;
@@ -20,7 +22,7 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     Storage::fake('collecte');
-    $this->seed([SourceFacticeSeeder::class, ReglesFiltrageSeeder::class]);
+    $this->seed([GenresSeeder::class, MotsGenresSeeder::class, SourceFacticeSeeder::class, ReglesFiltrageSeeder::class]);
     $this->source = Source::firstWhere('code', 'factice');
     Http::fake(['data.geopf.fr/*' => Http::response(['features' => []])]);
 });
@@ -51,7 +53,7 @@ it('collecte une source : fichier brut gardé, annonces comptées, lignes illisi
     $collecte = app(ExecuterCollecte::class)->handle($this->source);
 
     expect($collecte->statut)->toBe(StatutCollecte::Reussie)
-        ->and($collecte->nb_recus)->toBe(6)
+        ->and($collecte->nb_recus)->toBe(7)
         ->and($collecte->nb_illisibles)->toBe(1)
         ->and($collecte->fin)->not->toBeNull();
 
@@ -67,7 +69,7 @@ it('transmet chaque annonce gardée à la suite de la chaîne', function () {
         $titres[] = $annonce->titre;
     });
 
-    expect($titres)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour']);
+    expect($titres)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour', 'Le Petit Prince']);
 });
 
 it('marque la collecte en échec avec l’erreur, puis la laisse réessayer', function () {

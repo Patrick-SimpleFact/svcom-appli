@@ -14,6 +14,8 @@ use App\Models\ElementATraiter;
 use App\Models\RegleFiltrage;
 use App\Models\Source;
 use Carbon\CarbonImmutable;
+use Database\Seeders\GenresSeeder;
+use Database\Seeders\MotsGenresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Filament\Actions\CreateAction;
@@ -22,7 +24,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    $this->seed([ReglesFiltrageSeeder::class, SourceFacticeSeeder::class]);
+    $this->seed([GenresSeeder::class, MotsGenresSeeder::class, ReglesFiltrageSeeder::class, SourceFacticeSeeder::class]);
     $this->source = Source::firstWhere('code', 'factice');
     Http::fake(['data.geopf.fr/*' => Http::response(['features' => []])]);
 });
@@ -110,8 +112,8 @@ it('compte gardées, exclues et à trier sans bloquer la collecte', function () 
     });
 
     expect($collecte->only(['nb_recus', 'nb_retenus', 'nb_exclus', 'nb_a_trier']))
-        ->toBe(['nb_recus' => 6, 'nb_retenus' => 4, 'nb_exclus' => 1, 'nb_a_trier' => 1])
-        ->and($transmises)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour'])
+        ->toBe(['nb_recus' => 7, 'nb_retenus' => 5, 'nb_exclus' => 1, 'nb_a_trier' => 1])
+        ->and($transmises)->toBe(['Exemple de comédie', 'Exemple de concert', 'Exemple de pièce de théâtre', 'Exemple de spectacle d’humour', 'Le Petit Prince'])
         ->and(ElementATraiter::where('file', FileATraiter::ATrier)->sole()->donnees['titre'])->toBe('Soirée surprise');
 });
 

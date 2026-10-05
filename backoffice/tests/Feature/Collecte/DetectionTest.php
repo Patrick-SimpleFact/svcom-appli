@@ -13,6 +13,8 @@ use App\Filament\Resources\Sources\SourceResource;
 use App\Jobs\CollecterSource;
 use App\Models\Collecte;
 use App\Models\Source;
+use Database\Seeders\GenresSeeder;
+use Database\Seeders\MotsGenresSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Database\Seeders\SourcesSeeder;
 use Illuminate\Console\Scheduling\Schedule;
@@ -22,7 +24,7 @@ use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Queue::fake();
-    $this->seed(SourceFacticeSeeder::class);
+    $this->seed([GenresSeeder::class, MotsGenresSeeder::class, SourceFacticeSeeder::class]);
     $this->source = Source::firstWhere('code', 'factice');
     $this->source->update(['actif' => true, 'config' => ['version' => 'v1']]);
 });
