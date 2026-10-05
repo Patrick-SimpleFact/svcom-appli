@@ -74,7 +74,14 @@ class ConnecteurFactice implements Connecteur, DetecteVersion
 
     public function lire(string $contenuBrut, Source $source): iterable
     {
+        // `annonces_retirees` dans la configuration : ces annonces disparaissent du flux (démonstration des retraits, K08b).
+        $retirees = $source->config['annonces_retirees'] ?? [];
+
         foreach (json_decode($contenuBrut, true) as $ligne) {
+            if (in_array($ligne['id'] ?? null, $retirees, true)) {
+                continue;
+            }
+
             try {
                 yield $this->annonce($ligne);
             } catch (InvalidArgumentException $erreur) {

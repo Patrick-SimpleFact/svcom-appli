@@ -11,12 +11,16 @@ enum StatutRepresentation: string implements HasColor, HasLabel
     case Annulee = 'annulee';
     case Masquee = 'masquee';
 
+    /** Plus aucune billetterie ne la vend (COLLECTE §8.2) ; elle revient si une offre réapparaît. */
+    case Retiree = 'retiree';
+
     public function getLabel(): string
     {
         return match ($this) {
             self::Programmee => 'Programmée',
             self::Annulee => 'Annulée',
             self::Masquee => 'Masquée',
+            self::Retiree => 'Retirée',
         };
     }
 
@@ -26,6 +30,7 @@ enum StatutRepresentation: string implements HasColor, HasLabel
             self::Programmee => 'success',
             self::Annulee => 'danger',
             self::Masquee => 'gray',
+            self::Retiree => 'warning',
         };
     }
 }

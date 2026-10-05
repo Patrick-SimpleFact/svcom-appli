@@ -63,9 +63,11 @@ php artisan villes:importer          # 34 969 communes, outre-mer compris (≈ 5
 php artisan lieux:importer-ministere # 1 434 lieux de spectacle du Ministère (≈ 5 s)
 php artisan admin:creer <email> <nom>   # premier compte du back-office
 php artisan queue:work               # tâches de fond (collectes) : à laisser tourner dans un terminal
-php artisan schedule:work            # tâches planifiées (détection toutes les 30 min, purge) : idem, dans un 2e terminal
+php artisan schedule:work            # tâches planifiées (détection toutes les 30 min, entretien, purge) : idem, dans un 2e terminal
 php artisan test
 ```
+
+⚠️ `queue:work` et `schedule:work` gardent en mémoire le code chargé à leur démarrage : **après une modification du code, les arrêter (Ctrl+C) et les relancer**, sinon les collectes tournent avec l'ancien code (vu en K08b).
 
 ⚠️ Ne jamais lancer `migrate:fresh` ou `db:wipe` sur la base de développement : elle contient le compte admin (double authentification) et les réglages faits dans le back-office. Les tests utilisent leur propre base (`spettacoli_test`).
 
