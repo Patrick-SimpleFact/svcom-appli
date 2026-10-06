@@ -7,12 +7,15 @@ use App\Actions\ExecuterCollecte;
 use App\Actions\RattacherSpectacle;
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\ResultatGenre;
+use App\Enums\FileATraiter;
 use App\Enums\PrecisionPosition;
 use App\Enums\TypeDecisionDedoublonnage;
 use App\Enums\TypeLieu;
 use App\Filament\Resources\Spectacles\Pages\ViewSpectacle;
 use App\Filament\Resources\Spectacles\RelationManagers\OffresRelationManager;
+use App\Filament\Resources\SpectaclesAControler\Pages\ListSpectaclesAControler;
 use App\Models\Admin;
+use App\Models\ElementATraiter;
 use App\Models\Genre;
 use App\Models\Lieu;
 use App\Models\Offre;
@@ -57,13 +60,14 @@ beforeEach(function () {
     };
 });
 
-it('réunit un spectacle en tournée dans trois villes en un seul spectacle', function () {
+it('réunit sans contrôle la tournée d’une même billetterie dans trois villes (confiance de Patrick)', function () {
     $a = ($this->seance)($this->billetreduc, 'BR-1', 'Edmond', $this->avignon, '2026-10-17 20:30');
     $b = ($this->seance)($this->billetreduc, 'BR-2', 'Edmond', $this->marseille, '2026-10-20 20:00');
     $c = ($this->seance)($this->billetreduc, 'BR-3', 'EDMOND', $this->lyon, '2026-11-02 20:00');
 
     expect(Spectacle::count())->toBe(1)
         ->and([$a->spectacle_id, $b->spectacle_id, $c->spectacle_id])->each->toBe($a->spectacle_id)
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->count())->toBe(0)
         ->and(Spectacle::sole()->offres()->count())->toBe(3);
 });
 
@@ -93,8 +97,9 @@ it('réunit le même titre de deux sources seulement s’ils partagent un artist
     $d = ($this->seance)(Source::firstWhere('code', 'ticketmaster'), 'TM-1', 'Le Prénom', $bordeaux, '2026-11-03 20:00');
 
     expect($b->spectacle_id)->toBe($a->spectacle_id)
-        ->and($c->fresh()->spectacle_id)->toBe($a->spectacle_id) // même titre et même source que B (Fnac)
-        ->and($d->spectacle_id)->not->toBe($a->spectacle_id);    // autre source, autre lieu, aucun artiste en commun
+        ->and($c->fresh()->spectacle_id)->not->toBe($a->spectacle_id) // même titre et même source que B, mais autre troupe (K07b)
+        ->and($d->spectacle_id)->toBe($a->spectacle_id)          // titre seul (artistes inconnus chez Ticketmaster) : regroupé…
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->sole()->cible_id)->toBe($a->spectacle_id); // …à contrôler
 });
 
 it('réunit le même titre dans le même lieu, même vendu par deux sources à des dates différentes', function () {
@@ -159,4 +164,61 @@ it('rattache les séances des sources factices et les montre sur la fiche du spe
         ->assertOk()
         ->assertSee('Le Quai du Rire')
         ->assertSee('Démonstration bis (factice)');
+});
+
+it('réunit le même titre en tournée quand les artistes concordent, sans contrôle', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Edmond', $this->avignon, artistes: ['Pierre Forest', 'Kevin Garnichat']);
+    $b = ($this->seance)($this->billetreduc, 'BR-2', 'Edmond', $this->marseille, '2026-10-20 20:00', artistes: ['Kevin Garnichat']);
+
+    expect($b->spectacle_id)->toBe($a->spectacle_id)
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->count())->toBe(0);
+});
+
+it('sépare le même titre joué par une autre troupe, même dans le même lieu', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Le Petit Prince', $this->avignon, artistes: ['Compagnie des Ô']);
+    $b = ($this->seance)($this->fnac, 'FN-1', 'Le Petit Prince', $this->avignon, '2026-12-20 15:00', artistes: ['Théâtre du Rivage']);
+
+    expect($b->spectacle_id)->not->toBe($a->spectacle_id);
+});
+
+it('réunit sans contrôle le même titre dans le même lieu quand une billetterie ne donne pas les artistes', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Edmond', $this->avignon, artistes: ['Pierre Forest']);
+    $b = ($this->seance)($this->fnac, 'FN-1', 'Edmond', $this->avignon, '2026-10-18 20:30');
+
+    expect($b->spectacle_id)->toBe($a->spectacle_id)
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->count())->toBe(0);
+});
+
+it('sépare les dates d’un lieu depuis la file « Spectacles à contrôler », et ne les réunit plus', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Edmond', $this->avignon);
+    $b = ($this->seance)($this->fnac, 'FN-2', 'Edmond', $this->marseille, '2026-10-20 20:00'); // autre billetterie, autre lieu : titre seul
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    $this->get('/admin/spectacles-a-controler')->assertOk()->assertSee('Edmond')->assertSee('Le Quai du Rire');
+
+    Livewire::test(ListSpectaclesAControler::class)
+        ->callTableAction('separer', ElementATraiter::where('file', FileATraiter::SpectacleAControler)->sole(), ['lieux' => [$this->marseille->id]])
+        ->assertHasNoTableActionErrors();
+
+    $marseille = $b->fresh()->spectacle_id;
+    expect($marseille)->not->toBe($a->spectacle_id)
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->sole()->statut->value)->toBe('traite');
+
+    // Une nouvelle date à Marseille rejoint le spectacle séparé, pas l'ancien.
+    $c = ($this->seance)($this->fnac, 'FN-3', 'Edmond', $this->marseille, '2026-10-21 20:00');
+    expect($c->spectacle_id)->toBe($marseille);
+});
+
+it('ne prend pas pour une troupe le titre donné comme « artiste » par la Fnac', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Le Flocon Magique', $this->avignon, artistes: ['Irina Gueorguiev', 'Le Flocon Magique']);
+    $b = ($this->seance)($this->fnac, 'FN-1', 'Le Flocon magique', $this->avignon, '2026-12-20 15:00', artistes: ['Le Flocon Magique', 'Maud Louis']);
+    $c = ($this->seance)($this->fnac, 'FN-2', 'Emma Bojan - Attends-moi j’arrive', $this->marseille, '2026-12-20 20:00', artistes: ['Emma Bojan']);
+    $d = ($this->seance)($this->billetreduc, 'BR-2', 'Emma Bojan dans Attends-moi j’arrive', $this->lyon, '2026-12-21 20:00', artistes: ['Emma Bojan']);
+
+    // Le titre retiré des « artistes », restent deux distributions différentes : deux spectacles (règle de Patrick).
+    expect($b->spectacle_id)->not->toBe($a->spectacle_id)
+        ->and($d->spectacle_id)->toBe($c->spectacle_id); // même humoriste : un vrai artiste en tête du titre
+
+    $e = ($this->seance)($this->fnac, 'FN-3', 'Le Flocon magique', $this->marseille, '2026-12-22 15:00', artistes: ['Le Flocon Magique']);
+    expect($e->spectacle_id)->toBe($b->spectacle_id); // seul « artiste » = le titre : comme inconnu, même billetterie → regroupé
 });
