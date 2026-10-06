@@ -6,6 +6,7 @@ use App\Collecte\AnnonceNormalisee;
 use App\Enums\FileATraiter;
 use App\Enums\PrecisionPosition;
 use App\Enums\TypeLieu;
+use App\Filament\Resources\LieuxAVerifier\Pages\ListLieuxAVerifier;
 use App\Models\Admin;
 use App\Models\ElementATraiter;
 use App\Models\Lieu;
@@ -212,4 +213,28 @@ it('affiche la file « Lieux à vérifier » dans le back-office', function () {
         ->assertSee('Salle des fêtes')
         ->assertSee('Position approximative (centre de la commune)')
         ->assertSee('Fnac Spectacles');
+});
+
+it('ne fait pas échouer la collecte sur un code postal ou un nom anormalement longs (vu sur DATAtourisme)', function () {
+    Http::fake(['data.geopf.fr/*' => Http::response(['features' => []])]);
+
+    $lieu = ($this->rattacher)(annonceLieu([
+        'lieuNom' => str_repeat('Médiathèque Manufacture ', 20), 'lieuAdresse' => '10 rue Baron Louis', 'lieuCodePostal' => '54000, 54100 et environs', 'lieuVille' => 'Nancy',
+    ]));
+
+    expect(mb_strlen($lieu->nom))->toBeLessThanOrEqual(255)
+        ->and(mb_strlen($lieu->code_postal))->toBeLessThanOrEqual(10);
+});
+
+it('sort un lieu de la file « Lieux à vérifier » avec le bouton « Vérifié »', function () {
+    Http::fake(['data.geopf.fr/*' => Http::response(['features' => []])]);
+    ($this->rattacher)(annonceLieu(['lieuNom' => 'Salle des fêtes', 'lieuVille' => 'Avignon']));
+    $this->actingAs($admin = Admin::factory()->avecDoubleAuthentification()->create());
+
+    Livewire\Livewire::test(ListLieuxAVerifier::class)
+        ->callTableAction('verifie', lieuxAVerifier()->sole())
+        ->assertHasNoTableActionErrors();
+
+    expect(lieuxAVerifier()->sole()->statut->value)->toBe('traite')
+        ->and(lieuxAVerifier()->sole()->traite_par)->toBe($admin->id);
 });

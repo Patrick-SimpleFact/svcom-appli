@@ -30,7 +30,7 @@ class EntretenirCatalogue
 
         // 1. Sources muettes.
         $muettes = Source::where(fn ($q) => $q->whereNull('dernier_contact_le')->orWhere('dernier_contact_le', '<', now()->subHours(self::SILENCE_MAX_HEURES)))
-            ->whereHas('offres', fn ($q) => $q->whereNull('disparue_le')->where('date_locale', '>=', today()->toDateString()))
+            ->whereHas('offres', fn ($q) => $q->whereNull('disparue_le')->whereRaw('coalesce(date_fin, date_locale) >= ?', [today()->toDateString()]))
             ->get();
 
         foreach ($muettes as $source) {
@@ -43,7 +43,7 @@ class EntretenirCatalogue
 
         // 2. Historique allégé.
         $limite = today()->subDays(self::HISTORIQUE_OFFRES_JOURS)->toDateString();
-        Offre::where('date_locale', '<', $limite)->select('id')->chunkById(1000, function ($offres) use (&$resultat) {
+        Offre::whereRaw('coalesce(date_fin, date_locale) < ?', [$limite])->select('id')->chunkById(1000, function ($offres) use (&$resultat) {
             DB::transaction(function () use ($offres, &$resultat) {
                 ElementATraiter::where('cible_type', (new Offre)->getMorphClass())->whereIn('cible_id', $offres->modelKeys())->delete();
                 $resultat['offres_supprimees'] += Offre::whereKey($offres->modelKeys())->delete();

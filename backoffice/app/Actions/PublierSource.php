@@ -63,7 +63,9 @@ class PublierSource
      */
     public function marquerDisparues($requete): Collection
     {
-        $offres = $requete->whereNull('disparue_le')->where('date_locale', '>=', today()->toDateString())->get(['id', 'meme_seance_que_id']);
+        $offres = $requete->whereNull('disparue_le')
+            ->whereRaw('coalesce(date_fin, date_locale) >= ?', [today()->toDateString()]) // une période en cours n'est pas passée
+            ->get(['id', 'meme_seance_que_id']);
 
         foreach ($offres->chunk(self::TAILLE_PAQUET) as $paquet) {
             Offre::whereKey($paquet->modelKeys())->update(['disparue_le' => now()]);
@@ -135,9 +137,14 @@ class PublierSource
             'spectacle_id' => $spectacleId,
             'lieu_id' => $lieu->lieu_id,
             'salle' => app(ComparaisonLieux::class)->salle($lieu->donnees_normalisees['lieu_nom'] ?? null, $lieu->lieu?->nom ?? ''),
-            'type' => $horaire->heure_connue ? TypeRepresentation::Seance : TypeRepresentation::Jour,
+            'type' => match (true) {
+                $horaire->heure_connue => TypeRepresentation::Seance,
+                $horaire->date_fin !== null => TypeRepresentation::Periode,
+                default => TypeRepresentation::Jour,
+            },
             'debut' => $horaire->heure_connue ? $horaire->debut : null,
             'date_locale' => $horaire->date_locale, // recalculée à partir de l'heure pour une séance
+            'date_fin' => $horaire->heure_connue ? null : $horaire->date_fin,
             'prix_min' => $prixMin,
             'prix_max' => $prixMax,
             'gratuit' => $prixMin === null && $offres->contains(fn (Offre $o) => $o->donnees_normalisees['gratuit'] ?? false),

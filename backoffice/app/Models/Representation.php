@@ -36,7 +36,7 @@ class Representation extends Model
     public const HEURE_FIN_DE_SOIREE = 4;
 
     protected $fillable = [
-        'spectacle_id', 'lieu_id', 'salle', 'type', 'debut', 'fin', 'date_locale',
+        'spectacle_id', 'lieu_id', 'salle', 'type', 'debut', 'fin', 'date_locale', 'date_fin',
         'prix_min', 'prix_max', 'gratuit', 'complet', 'statut', 'champs_verrouilles',
     ];
 
@@ -48,6 +48,7 @@ class Representation extends Model
             'debut' => 'datetime',
             'fin' => 'datetime',
             'date_locale' => 'date',
+            'date_fin' => 'date',
             'position' => PointGeographique::class,
             'prix_min' => 'decimal:2',
             'prix_max' => 'decimal:2',
@@ -83,7 +84,7 @@ class Representation extends Model
     /** Jour du spectacle à l'heure du lieu ; une séance à 0 h 30 compte pour la veille. */
     public function calculerDateLocale(): void
     {
-        if ($this->type === TypeRepresentation::Jour || $this->debut === null) {
+        if (in_array($this->type, [TypeRepresentation::Jour, TypeRepresentation::Periode], true) || $this->debut === null) {
             return;
         }
 

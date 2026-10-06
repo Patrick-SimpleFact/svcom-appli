@@ -1,6 +1,7 @@
 <?php
 
 use App\Collecte\Connecteurs\ConnecteurBilletReduc;
+use App\Collecte\Connecteurs\ConnecteurDatatourisme;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 use App\Collecte\Connecteurs\ConnecteurFnac;
 
@@ -14,6 +15,7 @@ return [
         'factice_bis' => ConnecteurFactice::class,
         'billetreduc' => ConnecteurBilletReduc::class,
         'fnac' => ConnecteurFnac::class,
+        'datatourisme' => ConnecteurDatatourisme::class,
     ],
 
     // Disque des fichiers bruts et durée de conservation (jours).

@@ -114,7 +114,7 @@ it('lance une collecte depuis le back-office, et désactive le bouton sans conne
     Queue::assertPushed(CollecterSource::class, fn ($tache) => $tache->source->is($this->source));
     expect($this->source->fresh()->config['simuler_echec'])->toBeTrue();
 
-    Livewire::test(ViewSource::class, ['record' => Source::firstWhere('code', 'datatourisme')->getKey()]) // pas encore de connecteur (N03)
+    Livewire::test(ViewSource::class, ['record' => Source::firstWhere('code', 'openagenda')->getKey()]) // pas encore de connecteur (N04)
         ->assertActionDisabled('lancer');
 
     $this->get('/admin/collectes')->assertOk();
