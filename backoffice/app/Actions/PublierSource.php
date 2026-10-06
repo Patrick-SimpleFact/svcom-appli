@@ -125,7 +125,7 @@ class PublierSource
             return null;
         }
 
-        $representation = $this->representationDuGroupe($premiereId, $offres) ?? new Representation;
+        $representation = $this->representationDuGroupe($premiereId) ?? new Representation;
         $nouvelle = ! $representation->exists;
 
         $horaire = $this->plusFiable($offres->where('heure_connue', true), 'horaire') ?? $this->plusFiable($offres, 'horaire');
@@ -203,10 +203,14 @@ class PublierSource
      * La représentation déjà publiée pour ce groupe. Si des séances ont été séparées à la main entre-temps, plusieurs
      * groupes peuvent la désigner : elle reste au groupe de la plus ancienne offre qui la porte, les autres en reçoivent une nouvelle.
      */
-    private function representationDuGroupe(int $premiereId, Collection $offres): ?Representation
+    private function representationDuGroupe(int $premiereId): ?Representation
     {
+        // Toutes les offres du groupe, disparues comprises : une séance garde sa représentation même quand l'offre qui
+        // l'avait créée disparaît (ex. passage de l'export DATAtourisme à son API, N03b).
+        $offres = Offre::where(fn ($q) => $q->whereKey($premiereId)->orWhere('meme_seance_que_id', $premiereId))->get(['id', 'representation_id']);
+
         foreach ($offres->pluck('representation_id')->filter()->unique() as $representationId) {
-            $plusAncienne = Offre::where('representation_id', $representationId)->whereNull('disparue_le')->orderBy('id')->first();
+            $plusAncienne = Offre::where('representation_id', $representationId)->orderBy('id')->first();
 
             if (($plusAncienne?->meme_seance_que_id ?? $plusAncienne?->id) === $premiereId) {
                 return Representation::find($representationId);

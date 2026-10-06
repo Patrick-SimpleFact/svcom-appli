@@ -42,6 +42,12 @@ return [
         'adresse' => 'https://api.openagenda.com/v2',
     ],
 
+    // DATAtourisme : clé de l'API REST (api.datatourisme.fr, 1 000 requêtes / heure).
+    'datatourisme' => [
+        'cle' => env('DATATOURISME_API_KEY'),
+        'adresse' => 'https://api.datatourisme.fr/v1',
+    ],
+
     'awin' => [
         'liste_flux' => env('AWIN_FEEDLIST_URL'),
     ],
