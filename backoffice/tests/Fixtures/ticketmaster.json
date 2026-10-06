@@ -1,0 +1,1628 @@
+{
+  "events": [
+    {
+      "eventId": "rZ7SnyZ1A7vPvF",
+      "legacyEventId": "rZ7SnyZ1A7vPvF",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/michele-laroque-et-kad-merad-billet/idmanif/617303/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "MICHELE LAROQUE ET KAD MERAD - MICHÈLE LAROQUE ET KAD MERAD",
+      "eventInfo": "SMARTARTECH PRÉSENTE : MICHÈLE LAROQUE ET KAD MERADL’ÂGE BÊTETextes et mise en scène : Olivier BarouxBenoit et Claire viennent de se rencontrer, ils veulent vivre Leur nouvelle histoire à fond, sans limites. Rebelles et libres, ils revendiquent leur amour pour le sexe, l’alcool et le foot : ce sont les nouveaux soixantenaires. Ils refusent de se laisser enfermer par l’âge. Malgré leurs habitudes bien ancrées, ils veulent continuer à vivre comme des jeunes et s'éclater. Bienvenue dans leur « âge bête ».",
+      "eventNotes": "Accès {porte B} — \"billets\" à retirer } ici {",
+      "eventStatus": "onsale",
+      "eventImageUrl": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+      "eventStartDateTime": "2026-11-19T19:00:00Z",
+      "eventStartLocalTime": "20:00",
+      "eventStartLocalDate": "2026-11-19",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "CONFLUENCE SPECTACLES",
+        "venueId": "rZ7SnyZaAbP",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/confluence-spectacles-avignon/idsite/18278",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "84000",
+        "venueLatitude": 43.945363,
+        "venueLongitude": 4.793221,
+        "venueStreet": "PLACE DE L'EUROPE",
+        "venueCity": "Avignon",
+        "venueStateCode": "84",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "35538529",
+            "name": "SMARTARTECH",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-03-20T17:00:00Z",
+      "onsaleEndDateTime": "2026-11-19T19:00:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7na",
+      "classificationSegment": "Arts & Theatre",
+      "classificationGenreId": "KnvZfZ7vAe1",
+      "classificationGenre": "Comedy",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vF17",
+      "classificationSubGenre": "Comedy",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "ticketnet",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-03-20T18:00:00Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "rZ7SnyZ1A7vPva",
+      "legacyEventId": "rZ7SnyZ1A7vPva",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/michele-laroque-et-kad-merad-billet/idmanif/617303/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "MICHELE LAROQUE ET KAD MERAD - MICHÈLE LAROQUE ET KAD MERAD",
+      "eventInfo": "SMARTARTECH PRÉSENTE : MICHÈLE LAROQUE ET KAD MERADL’ÂGE BÊTETextes et mise en scène : Olivier BarouxBenoit et Claire viennent de se rencontrer, ils veulent vivre Leur nouvelle histoire à fond, sans limites. Rebelles et libres, ils revendiquent leur amour pour le sexe, l’alcool et le foot : ce sont les nouveaux soixantenaires. Ils refusent de se laisser enfermer par l’âge. Malgré leurs habitudes bien ancrées, ils veulent continuer à vivre comme des jeunes et s'éclater. Bienvenue dans leur « âge bête ».",
+      "eventNotes": null,
+      "eventStatus": "onsale",
+      "eventImageUrl": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+      "eventStartDateTime": "2026-11-20T19:00:00Z",
+      "eventStartLocalTime": "20:00",
+      "eventStartLocalDate": "2026-11-20",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "CONFLUENCE SPECTACLES",
+        "venueId": "rZ7SnyZaAbP",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/confluence-spectacles-avignon/idsite/18278",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "84000",
+        "venueLatitude": 43.945363,
+        "venueLongitude": 4.793221,
+        "venueStreet": "PLACE DE L'EUROPE",
+        "venueCity": "Avignon",
+        "venueStateCode": "84",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "35538529",
+            "name": "SMARTARTECH",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-03-20T17:00:00Z",
+      "onsaleEndDateTime": "2026-11-20T19:00:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7na",
+      "classificationSegment": "Arts & Theatre",
+      "classificationGenreId": "KnvZfZ7vAe1",
+      "classificationGenre": "Comedy",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vF17",
+      "classificationSubGenre": "Comedy",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "ticketnet",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-03-20T18:00:00Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "ZkyMmBwZ1A7kF0v",
+      "legacyEventId": "ZkyMmBwZ1A7kF0v",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/tristan-lopin-billet/idmanif/639937/idseance/4188901",
+      "resaleEventUrl": null,
+      "eventName": "TRISTAN LOPIN",
+      "eventInfo": "ADAM CONCERTS PRÉSENTE : TRISTAN LOPINJ’avais prévu plein de trucs pour le futur.Ça avait l’air d’être dans super longtemps.Je pensais vraiment avoir grave le temps et puis finalement pas tant que ça apparemment.Je crois que mon futur m’a ghosté…Ou alors, il est juste parti acheter des clopes.",
+      "eventNotes": null,
+      "eventStatus": "onsale",
+      "eventImageUrl": "https://s1.ticketm.net/dam/a/f1c/552a5bfd-993e-49fa-9f7e-5e86748dff1c_SOURCE",
+      "eventStartDateTime": "2027-03-13T19:30:00Z",
+      "eventStartLocalTime": "20:30",
+      "eventStartLocalDate": "2027-03-13",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "CONFLUENCE SPECTACLES",
+        "venueId": "rZ7SnyZaAbP",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/confluence-spectacles-avignon/idsite/18278",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "84000",
+        "venueLatitude": 43.945363,
+        "venueLongitude": 4.793221,
+        "venueStreet": "PLACE DE L'EUROPE",
+        "venueCity": "Avignon",
+        "venueStateCode": "84",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [
+        {
+          "attraction": {
+            "attractionUrl": "https://www.ticketmaster.com/tristan-lopin-tickets/artist/2484654",
+            "attractionId": "K8vZ917pD20",
+            "legacyAttractionId": "2484654",
+            "attractionName": "Tristan Lopin",
+            "attractionImageUrl": "https://s1.ticketm.net/dam/a/f1c/552a5bfd-993e-49fa-9f7e-5e86748dff1c_SOURCE",
+            "images": [
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_16_9.jpg",
+                  "width": 640,
+                  "height": 360,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_ARTIST_PAGE_3_2.jpg",
+                  "width": 305,
+                  "height": 203,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_3_2.jpg",
+                  "width": 640,
+                  "height": 427,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+                  "width": 2048,
+                  "height": 1152,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_3_2.jpg",
+                  "width": 1024,
+                  "height": 683,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RECOMENDATION_16_9.jpg",
+                  "width": 100,
+                  "height": 56,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_LANDSCAPE_16_9.jpg",
+                  "width": 1136,
+                  "height": 639,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "4_3",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_CUSTOM.jpg",
+                  "width": 305,
+                  "height": 225,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_16_9.jpg",
+                  "width": 1024,
+                  "height": 576,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_EVENT_DETAIL_PAGE_16_9.jpg",
+                  "width": 205,
+                  "height": 115,
+                  "fallback": true
+                }
+              }
+            ],
+            "classificationSegmentId": "KZFzniwnSyZfZ7v7na",
+            "classificationSegment": "Arts & Theatre",
+            "classificationGenreId": "KnvZfZ7vAe1",
+            "classificationGenre": "Comedy",
+            "classificationSubGenreId": "KZazBEonSMnZfZ7vF17",
+            "classificationSubGenre": "Comedy",
+            "classificationTypeId": "KZAyXgnZfZ7v7la",
+            "classificationType": "Individual",
+            "classificationSubTypeId": "KZFzBErXgnZfZ7vAdJ",
+            "classificationSubType": "Comedian"
+          }
+        }
+      ],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "3688193",
+            "name": "ADAM CONCERTS",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/50a/fa9caa1f-73a1-411e-b507-ec56fa59650a_106061_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-11-02T17:00:00Z",
+      "onsaleEndDateTime": "2027-03-13T19:30:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7na",
+      "classificationSegment": "Arts & Theatre",
+      "classificationGenreId": "KnvZfZ7vAe1",
+      "classificationGenre": "Comedy",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vF17",
+      "classificationSubGenre": "Comedy",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "trium",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-11-02T18:00:00Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "rZ7SnyZ1A77z_S",
+      "legacyEventId": "rZ7SnyZ1A77z_S",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/tina-arena-billet/idmanif/631433/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "TINA ARENA",
+      "eventInfo": "Alexandre Sorin Productions présente : TINA ARENALa star australienne multi-récompensée, aux 10 millions de disques vendus à travers le monde, et 50 ans de carrière, sera en concert en octobre 2026 en France et en Belgique.Après 15 années d'absence, TINA ARENA revient pour une série de concerts évènements.L'occasion pour le public de redécouvrir son incontournable répertoire français et international. Retrouvez TINA ARENA à la Salle Pleyel le 24 octobre 2026 et en tournée en octobre 2026.Un événement exceptionnel à ne manquer sous aucun prétexte. Contact PMR : pmr-femina@dstickets.fr",
+      "eventNotes": null,
+      "eventStatus": "onsale",
+      "eventImageUrl": "https://s1.ticketm.net/dam/a/dfe/c1e816dc-b4d9-410f-8f70-0e83c80a7dfe_SOURCE",
+      "eventStartDateTime": "2026-10-10T18:00:00Z",
+      "eventStartLocalTime": "20:00",
+      "eventStartLocalDate": "2026-10-10",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "THEATRE FEMINA",
+        "venueId": "rZ6SnyZd6A",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/theatre-femina-bordeaux/idsite/254",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "33000",
+        "venueLatitude": 44.841343,
+        "venueLongitude": -0.577246,
+        "venueStreet": "10, rue de Grassi",
+        "venueCity": "Bordeaux",
+        "venueStateCode": "33",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [
+        {
+          "attraction": {
+            "attractionUrl": "https://www.ticketmaster.com/tina-arena-tickets/artist/767234",
+            "attractionId": "K8vZ917GFAf",
+            "legacyAttractionId": "767234",
+            "attractionName": "Tina Arena",
+            "attractionImageUrl": "https://s1.ticketm.net/dam/a/dfe/c1e816dc-b4d9-410f-8f70-0e83c80a7dfe_SOURCE",
+            "images": [
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RETINA_LANDSCAPE_16_9.jpg",
+                  "width": 1136,
+                  "height": 639,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_TABLET_LANDSCAPE_16_9.jpg",
+                  "width": 1024,
+                  "height": 576,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RETINA_PORTRAIT_3_2.jpg",
+                  "width": 640,
+                  "height": 427,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+                  "width": 2048,
+                  "height": 1152,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_ARTIST_PAGE_3_2.jpg",
+                  "width": 305,
+                  "height": 203,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_EVENT_DETAIL_PAGE_16_9.jpg",
+                  "width": 205,
+                  "height": 115,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_TABLET_LANDSCAPE_3_2.jpg",
+                  "width": 1024,
+                  "height": 683,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RETINA_PORTRAIT_16_9.jpg",
+                  "width": 640,
+                  "height": 360,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RECOMENDATION_16_9.jpg",
+                  "width": 100,
+                  "height": 56,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "4_3",
+                  "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_CUSTOM.jpg",
+                  "width": 305,
+                  "height": 225,
+                  "fallback": true
+                }
+              }
+            ],
+            "classificationSegmentId": "KZFzniwnSyZfZ7v7nJ",
+            "classificationSegment": "Music",
+            "classificationGenreId": "KnvZfZ7vAev",
+            "classificationGenre": "Pop",
+            "classificationSubGenreId": "KZazBEonSMnZfZ7vk1t",
+            "classificationSubGenre": "Pop",
+            "classificationTypeId": "KZAyXgnZfZ7v7nI",
+            "classificationType": "Undefined",
+            "classificationSubTypeId": "KZFzBErXgnZfZ7v7lJ",
+            "classificationSubType": "Undefined"
+          }
+        }
+      ],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "43673470",
+            "name": "DARK SMILE - THFEMINA",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/4f2/0109888a-61b5-4525-8432-b026ef04f4f2_105631_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-07-18T07:31:18Z",
+      "onsaleEndDateTime": "2026-10-10T18:00:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7nJ",
+      "classificationSegment": "Music",
+      "classificationGenreId": "KnvZfZ7vAvA",
+      "classificationGenre": "Chanson Francaise",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vAFk",
+      "classificationSubGenre": "Chanson Francaise",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "ticketnet",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-07-18T08:31:18Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "ZkyMmBwZ1A7k9Ff",
+      "legacyEventId": "ZkyMmBwZ1A7k9Ff",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/joe-jackson-billet/idmanif/641249/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "JOE JACKSON",
+      "eventInfo": null,
+      "eventNotes": null,
+      "eventStatus": "onsale",
+      "eventImageUrl": "https://s1.ticketm.net/dam/a/51b/1c8fde45-36ff-4fe6-a244-12280aee251b_SOURCE",
+      "eventStartDateTime": "2026-10-25T18:00:00Z",
+      "eventStartLocalTime": "19:00",
+      "eventStartLocalDate": "2026-10-25",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "THEATRE FEMINA",
+        "venueId": "rZ6SnyZd6A",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/theatre-femina-bordeaux/idsite/254",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "33000",
+        "venueLatitude": 44.841343,
+        "venueLongitude": -0.577246,
+        "venueStreet": "10, rue de Grassi",
+        "venueCity": "Bordeaux",
+        "venueStateCode": "33",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [
+        {
+          "attraction": {
+            "attractionUrl": "https://www.ticketmaster.com/joe-jackson-tickets/artist/735355",
+            "attractionId": "K8vZ9171b_7",
+            "legacyAttractionId": "735355",
+            "attractionName": "Joe Jackson",
+            "attractionImageUrl": "https://s1.ticketm.net/dam/a/51b/1c8fde45-36ff-4fe6-a244-12280aee251b_SOURCE",
+            "images": [
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RETINA_PORTRAIT_3_2.jpg",
+                  "width": 640,
+                  "height": 427,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RETINA_PORTRAIT_16_9.jpg",
+                  "width": 640,
+                  "height": 360,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RETINA_LANDSCAPE_16_9.jpg",
+                  "width": 1136,
+                  "height": 639,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_TABLET_LANDSCAPE_16_9.jpg",
+                  "width": 1024,
+                  "height": 576,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+                  "width": 2048,
+                  "height": 1152,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_ARTIST_PAGE_3_2.jpg",
+                  "width": 305,
+                  "height": 203,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "4_3",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_CUSTOM.jpg",
+                  "width": 305,
+                  "height": 225,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RECOMENDATION_16_9.jpg",
+                  "width": 100,
+                  "height": 56,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "3_2",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_TABLET_LANDSCAPE_3_2.jpg",
+                  "width": 1024,
+                  "height": 683,
+                  "fallback": true
+                }
+              },
+              {
+                "image": {
+                  "ratio": "16_9",
+                  "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_EVENT_DETAIL_PAGE_16_9.jpg",
+                  "width": 205,
+                  "height": 115,
+                  "fallback": true
+                }
+              }
+            ],
+            "classificationSegmentId": "KZFzniwnSyZfZ7v7nJ",
+            "classificationSegment": "Music",
+            "classificationGenreId": "KnvZfZ7vAeA",
+            "classificationGenre": "Rock",
+            "classificationSubGenreId": "KZazBEonSMnZfZ7v6F1",
+            "classificationSubGenre": "Pop",
+            "classificationTypeId": "KZAyXgnZfZ7v7nI",
+            "classificationType": "Undefined",
+            "classificationSubTypeId": "KZFzBErXgnZfZ7v7lJ",
+            "classificationSubType": "Undefined"
+          }
+        }
+      ],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "43673470",
+            "name": "DARK SMILE - THFEMINA",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fbc/b293c0ad-c904-4215-bc59-8d7f2414dfbc_106141_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-11-14T09:00:00Z",
+      "onsaleEndDateTime": "2026-10-25T18:00:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7nJ",
+      "classificationSegment": "Music",
+      "classificationGenreId": "KnvZfZ7vAeA",
+      "classificationGenre": "Rock",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7v6F1",
+      "classificationSubGenre": "Pop",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "trium",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-11-14T10:00:00Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "rZ7SnyZ1A7ASqJ",
+      "legacyEventId": "rZ7SnyZ1A7ASqJ",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/putain-de-renaud-billet/idmanif/636459/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "PUTAIN DE RENAUD !",
+      "eventInfo": "OH MY PROD ! présente :« PUTAIN DE RENAUD ! »  - Pas un hommage, une révérence ! Putain de Renaud , interprété par Fred Pocquet , un mec qui chante Renaud avec les tripes, la tendresse, le respect pour Renaud et sa carrière.Un hommage sincère, populaire, à hauteur d’homme.  Putain de Renaud   n’est pas un hommage classique, c'est une révérence ! C’est un mec, Fred Pocquet, qui chante Renaud avec les tripes, le cœur, et une sacrée dose de respect.Un spectacle vivant, sincère, populaire, à hauteur d’homme.Une révérence pudique à l’un des plus grands raconteurs d’humanité de la chanson française.Mais ici, on ne raconte pas Renaud comme tout le monde.On le remonte à contre-courant.De ses derniers murmures aux premiers cris, on traverse sa vie à rebours — de la fatigue tendre des dernières chansons à la rage poétique de ses débuts.Putain de Renaud, c’est un voyage entre mélancolie, colère, révolte, tendresse, poésie, bistrot et rue pavée.C’est l’histoire d’un artiste… et peut-être un peu la nôtre.                   Production exclusive : OH MY PROD",
+      "eventNotes": null,
+      "eventStatus": "cancelled",
+      "eventImageUrl": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+      "eventStartDateTime": "2027-01-23T19:30:00Z",
+      "eventStartLocalTime": "20:30",
+      "eventStartLocalDate": "2027-01-23",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "LE SPOT - MACON",
+        "venueId": "rZ7SnyZadXI",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/le-spot-macon/idsite/13944",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "71000",
+        "venueLatitude": 46.325245,
+        "venueLongitude": 4.843065,
+        "venueStreet": "Avenue Pierre Beregovoy",
+        "venueCity": "Macon",
+        "venueStateCode": "71",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "4313983",
+            "name": "LES DERNIERS COUCHES",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/07d/fda8c807-42eb-4b81-9f16-f3a8367e107d_106371_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-09-24T08:47:58Z",
+      "onsaleEndDateTime": "2027-01-23T19:30:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7na",
+      "classificationSegment": "Arts & Theatre",
+      "classificationGenreId": "KnvZfZ7v7l1",
+      "classificationGenre": "Theatre",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vAve",
+      "classificationSubGenre": "Musical",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "ticketnet",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-09-24T09:47:58Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "ZkyMmBwZ1A7aaq-",
+      "legacyEventId": "ZkyMmBwZ1A7aaq-",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/aec-mma-billet/idmanif/646859/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "AEC MMA",
+      "eventInfo": "AEC MMAKINDARENA - ROUEN L'AEC MMA sera de retour le 28 novembre prochain pour une nouvelle grande soirée de MMA. Déjà7 000 spectateurs ont assisté aux deux éditions de l'AEC au Kindarena. Pour cette troisième édition, retrouvez vos meilleurs combattants, mais aussi les stars internationales de l'organisation.Au moins une ceinture mondiale sera mise en jeu lors de cette soirée. On vous attend nombreux et nombreuses pour célébrer le MMA à Rouen.",
+      "eventNotes": null,
+      "eventStatus": "cancelled",
+      "eventImageUrl": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+      "eventStartDateTime": "2026-11-28T17:30:00Z",
+      "eventStartLocalTime": "18:30",
+      "eventStartLocalDate": "2026-11-28",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "KINDARENA - ROUEN",
+        "venueId": "rZ7SnyZa7FR",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/kindarena-rouen/idsite/14425",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "76000",
+        "venueLatitude": 49.447418,
+        "venueLongitude": 1.06277,
+        "venueStreet": "40 RUE DE LILLEBONNE",
+        "venueCity": "Rouen",
+        "venueStateCode": "76",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "12739333",
+            "name": "CARRE OR",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/fe1/b0788f1e-2d08-47a7-96c1-c2b8603e8fe1_105371_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2026-01-09T15:25:43Z",
+      "onsaleEndDateTime": "2026-11-28T17:30:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7nE",
+      "classificationSegment": "Sports",
+      "classificationGenreId": "KnvZfZ7vA7d",
+      "classificationGenre": "Martial Arts",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vFIE",
+      "classificationSubGenre": "Mixed Martial Arts",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "trium",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2026-01-09T16:25:43Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    },
+    {
+      "eventId": "rZ7SnyZ1A77xvo",
+      "legacyEventId": "rZ7SnyZ1A77xvo",
+      "primaryEventUrl": "https://www.ticketmaster.fr/fr/manifestation/le-seigneur-des-anneaux-le-hobbit-billet/idmanif/628261/idtier/18864121",
+      "resaleEventUrl": null,
+      "eventName": "Le Seigneur des Anneaux & Le Hobbit",
+      "eventInfo": "FRANCE BILLET PRÉSENTE : LE SEIGNEUR DES ANNEAUX & LE HOBBIT«Le Seigneur des Anneaux et Le Hobbit» arrivent ! Découvrez l'univers musical de J.R.R. Tolkien  lors d'un magnifique concert avec un orchestre, et chœurs de la comté ainsi qu’un invité spécial : des sons menaçants de Mordor et de l'attaque stridente des cavaliers noirs aux belles mélodies lyriques des elfes ! Un invité vedette des films présente «La Musique du Seigneur des Anneaux et Le Hobbit - En concert» !",
+      "eventNotes": null,
+      "eventStatus": "rescheduled",
+      "eventImageUrl": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+      "eventStartDateTime": "2027-01-10T19:00:00Z",
+      "eventStartLocalTime": "20:00",
+      "eventStartLocalDate": "2027-01-10",
+      "eventEndDateTime": null,
+      "venue": {
+        "venueName": "REIMS ARENA",
+        "venueId": "rZ7SnyZaAc3",
+        "legacyVenueId": null,
+        "venueUrl": "https://www.ticketmaster.fr/fr/salle/reims-arena/idsite/19358",
+        "venueTimezone": "Europe/Paris",
+        "venueZipCode": "51100",
+        "venueLatitude": null,
+        "venueLongitude": null,
+        "venueStreet": "BOULEVARD JULES CESAR",
+        "venueCity": "Reims",
+        "venueStateCode": "51",
+        "venueCountryCode": "FR",
+        "accessibleSeatingDetail": null,
+        "adaPhones": null,
+        "adaCustomCopy": null,
+        "adaHours": null
+      },
+      "attractions": [],
+      "promoters": [
+        {
+          "promoter": {
+            "id": "10279",
+            "name": "FRANCE BILLET",
+            "description": null
+          }
+        }
+      ],
+      "images": [
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_RETINA_LANDSCAPE_16_9.jpg",
+            "width": 1136,
+            "height": 639,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_TABLET_LANDSCAPE_16_9.jpg",
+            "width": 1024,
+            "height": 576,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_RETINA_PORTRAIT_3_2.jpg",
+            "width": 640,
+            "height": 427,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_EVENT_DETAIL_PAGE_16_9.jpg",
+            "width": 205,
+            "height": 115,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_ARTIST_PAGE_3_2.jpg",
+            "width": 305,
+            "height": 203,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_RECOMENDATION_16_9.jpg",
+            "width": 100,
+            "height": 56,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "3_2",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_TABLET_LANDSCAPE_3_2.jpg",
+            "width": 1024,
+            "height": 683,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_TABLET_LANDSCAPE_LARGE_16_9.jpg",
+            "width": 2048,
+            "height": 1152,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "16_9",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_RETINA_PORTRAIT_16_9.jpg",
+            "width": 640,
+            "height": 360,
+            "fallback": true
+          }
+        },
+        {
+          "image": {
+            "ratio": "4_3",
+            "url": "https://s1.ticketm.net/dam/c/aae/b503db1a-c908-473b-a218-96d123cd5aae_105501_CUSTOM.jpg",
+            "width": 305,
+            "height": 225,
+            "fallback": true
+          }
+        }
+      ],
+      "onsaleStartDateTime": "2025-06-25T12:59:41Z",
+      "onsaleEndDateTime": "2027-01-10T19:00:00Z",
+      "classificationSegmentId": "KZFzniwnSyZfZ7v7nn",
+      "classificationSegment": "Film",
+      "classificationGenreId": "KnvZfZ7vAkJ",
+      "classificationGenre": "Music",
+      "classificationSubGenreId": "KZazBEonSMnZfZ7vave",
+      "classificationSubGenre": "Music",
+      "presaleName": null,
+      "presaleDateTimeRange": null,
+      "presales": [],
+      "source": "ticketnet",
+      "classificationTypeId": null,
+      "classificationType": null,
+      "classificationSubTypeId": null,
+      "classificationSubType": null,
+      "transactable": false,
+      "hotEvent": false,
+      "accessibilityInfo": null,
+      "apiOnsaleStartDateTime": "2025-06-25T13:59:41Z",
+      "healthCheck": null,
+      "pleaseNote": null,
+      "importantInformation": null,
+      "eventEndLocalDate": null,
+      "brandName": "Ticketmaster",
+      "officialSeller": true
+    }
+  ]
+}

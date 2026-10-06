@@ -5,6 +5,7 @@ use App\Collecte\Connecteurs\ConnecteurDatatourisme;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 use App\Collecte\Connecteurs\ConnecteurFnac;
 use App\Collecte\Connecteurs\ConnecteurOpenagenda;
+use App\Collecte\Connecteurs\ConnecteurTicketmaster;
 
 return [
     /*
@@ -18,11 +19,15 @@ return [
         'fnac' => ConnecteurFnac::class,
         'datatourisme' => ConnecteurDatatourisme::class,
         'openagenda' => ConnecteurOpenagenda::class,
+        'ticketmaster' => ConnecteurTicketmaster::class,
     ],
 
     // Disque des fichiers bruts et durée de conservation (jours).
     'disque_bruts' => env('COLLECTE_DISQUE', 'collecte'),
     'conservation_bruts_jours' => 30,
+
+    // Une seule collecte à la fois : attente maximale de la fin de la précédente (au-delà, nouvel essai plus tard).
+    'attente_max_secondes' => 7200,
 
     // Nouveaux essais après un échec : 15 min, 30 min, 1 h (F7.2).
     'delais_essais_secondes' => [900, 1800, 3600],

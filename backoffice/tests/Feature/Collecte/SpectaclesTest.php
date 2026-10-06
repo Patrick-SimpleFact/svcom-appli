@@ -4,6 +4,7 @@ use App\Actions\DeciderDoublon;
 use App\Actions\DedoublonnerOffre;
 use App\Actions\EnregistrerOffre;
 use App\Actions\ExecuterCollecte;
+use App\Actions\PublierSource;
 use App\Actions\RattacherSpectacle;
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\ResultatGenre;
@@ -237,4 +238,16 @@ it('montre toutes les annonces dans « Séances collectées », et isole les act
         ->filterTable('etat', 'disparues')
         ->assertCanSeeTableRecords([$b])
         ->assertCanNotSeeTableRecords([$a]);
+});
+
+it('affiche les lieux de chaque spectacle dans la liste, pour distinguer les homonymes', function () {
+    $nice = ($this->seance)($this->billetreduc, 'BR-1', 'Toc Toc', $this->marseille, '2026-11-17 20:30', artistes: ['Troupe du Sud']);
+    ($this->seance)($this->billetreduc, 'BR-2', 'Toc Toc', $this->lyon, '2026-11-18 20:30', artistes: ['Troupe du Sud']);
+    $bordeaux = ($this->seance)($this->fnac, 'FN-1', 'Toc Toc', $this->avignon, '2026-12-01 20:30', artistes: ['Autre troupe']);
+    app(PublierSource::class)->handle($this->billetreduc, null, Offre::pluck('id')->all());
+    app(PublierSource::class)->handle($this->fnac, null, Offre::pluck('id')->all());
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    expect($nice->spectacle_id)->not->toBe($bordeaux->spectacle_id);
+    $this->get('/admin/spectacles')->assertOk()->assertSee('2 lieux')->assertSee('Théâtre du Chêne noir');
 });

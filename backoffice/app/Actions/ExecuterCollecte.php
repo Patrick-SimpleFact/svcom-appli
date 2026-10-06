@@ -12,6 +12,7 @@ use App\Models\Collecte;
 use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Source;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -30,7 +31,20 @@ class ExecuterCollecte
     /**
      * @param  callable(AnnonceNormalisee, Lieu, ResultatGenre, Offre): void|null  $traiterAnnonce  suite de la chaîne (étapes suivantes)
      */
+    /** Une seule collecte à la fois, toutes sources confondues (deux publications simultanées peuvent s'interbloquer). */
+    public const VERROU = 'collecte-en-cours';
+
+    /** Durée de vie du verrou : au-delà de la durée maximale d'une collecte, pour qu'un plantage ne le laisse pas bloqué. */
+    public const VERROU_SECONDES = 7500;
+
     public function handle(Source $source, int $essai = 1, ?callable $traiterAnnonce = null, ?string $version = null): Collecte
+    {
+        // Si une autre collecte est en cours, on attend qu'elle soit entièrement terminée (publication comprise).
+        return Cache::lock(self::VERROU, self::VERROU_SECONDES)
+            ->block((int) config('collecte.attente_max_secondes'), fn () => $this->executer($source, $essai, $traiterAnnonce, $version));
+    }
+
+    private function executer(Source $source, int $essai, ?callable $traiterAnnonce, ?string $version): Collecte
     {
         $collecte = Collecte::create([
             'source_id' => $source->id,

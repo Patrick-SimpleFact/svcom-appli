@@ -15,7 +15,9 @@ use Database\Seeders\ParametresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Database\Seeders\SourcesSeeder;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -114,7 +116,7 @@ it('lance une collecte depuis le back-office, et désactive le bouton sans conne
     Queue::assertPushed(CollecterSource::class, fn ($tache) => $tache->source->is($this->source));
     expect($this->source->fresh()->config['simuler_echec'])->toBeTrue();
 
-    Livewire::test(ViewSource::class, ['record' => Source::firstWhere('code', 'ticketmaster')->getKey()]) // pas encore de connecteur (N05)
+    Livewire::test(ViewSource::class, ['record' => Source::firstWhere('code', 'paris_qfap')->getKey()]) // pas encore de connecteur (N06)
         ->assertActionDisabled('lancer');
 
     $this->get('/admin/collectes')->assertOk();
@@ -130,4 +132,17 @@ it('supprime les fichiers bruts de plus de 30 jours', function () {
 
     $disque->assertMissing('factice/ancien.json');
     $disque->assertExists('factice/recent.json');
+});
+
+it('fait attendre une collecte tant qu’une autre est en cours, toutes sources confondues', function () {
+    config(['collecte.attente_max_secondes' => 0]); // en test : on vérifie l'attente sans patienter
+    $autre = Cache::lock(ExecuterCollecte::VERROU, 60);
+    expect($autre->get())->toBeTrue(); // une collecte d'une autre source est en cours
+
+    expect(fn () => app(ExecuterCollecte::class)->handle($this->source))
+        ->toThrow(LockTimeoutException::class)
+        ->and(Collecte::count())->toBe(0); // rien n'a commencé
+
+    $autre->release(); // l'autre collecte est terminée
+    expect(app(ExecuterCollecte::class)->handle($this->source)->statut)->toBe(StatutCollecte::Reussie);
 });
