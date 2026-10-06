@@ -5,6 +5,7 @@ namespace App\Filament\Resources\LieuxAVerifier;
 use App\Enums\FileATraiter;
 use App\Enums\PrecisionPosition;
 use App\Enums\StatutElement;
+use App\Filament\Actions\ChercherAdresseBan;
 use App\Filament\Resources\Lieux\LieuResource;
 use App\Filament\Resources\LieuxAVerifier\Pages\ListLieuxAVerifier;
 use App\Models\ElementATraiter;
@@ -76,6 +77,8 @@ class LieuAVerifierResource extends Resource
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
             ])
             ->recordActions([
+                ChercherAdresseBan::make(ChercherAdresseBan::lieuDeLElement())
+                    ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente && $record->cible !== null),
                 Action::make('verifie')->label('Vérifié')->icon(Heroicon::OutlinedCheck)->color('success')
                     ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente)
                     ->action(function (ElementATraiter $record): void {

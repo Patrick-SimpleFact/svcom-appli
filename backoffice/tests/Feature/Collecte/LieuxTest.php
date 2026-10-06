@@ -6,6 +6,7 @@ use App\Collecte\AnnonceNormalisee;
 use App\Enums\FileATraiter;
 use App\Enums\PrecisionPosition;
 use App\Enums\TypeLieu;
+use App\Filament\Resources\Lieux\Pages\EditLieu;
 use App\Filament\Resources\LieuxAVerifier\Pages\ListLieuxAVerifier;
 use App\Models\Admin;
 use App\Models\ElementATraiter;
@@ -237,4 +238,57 @@ it('sort un lieu de la file « Lieux à vérifier » avec le bouton « Vérifié
 
     expect(lieuxAVerifier()->sole()->statut->value)->toBe('traite')
         ->and(lieuxAVerifier()->sole()->traite_par)->toBe($admin->id);
+});
+
+/** Réponse de la BAN avec plusieurs résultats (recherche du back-office, K04b). */
+function reponseBanMultiple(): array
+{
+    $resultat = fn (string $label, string $nom, string $type, float $score, float $lat, float $lon) => [
+        'geometry' => ['type' => 'Point', 'coordinates' => [$lon, $lat]],
+        'properties' => ['label' => $label, 'name' => $nom, 'postcode' => '84000', 'city' => 'Avignon', 'citycode' => '84007', 'type' => $type, 'score' => $score],
+    ];
+
+    return ['features' => [
+        $resultat('8 Bis Rue Sainte-Catherine 84000 Avignon', '8 Bis Rue Sainte-Catherine', 'housenumber', 0.87, 43.950600, 4.809800),
+        $resultat('Avenue de Sainte-Catherine 84140 Avignon', 'Avenue de Sainte-Catherine', 'street', 0.58, 43.920000, 4.860000),
+    ]];
+}
+
+it('corrige l’adresse d’un lieu avec la BAN depuis sa fiche, sans que la collecte ne l’écrase ensuite', function () {
+    Http::fake(['data.geopf.fr/*' => Http::response(reponseBanMultiple())]);
+    $lieu = Lieu::create(['nom' => 'Salle Sainte-Catherine', 'type' => TypeLieu::Autre, 'ville_id' => $this->avignon->id, 'position' => new Point(43.9493, 4.8055), 'precision_position' => PrecisionPosition::Commune, 'fuseau_horaire' => 'Europe/Paris']);
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    Livewire\Livewire::test(EditLieu::class, ['record' => $lieu->getKey()])
+        ->callAction('chercherBan', ['recherche' => '8 bis rue Sainte-Catherine Avignon', 'choix' => '0'])
+        ->assertHasNoActionErrors();
+
+    $lieu->refresh();
+    expect($lieu->adresse)->toBe('8 Bis Rue Sainte-Catherine')
+        ->and($lieu->code_postal)->toBe('84000')
+        ->and($lieu->precision_position)->toBe(PrecisionPosition::Adresse)
+        ->and($lieu->position->latitude)->toEqualWithDelta(43.9506, 0.0001)
+        ->and($lieu->champs_verrouilles)->toContain('position')
+        ->and($lieu->champs_verrouilles)->toContain('adresse');
+
+    Http::assertSent(fn ($requete) => str_contains($requete->url(), 'autocomplete=0') && str_contains($requete->url(), 'limit=5'));
+
+    // La collecte suivante (position « exacte » donnée par une source) ne l'écrase pas.
+    auth()->logout();
+    LieuSource::query()->delete();
+    ($this->rattacher)(annonceLieu(['lieuNom' => 'Salle Sainte-Catherine', 'lieuAdresse' => '8 bis rue Sainte-Catherine', 'lieuCodePostal' => '84000', 'lieuVille' => 'Avignon', 'lieuLatitude' => 43.9507, 'lieuLongitude' => 4.8099]));
+    expect($lieu->fresh()->precision_position)->toBe(PrecisionPosition::Adresse);
+});
+
+it('propose la recherche BAN dans la file « Lieux à vérifier »', function () {
+    Http::fake(['data.geopf.fr/*' => Http::response(reponseBanMultiple())]);
+    $lieu = ($this->rattacher)(annonceLieu(['lieuNom' => 'Salle des fêtes', 'lieuVille' => 'Avignon'])); // sans adresse : pas de géocodage
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    Livewire\Livewire::test(ListLieuxAVerifier::class)
+        ->callTableAction('chercherBan', lieuxAVerifier()->sole(), ['recherche' => 'Salle des fêtes Avignon', 'choix' => '1'])
+        ->assertHasNoTableActionErrors();
+
+    expect($lieu->fresh()->adresse)->toBe('Avenue de Sainte-Catherine')
+        ->and($lieu->fresh()->precision_position)->toBe(PrecisionPosition::Adresse);
 });

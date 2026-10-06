@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Lieux\Pages;
 
 use App\Actions\FusionnerLieux;
+use App\Filament\Actions\ChercherAdresseBan;
 use App\Filament\Resources\Lieux\LieuResource;
 use App\Filament\Resources\Lieux\Pages\Concerns\ConvertitPosition;
 use App\Models\Lieu;
@@ -43,6 +44,8 @@ class EditLieu extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ChercherAdresseBan::make(fn (Lieu $record) => $record)
+                ->after(fn () => $this->redirect(LieuResource::getUrl('edit', ['record' => $this->record]))), // formulaire à jour
             Action::make('fusionner')
                 ->label('Fusionner avec un autre lieu')
                 ->icon('heroicon-o-arrows-pointing-in')
