@@ -9,9 +9,11 @@ use App\Enums\StatutCollecte;
 use App\Models\ElementATraiter;
 use App\Models\Lieu;
 use App\Models\Offre;
+use App\Models\Parametre;
 use App\Models\Representation;
 use App\Models\Source;
 use App\Models\Ville;
+use App\Support\Horizon;
 use App\Support\Point;
 use Database\Seeders\GenresSeeder;
 use Database\Seeders\MotsGenresSeeder;
@@ -127,4 +129,23 @@ it('collecte BilletRéduc de bout en bout : tri, lieux, genres, publication', fu
     Http::fake([LISTE_FLUX_AWIN => Http::response(listeFluxAwin()), 'flux.awin.test/billetreduc.csv.gz' => Http::response(gzencode($this->csv))]);
     $seconde = app(ExecuterCollecte::class)->handle($this->source);
     expect([$seconde->nb_nouveaux, $seconde->nb_mis_a_jour, $seconde->nb_retires])->toBe([0, 0, 0]);
+});
+
+it('ne collecte pas les séances au-delà de l’horizon (fin du mois, N mois après aujourd’hui)', function () {
+    Storage::fake('collecte');
+    $this->seed([GenresSeeder::class, MotsGenresSeeder::class, ParametresSeeder::class, ReglesFiltrageSeeder::class]);
+    Parametre::firstWhere('cle', 'horizon_mois')->update(['valeur' => 1]); // le 05/10/2026 → jusqu'au 30/11/2026
+    Http::fake([
+        LISTE_FLUX_AWIN => Http::response(listeFluxAwin()),
+        'flux.awin.test/billetreduc.csv.gz' => Http::response(gzencode($this->csv)),
+        'data.geopf.fr/*' => Http::response(['features' => []]),
+    ]);
+
+    expect(Horizon::dateLimite()->format('Y-m-d'))->toBe('2026-11-30');
+
+    $collecte = app(ExecuterCollecte::class)->handle($this->source);
+
+    expect($collecte->nb_hors_horizon)->toBeGreaterThan(0) // « A la fin il meurt » (avril 2027), Tristan Lopin (mars 2027)…
+        ->and(Offre::where('date_locale', '>', '2026-11-30')->count())->toBe(0)
+        ->and(Offre::where('date_locale', '<=', '2026-11-30')->count())->toBeGreaterThan(0);
 });

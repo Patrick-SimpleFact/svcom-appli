@@ -47,6 +47,7 @@ class ParametresSeeder extends Seeder
             ['cle' => 'pistes_max_par_jour', 'groupe' => 'Pistes', 'libelle' => 'Pistes maximum par jour et par téléphone', 'description' => 'F8.4.', 'type' => $e, 'valeur' => 5],
 
             // Collecte (F7)
+            ['cle' => 'horizon_mois', 'groupe' => 'Collecte', 'libelle' => 'Horizon des séances (mois)', 'description' => 'Séances gardées jusqu’au dernier jour du mois, N mois après aujourd’hui (ex. 6 le 06/10/2026 → jusqu’au 30/04/2027). Au-delà : ni collectées ni gardées. 0 = sans limite.', 'type' => $e, 'valeur' => 12],
             ['cle' => 'dedoublonnage_ecart_minutes', 'groupe' => 'Collecte', 'libelle' => 'Écart d’heure maximal pour fusionner deux séances (min)', 'description' => 'Deux billetteries annoncent la même séance à des heures un peu différentes : en deçà, fusion automatique (COLLECTE §7.1).', 'type' => $e, 'valeur' => 30],
             ['cle' => 'dedoublonnage_ecart_probable_minutes', 'groupe' => 'Collecte', 'libelle' => 'Écart d’heure maximal pour un doublon probable (min)', 'description' => 'Au-delà de l’écart de fusion et jusqu’à cette valeur, les deux séances vont dans « Doublons probables » (COLLECTE §7.2). Jamais entre deux séances d’une même billetterie.', 'type' => $e, 'valeur' => 60],
             ['cle' => 'controle_fusions_actif', 'groupe' => 'Collecte', 'libelle' => 'File « Fusions à contrôler » active', 'description' => 'À désactiver quand la règle aura fait ses preuves (COLLECTE §7.2).', 'type' => $b, 'valeur' => true],

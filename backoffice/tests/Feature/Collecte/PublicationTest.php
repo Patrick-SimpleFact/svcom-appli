@@ -10,6 +10,9 @@ use App\Enums\StatutCollecte;
 use App\Enums\StatutRepresentation;
 use App\Enums\TypeDecisionDedoublonnage;
 use App\Enums\TypeRepresentation;
+use App\Filament\Resources\Spectacles\Pages\ViewSpectacle;
+use App\Filament\Resources\Spectacles\RelationManagers\OffresRelationManager;
+use App\Filament\Resources\Spectacles\RelationManagers\RepresentationsRelationManager;
 use App\Models\Admin;
 use App\Models\Collecte;
 use App\Models\Genre;
@@ -206,4 +209,35 @@ it('garde la salle donnée par la billetterie sur la représentation', function 
 
     expect($offre->fresh()->representation->salle)->toBe('Salle Léo Ferré')
         ->and(($this->offre)('F-2')->representation->salle)->toBeNull();
+});
+
+it('donne à un spectacle classé « Autres » le genre qu’une autre de ses sources sait donner', function () {
+    ($this->collecter)($this->factice);
+    $offre = ($this->offre)('F-1');
+    $spectacle = $offre->spectacle;
+    $spectacle->update(['genre_id' => Genre::firstWhere('slug', 'autres')->id]); // la 1re source ne savait pas classer
+    $offre->update(['genre_id' => Genre::firstWhere('slug', 'humour')->id]);   // une autre source (ou une correspondance) sait
+
+    ($this->republier)($this->factice);
+
+    // Le genre d'une de ses autres sources (ici Humour ou Théâtre, selon la séance republiée en dernier) : plus « Autres ».
+    expect($spectacle->fresh()->genre->slug)->toBeIn(['humour', 'theatre'])
+        ->and($offre->fresh()->representation->genre_id)->toBe($spectacle->fresh()->genre_id)
+        ->and($spectacle->fresh()->champs_verrouilles)->toBe([]);
+});
+
+it('affiche les prix et le lien de réservation de chaque billetterie dans le back-office', function () {
+    ($this->collecter)($this->factice);
+    ($this->collecter)($this->bis);
+    $representation = ($this->offre)('F-1')->representation;
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    Livewire\Livewire::test(RepresentationsRelationManager::class, ['ownerRecord' => $representation->spectacle, 'pageClass' => ViewSpectacle::class])
+        ->assertSee('16 – 18 €');
+    Livewire\Livewire::test(OffresRelationManager::class, ['ownerRecord' => $representation->spectacle, 'pageClass' => ViewSpectacle::class])
+        ->assertSee('18 €')
+        ->assertSee('Réserver ↗')
+        ->assertSeeHtml('href="https://exemple.fr/1"');
+    expect(RepresentationsRelationManager::prix(null, null, true))->toBe('Gratuit')
+        ->and(RepresentationsRelationManager::prix('8.50', '8.50'))->toBe('8,50 €');
 });
