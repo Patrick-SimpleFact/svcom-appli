@@ -26,7 +26,7 @@ class ReglesFiltrageSeeder extends Seeder
         'boum', 'baleti', 'soiree salsa', 'science', 'mediatheque', 'parcours de l art',
         'bibliotheque', 'fete de la science',
         // catégories Fnac hors spectacle (validé par Patrick le 05/10/2026, N02)
-        'parc d attraction', 'aquarium', 'musee', 'tourisme', 'zoo', 'croisiere',
+        'parc d attraction', 'aquarium', 'musee', 'tourisme et sejours', 'zoo', 'croisiere', // pas « tourisme » seul : la Fnac classe les cabarets en « Tourisme loisirs › Cabaret »
     ];
 
     public function run(): void

@@ -13,6 +13,7 @@ enum FileATraiter: string implements HasLabel
     case AClasser = 'a_classer';
     case LieuAVerifier = 'lieu_a_verifier';
     case ArtisteAVerifier = 'artiste_a_verifier';
+    case SpectacleAControler = 'spectacle_a_controler';
 
     public function getLabel(): string
     {
@@ -23,6 +24,7 @@ enum FileATraiter: string implements HasLabel
             self::AClasser => 'À classer',
             self::LieuAVerifier => 'Lieux à vérifier',
             self::ArtisteAVerifier => 'Artistes à vérifier',
+            self::SpectacleAControler => 'Spectacles à contrôler',
         };
     }
 }
