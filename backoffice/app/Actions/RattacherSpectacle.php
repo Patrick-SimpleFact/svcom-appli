@@ -187,12 +187,12 @@ class RattacherSpectacle
 
         // Création automatique : pas de verrouillage ni de journal (ce n'est pas une correction à la main).
         return Spectacle::withoutEvents(fn () => Spectacle::create([
-            'titre' => $donnees['titre'],
+            'titre' => mb_substr($donnees['titre'], 0, 255),
             'description' => $donnees['description'] ?? null,
             'genre_id' => $offre->genre_id,
-            'classification_fine' => $donnees['categories_source'][0] ?? null,
+            'classification_fine' => isset($donnees['categories_source'][0]) ? mb_substr($donnees['categories_source'][0], 0, 255) : null,
             'jeune_public' => $offre->jeune_public,
-            'image_url' => $donnees['image_url'] ?? null,
+            'image_url' => isset($donnees['image_url']) ? mb_substr($donnees['image_url'], 0, 1000) : null,
         ]));
     }
 }

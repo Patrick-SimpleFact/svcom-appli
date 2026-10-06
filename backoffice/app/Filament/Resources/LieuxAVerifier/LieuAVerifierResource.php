@@ -9,18 +9,22 @@ use App\Filament\Resources\Lieux\LieuResource;
 use App\Filament\Resources\LieuxAVerifier\Pages\ListLieuxAVerifier;
 use App\Models\ElementATraiter;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use UnitEnum;
 
 /**
  * File « Lieux à vérifier » (F7.5, F7.10) : lieux créés par la collecte, absents du référentiel ou mal placés.
  * Ils sont publiés quand même. Une ligne ouvre la fiche du lieu (corriger la position, fusionner) ;
- * le bouton « vérifié » arrive avec la boîte de travail (A01).
+ * « Vérifié » la sort de la file (avancé à la demande de Patrick le 06/10/2026 ; la boîte de travail A01 l'enrichira).
  */
 class LieuAVerifierResource extends Resource
 {
@@ -71,7 +75,36 @@ class LieuAVerifierResource extends Resource
             ->filters([
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
             ])
+            ->recordActions([
+                Action::make('verifie')->label('Vérifié')->icon(Heroicon::OutlinedCheck)->color('success')
+                    ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente)
+                    ->action(function (ElementATraiter $record): void {
+                        static::marquerVerifies(new Collection([$record]));
+                        Notification::make()->success()->title('Lieu vérifié')->send();
+                    }),
+            ])
+            ->toolbarActions([
+                BulkAction::make('verifies')->label('Marquer comme vérifiés')->icon(Heroicon::OutlinedCheck)
+                    ->requiresConfirmation()
+                    ->action(function (Collection $records): void {
+                        static::marquerVerifies($records);
+                        Notification::make()->success()->title('Lieux vérifiés')->send();
+                    }),
+            ])
             ->recordUrl(fn (ElementATraiter $record): ?string => $record->cible ? LieuResource::getUrl('edit', ['record' => $record->cible]) : null);
+    }
+
+    /** Sort les lieux de la file : traités par l'admin connecté, maintenant. */
+    public static function marquerVerifies(Collection $elements): void
+    {
+        ElementATraiter::whereKey($elements->modelKeys())
+            ->where('statut', StatutElement::EnAttente)
+            ->update([
+                'statut' => StatutElement::Traite,
+                'decision' => json_encode(['verifie' => true]),
+                'traite_par' => auth()->id(),
+                'traite_le' => now(),
+            ]);
     }
 
     public static function canCreate(): bool

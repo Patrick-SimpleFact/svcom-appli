@@ -69,9 +69,9 @@ class RattacherLieu
             LieuSource::create([
                 'source_id' => $source->id,
                 'cle' => $cle,
-                'nom' => $annonce->lieuNom,
-                'adresse' => $annonce->lieuAdresse,
-                'ville' => trim(($annonce->lieuCodePostal ?? '').' '.($annonce->lieuVille ?? '')) ?: null,
+                'nom' => $annonce->lieuNom !== null ? mb_substr($annonce->lieuNom, 0, 255) : null,
+                'adresse' => $annonce->lieuAdresse !== null ? mb_substr($annonce->lieuAdresse, 0, 255) : null,
+                'ville' => mb_substr(trim(($annonce->lieuCodePostal ?? '').' '.($annonce->lieuVille ?? '')), 0, 255) ?: null,
                 'lieu_id' => $lieu->id,
             ]);
 
@@ -121,11 +121,12 @@ class RattacherLieu
             [$position, $precision] = [$ville?->position, PrecisionPosition::Commune];
         }
 
+        // Tronqué aux tailles des colonnes : une donnée anormale d'une source ne doit pas faire échouer la collecte.
         $lieu = Lieu::create([
-            'nom' => $annonce->lieuNom ?: $annonce->lieuAdresse,
+            'nom' => mb_substr($annonce->lieuNom ?: $annonce->lieuAdresse, 0, 255),
             'type' => TypeLieu::Autre,
-            'adresse' => $annonce->lieuAdresse,
-            'code_postal' => $annonce->lieuCodePostal,
+            'adresse' => $annonce->lieuAdresse !== null ? mb_substr($annonce->lieuAdresse, 0, 255) : null,
+            'code_postal' => $annonce->lieuCodePostal !== null ? mb_substr($annonce->lieuCodePostal, 0, 10) : null,
             'ville_id' => $ville?->id,
             'position' => $position,
             'precision_position' => $precision,
@@ -249,8 +250,8 @@ class RattacherLieu
     private function completer(Lieu $lieu, AnnonceNormalisee $annonce, ?Ville $ville, ?Point $position, ?PrecisionPosition $precision): void
     {
         $valeurs = array_filter([
-            'adresse' => blank($lieu->adresse) ? $annonce->lieuAdresse : null,
-            'code_postal' => blank($lieu->code_postal) ? $annonce->lieuCodePostal : null,
+            'adresse' => blank($lieu->adresse) && $annonce->lieuAdresse !== null ? mb_substr($annonce->lieuAdresse, 0, 255) : null,
+            'code_postal' => blank($lieu->code_postal) && $annonce->lieuCodePostal !== null ? mb_substr($annonce->lieuCodePostal, 0, 10) : null,
             'ville_id' => $lieu->ville_id === null ? $ville?->id : null,
         ]);
 

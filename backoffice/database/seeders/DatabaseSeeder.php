@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             SourcesSeeder::class,
             ReglesFiltrageSeeder::class,
             MotsGenresSeeder::class,
+            CorrespondancesGenresSeeder::class,
         ]);
     }
 }

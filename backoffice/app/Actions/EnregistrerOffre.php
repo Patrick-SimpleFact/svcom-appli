@@ -32,7 +32,10 @@ class EnregistrerOffre
             'debut' => $annonce->debut,
             'heure_connue' => $annonce->heureConnue,
             'date_locale' => $dateLocale->format('Y-m-d'),
-            'titre_comparable' => $this->comparaison->titreComparable($annonce->titre, $annonce->lieuNom ?? $lieu->nom, $annonce->lieuVille),
+            // Sans horaire sur plusieurs jours : une période (dernier jour inclus), publiée « du … au … ».
+            'date_fin' => ! $annonce->heureConnue && $annonce->fin !== null && $annonce->fin->format('Y-m-d') > $dateLocale->format('Y-m-d')
+                ? $annonce->fin->format('Y-m-d') : null,
+            'titre_comparable' => mb_substr($this->comparaison->titreComparable($annonce->titre, $annonce->lieuNom ?? $lieu->nom, $annonce->lieuVille), 0, 255),
         ];
 
         $offre = Offre::firstOrNew(['source_id' => $source->id, 'identifiant_externe' => $annonce->identifiantExterne]);
@@ -43,7 +46,7 @@ class EnregistrerOffre
             ...$seance,
             'genre_id' => $genre->genre->id,
             'jeune_public' => $genre->jeunePublic,
-            'lien' => $annonce->lien,
+            'lien' => mb_substr($annonce->lien, 0, 2000),
             'prix_min' => $annonce->prixMin,
             'prix_max' => $annonce->prixMax,
             'complet' => $annonce->complet,
@@ -59,6 +62,6 @@ class EnregistrerOffre
 
     private function cleSeance(Offre $offre): string
     {
-        return implode('|', [$offre->lieu_id, $offre->debut?->utc()->toIso8601String(), (int) $offre->heure_connue, $offre->date_locale?->format('Y-m-d'), $offre->titre_comparable]);
+        return implode('|', [$offre->lieu_id, $offre->debut?->utc()->toIso8601String(), (int) $offre->heure_connue, $offre->date_locale?->format('Y-m-d'), $offre->date_fin?->format('Y-m-d'), $offre->titre_comparable]);
     }
 }
