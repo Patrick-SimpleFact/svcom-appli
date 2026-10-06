@@ -36,6 +36,12 @@ return [
     ],
 
     // Awin (BilletRéduc, Fnac) : adresse secrète de la liste des flux du compte éditeur (COLLECTE §3).
+    // OpenAgenda : clé d'API (COLLECTE §3).
+    'openagenda' => [
+        'cle' => env('OPENAGENDA_API_KEY'),
+        'adresse' => 'https://api.openagenda.com/v2',
+    ],
+
     'awin' => [
         'liste_flux' => env('AWIN_FEEDLIST_URL'),
     ],

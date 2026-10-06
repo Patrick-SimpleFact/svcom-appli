@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\FiltreSpectacleVivant;
+use App\Collecte\ResultatFiltrage;
 use App\Enums\FileATraiter;
 use App\Enums\IssueFiltrage;
 use App\Enums\StatutElement;
@@ -41,6 +42,11 @@ class TrierAnnonce
         }
 
         $resultat = $this->filtre->evaluer($annonce);
+
+        // Aucun signal chez une source aux mots-clés pauvres : écarté plutôt que mis de côté.
+        if ($resultat->issue === IssueFiltrage::ATrier && $resultat->score === 0 && in_array($source->code, config('collecte.score_nul_exclu', []), true)) {
+            $resultat = new ResultatFiltrage(IssueFiltrage::Exclu, 0, [...$resultat->motifs, 'score nul : exclu pour cette source']);
+        }
 
         if ($resultat->issue === IssueFiltrage::ATrier) {
             ElementATraiter::updateOrCreate(['id' => $element?->id], [

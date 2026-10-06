@@ -19,13 +19,15 @@ class AgendaOpenagenda extends Model
 
     protected $table = 'agendas_openagenda';
 
-    protected $fillable = ['uid', 'nom', 'ville_id', 'officiel', 'dernier_evenement_le', 'frequence', 'actif', 'origine'];
+    protected $fillable = ['uid', 'nom', 'slug', 'ville_id', 'officiel', 'dernier_evenement_le', 'derniere_collecte_le', 'nb_evenements_a_venir', 'frequence', 'actif', 'origine'];
 
     protected function casts(): array
     {
         return [
             'officiel' => 'boolean',
             'dernier_evenement_le' => 'datetime',
+            'derniere_collecte_le' => 'datetime',
+            'nb_evenements_a_venir' => 'integer',
             'frequence' => FrequenceAgenda::class,
             'actif' => 'boolean',
             'origine' => OrigineAgenda::class,

@@ -4,6 +4,7 @@ use App\Collecte\Connecteurs\ConnecteurBilletReduc;
 use App\Collecte\Connecteurs\ConnecteurDatatourisme;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 use App\Collecte\Connecteurs\ConnecteurFnac;
+use App\Collecte\Connecteurs\ConnecteurOpenagenda;
 
 return [
     /*
@@ -16,6 +17,7 @@ return [
         'billetreduc' => ConnecteurBilletReduc::class,
         'fnac' => ConnecteurFnac::class,
         'datatourisme' => ConnecteurDatatourisme::class,
+        'openagenda' => ConnecteurOpenagenda::class,
     ],
 
     // Disque des fichiers bruts et durée de conservation (jours).
@@ -24,6 +26,10 @@ return [
 
     // Nouveaux essais après un échec : 15 min, 30 min, 1 h (F7.2).
     'delais_essais_secondes' => [900, 1800, 3600],
+
+    // Sources où un score nul (aucun signal) vaut « exclu », pas « à trier » (décisions de Patrick du 06/10/2026) :
+    // OpenAgenda (mots-clés libres, souvent absents), DATAtourisme (sans type de spectacle ni mot connu : visites, ventes…).
+    'score_nul_exclu' => ['openagenda', 'datatourisme'],
 
     // Rattachement des lieux (COLLECTE §4, F7.5).
     'rapprochement_lieux_metres' => 200,
