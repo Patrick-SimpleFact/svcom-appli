@@ -48,6 +48,12 @@ return [
         'adresse' => 'https://api.datatourisme.fr/v1',
     ],
 
+    // Ticketmaster : clé de l'API Discovery ; flux national d'un pays en un fichier (COLLECTE §3).
+    'ticketmaster' => [
+        'cle' => env('TICKETMASTER_CONSUMER_KEY'),
+        'flux' => 'https://app.ticketmaster.com/discovery-feed/v2/events.json',
+    ],
+
     'awin' => [
         'liste_flux' => env('AWIN_FEEDLIST_URL'),
     ],

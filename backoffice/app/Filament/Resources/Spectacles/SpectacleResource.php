@@ -59,6 +59,13 @@ class SpectacleResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with('genre')
                 ->withCount(['representations as a_venir' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())])
                 ->withCount(['offres as seances_collectees' => fn (Builder $q) => $q->whereNull('disparue_le')->whereDate('date_locale', '>=', today())])
+                // Lieux des représentations à venir : pour distinguer les homonymes (deux « Toc Toc », deux troupes).
+                ->selectSub(fn ($q) => $q->from('representations as r')->join('lieux as l', 'l.id', '=', 'r.lieu_id')->leftJoin('villes as v', 'v.id', '=', 'l.ville_id')
+                    ->whereColumn('r.spectacle_id', 'spectacles.id')->whereRaw('coalesce(r.date_fin, r.date_locale) >= current_date')
+                    ->selectRaw("string_agg(distinct l.nom || coalesce(' (' || v.nom || ')', ''), ' ; ')"), 'lieux_a_venir')
+                ->selectSub(fn ($q) => $q->from('representations as r')->join('lieux as l', 'l.id', '=', 'r.lieu_id')->leftJoin('villes as v', 'v.id', '=', 'l.ville_id')
+                    ->whereColumn('r.spectacle_id', 'spectacles.id')->whereRaw('coalesce(r.date_fin, r.date_locale) >= current_date')
+                    ->selectRaw("string_agg(distinct coalesce(v.nom, l.nom), ', ')"), 'villes_a_venir')
                 ->withMin(['representations as prochaine' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())], 'date_locale'))
             ->defaultSort('prochaine')
             ->columns([
@@ -66,6 +73,13 @@ class SpectacleResource extends Resource
                     ->wrap()
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->where('titre_normalise', 'like', '%'.Texte::normaliser($search).'%')),
                 TextColumn::make('genre.libelle')->label('Genre')->badge(),
+                TextColumn::make('lieux_a_venir')->label('Lieux')->wrap()->placeholder('—')
+                    ->formatStateUsing(function (?string $state, Spectacle $record): ?string {
+                        $lieux = $state === null ? [] : explode(' ; ', $state);
+
+                        return count($lieux) <= 1 ? $state : count($lieux).' lieux : '.mb_strimwidth((string) $record->villes_a_venir, 0, 60, '…');
+                    })
+                    ->tooltip(fn (Spectacle $record): ?string => $record->lieux_a_venir),
                 TextColumn::make('a_venir')->label('Représentations à venir')->numeric(),
                 TextColumn::make('seances_collectees')->label('Séances collectées')->numeric()->sortable(),
                 TextColumn::make('prochaine')->label('Prochaine')->date('d/m/Y')->sortable()->placeholder('—'),
