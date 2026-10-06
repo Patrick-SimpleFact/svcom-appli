@@ -89,7 +89,7 @@ class RattacherLieu
         [$position, $precision] = $this->positionSource($annonce, $ville);
 
         if ($position === null && filled($annonce->lieuAdresse)) {
-            $geocodage = $this->ban->geocoder($annonce->lieuAdresse, $annonce->lieuCodePostal, $annonce->lieuVille);
+            $geocodage = $this->ban->geocoder($annonce->lieuAdresse, $annonce->lieuCodePostal, $annonce->lieuVille, $ville?->code_insee);
 
             if ($geocodage !== null) {
                 [$position, $precision] = [$geocodage['position'], PrecisionPosition::Adresse];
