@@ -5,6 +5,7 @@ use App\Collecte\Connecteurs\ConnecteurDatatourisme;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 use App\Collecte\Connecteurs\ConnecteurFnac;
 use App\Collecte\Connecteurs\ConnecteurOpenagenda;
+use App\Collecte\Connecteurs\ConnecteurParisQfap;
 use App\Collecte\Connecteurs\ConnecteurTicketmaster;
 
 return [
@@ -20,6 +21,7 @@ return [
         'datatourisme' => ConnecteurDatatourisme::class,
         'openagenda' => ConnecteurOpenagenda::class,
         'ticketmaster' => ConnecteurTicketmaster::class,
+        'paris_qfap' => ConnecteurParisQfap::class,
     ],
 
     // Disque des fichiers bruts et durée de conservation (jours).

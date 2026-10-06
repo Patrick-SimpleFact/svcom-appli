@@ -33,7 +33,24 @@ class RepresentationsRelationManager extends RelationManager
                     ->state(fn (Representation $r): string => $r->debut?->setTimezone($r->lieu?->fuseau_horaire ?? 'Europe/Paris')->format('H:i') ?? ($r->date_fin ? '—' : 'à confirmer')),
                 TextColumn::make('lieu.nom')->label('Lieu')->wrap()->description(fn (Representation $r): ?string => $r->salle),
                 TextColumn::make('lieu.ville.nom')->label('Ville'),
+                TextColumn::make('prix')->label('Prix')
+                    ->state(fn (Representation $r): string => self::prix($r->prix_min, $r->prix_max, $r->gratuit))
+                    ->description(fn (Representation $r): ?string => $r->complet ? 'Complet' : null),
                 TextColumn::make('statut')->badge(),
             ]);
+    }
+
+    /** « 8 – 22 € », « 15 € », « Gratuit » ou « — ». */
+    public static function prix(mixed $min, mixed $max, bool $gratuit = false): string
+    {
+        if ($min === null && $max === null) {
+            return $gratuit ? 'Gratuit' : '—';
+        }
+
+        $format = fn ($p) => fmod((float) $p, 1.0) === 0.0 ? number_format((float) $p, 0, ',', ' ') : number_format((float) $p, 2, ',', ' ');
+        $min ??= $max;
+        $max ??= $min;
+
+        return (float) $min === (float) $max ? $format($min).' €' : $format($min).' – '.$format($max).' €';
     }
 }

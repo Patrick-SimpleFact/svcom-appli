@@ -6,6 +6,7 @@ use App\Collecte\ComparaisonLieux;
 use App\Enums\StatutRepresentation;
 use App\Enums\TypeRepresentation;
 use App\Models\Collecte;
+use App\Models\Genre;
 use App\Models\Offre;
 use App\Models\Representation;
 use App\Models\Source;
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\DB;
 class PublierSource
 {
     private const RANG_FIABILITE = ['elevee' => 3, 'moyenne' => 2, 'faible' => 1];
+
+    private ?int $genreAutres = null;
 
     /** Paquets d'identifiants : PostgreSQL limite une requête à 65 535 paramètres. */
     private const TAILLE_PAQUET = 5000;
@@ -252,10 +255,23 @@ class PublierSource
             'image_url' => $spectacle->image_url ?? $image,
         ], fn ($v, string $champ) => $v !== null && ! $spectacle->estVerrouille($champ), ARRAY_FILTER_USE_BOTH);
 
+        // Classé « Autres » faute de mieux par sa 1re source : prend le genre qu'une autre de ses sources sait donner.
+        $autres = $this->genreAutres ??= Genre::where('slug', 'autres')->value('id');
+        $meilleurGenre = $offres->pluck('genre_id')->filter(fn ($g) => $g !== null && $g !== $autres)->countBy()->sortDesc()->keys()->first();
+
+        if ($spectacle->genre_id === $autres && $meilleurGenre !== null && ! $spectacle->estVerrouille('genre_id')) {
+            $valeurs['genre_id'] = $meilleurGenre;
+        }
+
         $spectacle->fill($valeurs);
 
         if ($spectacle->isDirty()) {
-            $spectacle->save();
+            // Mise à jour automatique : sans verrouillage ni journal, même lancée depuis le back-office.
+            $spectacle->saveQuietly();
+
+            if ($spectacle->wasChanged('genre_id')) {
+                $spectacle->representations()->update(['genre_id' => $spectacle->genre_id]);
+            }
         }
     }
 }

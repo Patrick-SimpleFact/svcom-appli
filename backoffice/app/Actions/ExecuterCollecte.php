@@ -12,6 +12,7 @@ use App\Models\Collecte;
 use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Source;
+use App\Support\Horizon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -69,7 +70,8 @@ class ExecuterCollecte
             $dedoublonner = app(DedoublonnerOffre::class); // idem : lieux proches calculés une fois
             $rattacherSpectacle = app(RattacherSpectacle::class);
             $offresARepublier = [];
-            $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0];
+            $compteurs = ['nb_recus' => 0, 'nb_illisibles' => 0, 'nb_retenus' => 0, 'nb_exclus' => 0, 'nb_a_trier' => 0, 'nb_hors_horizon' => 0];
+            $horizon = Horizon::dateLimite(); // séances au-delà : ni enregistrées ni publiées
 
             // Écritures groupées par lots (une transaction pour 500 annonces) : bien plus rapide sur les gros flux.
             $niveau = DB::transactionLevel();
@@ -90,6 +92,12 @@ class ExecuterCollecte
                 }
 
                 $compteurs['nb_recus']++;
+
+                if ($horizon !== null && $element->debut->gt($horizon)) {
+                    $compteurs['nb_hors_horizon']++;
+
+                    continue;
+                }
 
                 $issue = $trier->handle($element, $source);
                 $compteurs[match ($issue) {

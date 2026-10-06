@@ -8,7 +8,8 @@ use App\Models\Source;
 use Illuminate\Database\Seeder;
 
 /**
- * Correspondances de départ des types de l'ontologie DATAtourisme vers les genres de l'app (N03).
+ * Correspondances de départ vers les genres de l'app, pour les sources aux catégories propres et peu nombreuses :
+ * types de l'ontologie DATAtourisme (N03), étiquettes de Que faire à Paris (N06).
  * Modifiables dans le BO ; relancer ce seeder n'écrase rien.
  */
 class CorrespondancesGenresSeeder extends Seeder
@@ -25,17 +26,29 @@ class CorrespondancesGenresSeeder extends Seeder
         'StreetArtShow' => 'autres',
     ];
 
+    public const PARIS_QFAP = [
+        'Théâtre' => 'theatre',
+        'Concert' => 'concert',
+        'Danse' => 'danse',
+        'Humour' => 'humour',
+        'Cirque' => 'cirque-magie',
+        'Spectacle musical' => 'comedie-musicale-cabaret',
+    ];
+
     public function run(): void
     {
-        $source = Source::firstWhere('code', 'datatourisme');
         $genres = Genre::pluck('id', 'slug');
 
-        if ($source === null) {
-            return;
-        }
+        foreach (['datatourisme' => self::DATATOURISME, 'paris_qfap' => self::PARIS_QFAP] as $code => $correspondances) {
+            $source = Source::firstWhere('code', $code);
 
-        foreach (self::DATATOURISME as $categorie => $genre) {
-            CorrespondanceGenre::firstOrCreate(['source_id' => $source->id, 'categorie_source' => $categorie], ['genre_id' => $genres[$genre]]);
+            if ($source === null) {
+                continue;
+            }
+
+            foreach ($correspondances as $categorie => $genre) {
+                CorrespondanceGenre::firstOrCreate(['source_id' => $source->id, 'categorie_source' => $categorie], ['genre_id' => $genres[$genre]]);
+            }
         }
     }
 }

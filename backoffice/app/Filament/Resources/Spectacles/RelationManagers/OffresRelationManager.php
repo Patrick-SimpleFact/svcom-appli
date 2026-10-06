@@ -39,6 +39,13 @@ class OffresRelationManager extends RelationManager
                 TextColumn::make('lieu.nom')->label('Lieu')->wrap(),
                 TextColumn::make('lieu.ville.nom')->label('Ville')->placeholder('—'),
                 TextColumn::make('source.nom')->label('Billetterie'),
+                TextColumn::make('prix')->label('Prix')
+                    ->state(fn (Offre $o): string => RepresentationsRelationManager::prix($o->prix_min, $o->prix_max, (bool) ($o->donnees_normalisees['gratuit'] ?? false)))
+                    ->description(fn (Offre $o): ?string => $o->complet ? 'Complet' : null),
+                TextColumn::make('lien')->label('Réservation')
+                    ->state(fn (Offre $o): ?string => $o->lien ? 'Réserver ↗' : null)->placeholder('—')
+                    ->url(fn (Offre $o): ?string => $o->lien, shouldOpenInNewTab: true)
+                    ->color('primary'),
                 TextColumn::make('donnees_normalisees.titre')->label('Titre chez la source')->wrap(),
                 TextColumn::make('disparue_le')->label('Disparue le')->dateTime('d/m/Y H:i', 'Europe/Paris')->placeholder('—'),
                 TextColumn::make('seance')->label('Séance')

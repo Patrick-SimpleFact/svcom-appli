@@ -56,9 +56,9 @@ it('relance une version dont la collecte avait échoué', function () {
 
 it('ignore les sources désactivées et celles dont le connecteur n’est pas écrit', function () {
     $this->seed(SourcesSeeder::class);
-    // Seules restent actives : la source factice, désactivée ici, et Que faire à Paris, sans connecteur (N06).
-    Source::where('code', '!=', 'paris_qfap')->update(['actif' => false]);
-    Source::where('code', 'paris_qfap')->update(['actif' => true]);
+    // Seule reste active une source dont le connecteur n'est pas écrit (les six sources en ont un depuis N06).
+    Source::query()->update(['actif' => false]);
+    Source::create(['code' => 'sans_connecteur', 'nom' => 'Source future', 'type_acces' => TypeAccesSource::Api, 'licence' => '—', 'type_lien' => TypeLienSource::Direct, 'actif' => true]);
 
     expect(app(DetecterMisesAJour::class)->handle())->toBe([]);
     Queue::assertNothingPushed();

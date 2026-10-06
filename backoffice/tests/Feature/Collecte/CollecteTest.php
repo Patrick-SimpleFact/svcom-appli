@@ -3,6 +3,8 @@
 use App\Actions\ExecuterCollecte;
 use App\Collecte\AnnonceNormalisee;
 use App\Enums\StatutCollecte;
+use App\Enums\TypeAccesSource;
+use App\Enums\TypeLienSource;
 use App\Filament\Resources\Sources\Pages\ViewSource;
 use App\Jobs\CollecterSource;
 use App\Models\Admin;
@@ -116,7 +118,8 @@ it('lance une collecte depuis le back-office, et désactive le bouton sans conne
     Queue::assertPushed(CollecterSource::class, fn ($tache) => $tache->source->is($this->source));
     expect($this->source->fresh()->config['simuler_echec'])->toBeTrue();
 
-    Livewire::test(ViewSource::class, ['record' => Source::firstWhere('code', 'paris_qfap')->getKey()]) // pas encore de connecteur (N06)
+    $sansConnecteur = Source::create(['code' => 'sans_connecteur', 'nom' => 'Source future', 'type_acces' => TypeAccesSource::Api, 'licence' => '—', 'type_lien' => TypeLienSource::Direct, 'actif' => true]);
+    Livewire::test(ViewSource::class, ['record' => $sansConnecteur->getKey()]) // les six sources ont un connecteur depuis N06
         ->assertActionDisabled('lancer');
 
     $this->get('/admin/collectes')->assertOk();

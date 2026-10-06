@@ -4,9 +4,12 @@ use App\Actions\EntretenirCatalogue;
 use App\Actions\ExecuterCollecte;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 use App\Collecte\RegistreConnecteurs;
+use App\Enums\StatutCollecte;
 use App\Enums\StatutRepresentation;
 use App\Models\Admin;
+use App\Models\Collecte;
 use App\Models\Offre;
+use App\Models\Parametre;
 use App\Models\Representation;
 use App\Models\Source;
 use App\Models\Spectacle;
@@ -177,4 +180,31 @@ it('lance l’entretien en commande et affiche les retraits dans « Collectes »
 
     $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
     $this->get('/admin/collectes')->assertOk()->assertSee('Retirées');
+});
+
+it('marque interrompue une collecte restée « en cours » au-delà de sa durée maximale', function () {
+    $orpheline = Collecte::create(['source_id' => $this->bis->id, 'debut' => now()->subHours(5), 'statut' => StatutCollecte::EnCours]);
+    $recente = Collecte::create(['source_id' => $this->bis->id, 'debut' => now()->subHour(), 'statut' => StatutCollecte::EnCours]);
+
+    expect(app(EntretenirCatalogue::class)->handle()['collectes_interrompues'])->toBe(1)
+        ->and($orpheline->fresh()->statut)->toBe(StatutCollecte::Echouee)
+        ->and($recente->fresh()->statut)->toBe(StatutCollecte::EnCours);
+});
+
+it('supprime les séances au-delà d’un horizon réduit, sauf une représentation corrigée à la main', function () {
+    $lointaine = ($this->offre)('F-9');               // dans 4 jours
+    $lointaine->update(['date_locale' => '2027-06-15']);
+    // Écrit directement : le modèle recalculerait la date à partir de l'heure.
+    Representation::whereKey($lointaine->representation_id)->update(['date_locale' => '2027-06-15']);
+    $corrigee = ($this->offre)('F-6')->representation;
+    Representation::whereKey($corrigee->id)->update(['date_locale' => '2027-06-20', 'champs_verrouilles' => json_encode(['debut'])]);
+    Offre::where('representation_id', $corrigee->id)->update(['date_locale' => '2027-06-20']);
+    Parametre::firstWhere('cle', 'horizon_mois')->update(['valeur' => 6]); // → 30/04/2027
+
+    $resultat = app(EntretenirCatalogue::class)->handle();
+
+    expect($resultat['hors_horizon_supprimees'])->toBeGreaterThanOrEqual(1)
+        ->and(Offre::find($lointaine->id))->toBeNull()
+        ->and(Representation::find($lointaine->representation_id))->toBeNull()
+        ->and(Representation::find($corrigee->id))->not->toBeNull(); // corrigée à la main : gardée
 });

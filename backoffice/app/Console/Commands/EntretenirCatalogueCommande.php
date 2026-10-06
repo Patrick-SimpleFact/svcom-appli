@@ -20,7 +20,7 @@ class EntretenirCatalogueCommande extends Command
 
         $muettes = $resultat['sources_muettes'] === [] ? 'aucune' : implode(', ', $resultat['sources_muettes']);
         $this->info("Sources muettes : {$muettes} ({$resultat['nb_retires']} représentations retirées).");
-        $this->info("Historique : {$resultat['offres_supprimees']} offres supprimées. Spectacles vides supprimés : {$resultat['spectacles_supprimes']}.");
+        $this->info("Historique : {$resultat['offres_supprimees']} offres supprimées. Spectacles vides supprimés : {$resultat['spectacles_supprimes']}. Collectes interrompues : {$resultat['collectes_interrompues']}. Séances au-delà de l’horizon supprimées : {$resultat['hors_horizon_supprimees']}.");
 
         return self::SUCCESS;
     }
