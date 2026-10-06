@@ -3,8 +3,8 @@
 namespace App\Collecte\Connecteurs;
 
 use App\Collecte\AnnonceNormalisee;
+use App\Collecte\CollecteParIntervalle;
 use App\Collecte\Connecteur;
-use App\Collecte\DetecteVersion;
 use App\Collecte\LigneIllisible;
 use App\Models\Source;
 use Carbon\CarbonImmutable;
@@ -14,179 +14,232 @@ use RuntimeException;
 use Throwable;
 
 /**
- * DATAtourisme (export national des « fêtes et manifestations » publié chaque nuit sur data.gouv.fr, Licence Ouverte,
- * sans compte, COLLECTE §3). Pas d'horaires, seulement des périodes de dates :
- * - un jour isolé → une annonce du jour (« horaire à confirmer ») ;
- * - plusieurs jours → une seule annonce « période » (du … au …, décision de Patrick du 06/10/2026), quelle que soit
- *   sa durée : une période ne prend qu'une ligne (Patrick, 06/10 : les périodes de plus d'un an sont publiées aussi).
- * L'adresse du fichier change chaque jour : on la retrouve par l'API data.gouv.fr.
+ * DATAtourisme par son API REST (api.datatourisme.fr, clé reçue le 06/10/2026, étape N03b) : contrairement à l'export
+ * data.gouv.fr, elle donne l'heure des séances (≈ 9 sur 10), le prix et souvent le lien de réservation.
+ * On ne demande que les événements de spectacle à venir (≈ 18 000, ≈ 180 requêtes pour 1 000 autorisées par heure).
+ * Pour chaque créneau :
+ * - avec heure : une séance par jour du créneau (jusqu'à 31 jours ; au-delà, une période) ;
+ * - sans heure : un jour isolé → « horaire à confirmer » ; plusieurs jours → une seule « période » (décision du 06/10).
+ * L'API n'annonce pas de version : une collecte par jour, tôt le matin.
  */
-class ConnecteurDatatourisme implements Connecteur, DetecteVersion
+class ConnecteurDatatourisme implements CollecteParIntervalle, Connecteur
 {
-    public const JEU_DE_DONNEES = 'https://www.data.gouv.fr/api/1/datasets/5b598be088ee387c0c353714/';
-
-    private const RESSOURCE = 'datatourisme-fma.csv';
-
     private const FUSEAU = 'Europe/Paris';
 
-    /** Types de l'ontologie qui relèvent du spectacle vivant (POC). */
+    private const SEANCES_QUOTIDIENNES_MAX_JOURS = 31;
+
+    /** Types de l'ontologie qui relèvent du spectacle vivant (ceux demandés à l'API). */
     private const TYPES_SPECTACLE = ['ShowEvent', 'TheaterEvent', 'Concert', 'DanceEvent', 'CircusEvent', 'Opera', 'ComedyEvent', 'Recital',
         'StreetArtShow', 'PuppetShow', 'Festival', 'MusicEvent'];
 
-    /** Types de l'ontologie trop généraux pour dire quoi que ce soit du genre. */
-    private const TYPES_GENERIQUES = ['Event', 'EntertainmentAndEvent', 'PointOfInterest', 'CulturalEvent', 'Product', 'PlaceOfInterest'];
+    private const CHAMPS = 'uuid,label,type,takesPlaceAt,offers,hasBookingContact,hasContact,isLocatedAt,hasDescription,hasMainRepresentation,lastUpdate';
 
-    public function versionDisponible(Source $source): ?string
+    public function intervalleHeures(): int
     {
-        return $this->ressource()['last_modified'] ?? null;
+        return 24;
     }
 
-    public function telecharger(Source $source): string
+    /** @return array{0: int, 1: int} */
+    public function plageHoraire(): array
     {
-        $reponse = Http::timeout(600)->retry(2, 5000, throw: false)->get($this->ressource()['url']);
-
-        if (! $reponse->successful()) {
-            throw new RuntimeException("Téléchargement de l'export DATAtourisme impossible ({$reponse->status()}).");
-        }
-
-        return $reponse->body();
+        return [5, 9];
     }
 
     public function extensionBrut(): string
     {
-        return 'csv';
+        return 'json';
+    }
+
+    /** Toutes les pages de spectacles à venir, conservées telles quelles (une page par ligne). */
+    public function telecharger(Source $source): string
+    {
+        $cle = config('services.datatourisme.cle');
+
+        if (blank($cle)) {
+            throw new RuntimeException('Clé de l’API DATAtourisme absente (DATATOURISME_API_KEY).');
+        }
+
+        $adresse = config('services.datatourisme.adresse').'/entertainmentAndEvent?'.http_build_query([
+            'filters' => 'type[in]='.implode(',', self::TYPES_SPECTACLE).' AND takesPlaceAt.endDate[gte]='.CarbonImmutable::today(self::FUSEAU)->format('Y-m-d'),
+            'page_size' => 100,
+            'lang' => 'fr',
+            'fields' => self::CHAMPS,
+        ]);
+        $pages = [];
+
+        while ($adresse !== null) {
+            $reponse = Http::withHeaders(['X-API-Key' => $cle])->timeout(60)->retry(3, 3000, throw: false)->get($adresse);
+
+            if (! $reponse->successful()) {
+                throw new RuntimeException("API DATAtourisme : erreur {$reponse->status()} (page ".(count($pages) + 1).').');
+            }
+
+            $pages[] = json_encode($reponse->json('objects', []), JSON_UNESCAPED_UNICODE);
+            $adresse = $reponse->json('meta.next');
+        }
+
+        return implode("\n", $pages);
     }
 
     public function lire(string $contenuBrut, Source $source): iterable
     {
-        $flux = fopen('php://temp', 'r+');
-        fwrite($flux, $contenuBrut);
-        rewind($flux);
-
-        $entetes = fgetcsv($flux, separator: ',', enclosure: '"', escape: '');
-        $entetes[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $entetes[0]);
-        $numero = 1;
-
-        while (($valeurs = fgetcsv($flux, separator: ',', enclosure: '"', escape: '')) !== false) {
-            $numero++;
-
-            if ($valeurs === [null]) {
-                continue;
-            }
-
-            if (count($valeurs) !== count($entetes)) {
-                yield new LigneIllisible("Ligne {$numero} : nombre de colonnes incorrect.");
-
-                continue;
-            }
-
-            $ligne = array_combine($entetes, $valeurs);
-
-            try {
-                foreach ($this->annonces($ligne) as $annonce) {
-                    yield $annonce;
+        foreach (explode("\n", $contenuBrut) as $page) {
+            foreach (json_decode($page, true) ?? [] as $evenement) {
+                try {
+                    foreach ($this->annonces($evenement) as $annonce) {
+                        yield $annonce;
+                    }
+                } catch (InvalidArgumentException|Throwable $erreur) {
+                    yield new LigneIllisible('Événement '.($evenement['uuid'] ?? '?').' : '.$erreur->getMessage(), $evenement['uuid'] ?? null);
                 }
-            } catch (InvalidArgumentException|Throwable $erreur) {
-                yield new LigneIllisible("Ligne {$numero} : ".$erreur->getMessage(), $ligne['URI_ID_du_POI'] ?? null);
             }
         }
-
-        fclose($flux);
     }
 
-    /** @return iterable<AnnonceNormalisee> une par jour isolé ou par période */
-    private function annonces(array $ligne): iterable
+    /** @return iterable<AnnonceNormalisee> */
+    private function annonces(array $evenement): iterable
     {
-        $uri = trim($ligne['URI_ID_du_POI'] ?? '');
-        $identifiant = basename($uri);
-        [$codePostal, $commune] = array_pad(explode('#', $ligne['Code_postal_et_commune'] ?? '', 2), 2, '');
+        $uuid = (string) $evenement['uuid'];
         $aujourdhui = CarbonImmutable::today(self::FUSEAU);
-        preg_match('/https?:\/\/[^\s<>#|]+/', $ligne['Contacts_du_POI'] ?? '', $lien);
-
         $commun = [
-            'identifiantSpectacle' => $identifiant,
-            'titre' => trim($ligne['Nom_du_POI'] ?? ''),
-            'heureConnue' => false,
-            'lien' => $lien[0] ?? $uri, // « Plus d'infos » : site de l'organisateur, sinon la fiche DATAtourisme
-            'lieuNom' => null,
-            'lieuAdresse' => trim($ligne['Adresse_postale'] ?? '') ?: null,
-            'lieuCodePostal' => preg_match('/\b\d{5}\b/', $codePostal, $cp) ? $cp[0] : null, // parfois plusieurs codes ou du texte
-            'lieuVille' => trim($commune) ?: null,
-            'lieuLatitude' => is_numeric($ligne['Latitude'] ?? null) ? (float) $ligne['Latitude'] : null,
-            'lieuLongitude' => is_numeric($ligne['Longitude'] ?? null) ? (float) $ligne['Longitude'] : null,
-            'categoriesSource' => $this->types($ligne['Categories_de_POI'] ?? ''),
-            'description' => trim(strip_tags($ligne['Description'] ?? '')) ?: null,
-            'misAJourSource' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $ligne['Date_de_mise_a_jour'] ?? '') ? CarbonImmutable::parse($ligne['Date_de_mise_a_jour'], self::FUSEAU) : null,
+            'identifiantSpectacle' => $uuid,
+            'titre' => trim((string) ($evenement['label']['@fr'] ?? reset($evenement['label']) ?: '')),
+            'lien' => $this->lien($evenement) ?? 'https://data.datatourisme.fr/'.$uuid,
+            ...$this->lieu($evenement),
+            'categoriesSource' => $this->types($evenement['type'] ?? []),
+            'description' => $this->description($evenement),
+            'imageUrl' => $evenement['hasMainRepresentation'][0]['hasRelatedResource'][0]['locator'][0] ?? null,
+            ...$this->prix($evenement),
+            'misAJourSource' => isset($evenement['lastUpdate']) ? CarbonImmutable::parse($evenement['lastUpdate'], self::FUSEAU) : null,
         ];
-
-        // Sans adresse, le lieu est la commune elle-même.
-        $commun['lieuAdresse'] ??= $commun['lieuVille'];
-
         $deja = [];
 
-        foreach (array_filter(explode('|', $ligne['Periodes_regroupees'] ?? '')) as $periode) {
-            [$debut, $fin] = array_pad(explode('<->', $periode, 2), 2, '');
+        foreach ($evenement['takesPlaceAt'] ?? [] as $creneau) {
+            $debut = CarbonImmutable::parse($creneau['startDate'], self::FUSEAU)->startOfDay();
+            $fin = CarbonImmutable::parse($creneau['endDate'] ?? $creneau['startDate'], self::FUSEAU)->startOfDay();
+            $heure = $creneau['startTime'] ?? null;
 
-            try {
-                $debut = CarbonImmutable::parse($debut, self::FUSEAU)->startOfDay();
-                $fin = $fin !== '' ? CarbonImmutable::parse($fin, self::FUSEAU)->startOfDay() : $debut;
-            } catch (Throwable) {
+            if ($fin->lt($aujourdhui)) {
                 continue;
             }
 
-            if ($fin->lt($aujourdhui)) {
-                continue; // passée
+            $jours = $debut->diffInDays($fin) + 1;
+
+            if ($heure !== null && $jours <= self::SEANCES_QUOTIDIENNES_MAX_JOURS) {
+                // Une séance par jour du créneau, à l'heure donnée.
+                for ($jour = $debut->max($aujourdhui); $jour->lte($fin); $jour = $jour->addDay()) {
+                    $seance = CarbonImmutable::parse($jour->format('Y-m-d').' '.$heure, self::FUSEAU);
+                    $cle = $seance->format('Y-m-d\TH:i');
+                    if (! isset($deja[$cle])) {
+                        $deja[$cle] = true;
+                        yield new AnnonceNormalisee(...[...$commun, 'identifiantExterne' => "{$uuid}@{$cle}", 'debut' => $seance, 'heureConnue' => true]);
+                    }
+                }
+
+                continue;
             }
 
             $cle = $debut->format('Y-m-d').($fin->gt($debut) ? '..'.$fin->format('Y-m-d') : '');
-
-            if (isset($deja[$cle])) {
-                continue; // périodes en double dans le même événement
+            if (! isset($deja[$cle])) {
+                $deja[$cle] = true;
+                yield new AnnonceNormalisee(...[...$commun, 'identifiantExterne' => "{$uuid}@{$cle}", 'debut' => $debut, 'heureConnue' => false, 'fin' => $fin->gt($debut) ? $fin : null]);
             }
-
-            $deja[$cle] = true;
-
-            yield new AnnonceNormalisee(...[
-                ...$commun,
-                'identifiantExterne' => $identifiant.'@'.$cle,
-                'debut' => $debut,
-                'fin' => $fin->gt($debut) ? $fin : null,
-            ]);
         }
     }
 
     /**
-     * « https://www.datatourisme.fr/ontology/core#TheaterEvent|… » → ['TheaterEvent', …] sans les types trop généraux.
-     * Les types sont souvent cumulés à tort (« Magic Show » : TheaterEvent + SportsEvent) : dès qu'un type de spectacle
-     * est présent, seuls les types de spectacle (et ChildrensEvent, pour le jeune public) sont transmis au tri.
+     * Lieu : la première ligne de l'adresse est souvent le nom de la salle (« TMP - Théâtre Municipal Pazenais »,
+     * puis « 7 rue du Ballon »).
      */
-    private function types(string $categories): array
+    private function lieu(array $evenement): array
     {
-        $types = array_map(fn (string $t) => (string) preg_replace('/^.*[#\/]/', '', trim($t)), explode('|', $categories));
-        $types = array_values(array_unique(array_filter($types, fn (string $t) => $t !== '' && ! in_array($t, self::TYPES_GENERIQUES, true))));
+        $lieu = $evenement['isLocatedAt'][0] ?? [];
+        $adresse = $lieu['address'][0] ?? [];
+        $lignes = array_values(array_filter(array_map('trim', (array) ($adresse['streetAddress'] ?? []))));
+        $nom = null;
 
-        if (array_intersect($types, self::TYPES_SPECTACLE) !== []) {
-            $types = array_values(array_filter($types, fn (string $t) => in_array($t, [...self::TYPES_SPECTACLE, 'ChildrensEvent'], true)));
+        if (count($lignes) >= 2 && ! preg_match('/^\d/', $lignes[0])) {
+            $nom = array_shift($lignes);
+        } elseif (count($lignes) === 1 && ! preg_match('/\d/', $lignes[0])) {
+            $nom = array_shift($lignes); // une seule ligne sans numéro : un nom de salle (« Cinéma Le Doron »)
         }
 
-        return $types;
+        $ville = $adresse['addressLocality'] ?? ($adresse['hasAddressCity']['label']['@fr'] ?? null);
+
+        return [
+            'lieuNom' => $nom,
+            'lieuAdresse' => $lignes !== [] ? implode(', ', $lignes) : ($nom === null ? $ville : null),
+            'lieuCodePostal' => preg_match('/\b\d{5}\b/', (string) ($adresse['postalCode'] ?? ''), $cp) ? $cp[0] : null,
+            'lieuVille' => $ville,
+            'lieuLatitude' => is_numeric($lieu['geo']['latitude'] ?? null) ? (float) $lieu['geo']['latitude'] : null,
+            'lieuLongitude' => is_numeric($lieu['geo']['longitude'] ?? null) ? (float) $lieu['geo']['longitude'] : null,
+        ];
     }
 
-    /** La ressource « datatourisme-fma.csv » de la fiche data.gouv.fr (adresse du jour et date de mise à jour). */
-    private function ressource(): array
+    /** Lien de réservation, sinon site de l'organisateur. */
+    private function lien(array $evenement): ?string
     {
-        $reponse = Http::timeout(60)->retry(2, 2000, throw: false)->get(self::JEU_DE_DONNEES);
-
-        if (! $reponse->successful()) {
-            throw new RuntimeException("Fiche DATAtourisme inaccessible sur data.gouv.fr ({$reponse->status()}).");
+        foreach ([$evenement['hasBookingContact'] ?? [], $evenement['hasContact'] ?? []] as $contacts) {
+            foreach ((array) $contacts as $contact) {
+                foreach ((array) ($contact['homepage'] ?? []) as $site) {
+                    if (is_string($site) && str_starts_with($site, 'http')) {
+                        return $site;
+                    }
+                }
+            }
         }
 
-        $ressource = collect($reponse->json('resources', []))->firstWhere('title', self::RESSOURCE);
+        return null;
+    }
 
-        if ($ressource === null) {
-            throw new RuntimeException('Ressource « '.self::RESSOURCE.' » introuvable sur data.gouv.fr.');
+    /** @return array{prixMin: ?float, prixMax: ?float, gratuit: bool} */
+    private function prix(array $evenement): array
+    {
+        $prix = [];
+        $gratuit = false;
+
+        foreach ($evenement['offers'] ?? [] as $offre) {
+            foreach ($offre['priceSpecification'] ?? [] as $tarif) {
+                foreach (['minPrice', 'maxPrice'] as $champ) {
+                    foreach ((array) ($tarif[$champ] ?? []) as $valeur) {
+                        if (is_numeric($valeur)) {
+                            $prix[] = (float) $valeur;
+                        }
+                    }
+                }
+
+                // Le minimum n'est parfois que dans le texte : « De 8€ à 16€ ».
+                $texte = implode(' ', array_filter((array) ($tarif['additionalInformation']['@fr'] ?? []), 'is_string')); // parfois une liste
+                preg_match_all('/(\d+(?:[.,]\d+)?)\s*€/u', $texte, $montants);
+                foreach ($montants[1] as $montant) {
+                    $prix[] = (float) str_replace(',', '.', $montant);
+                }
+                $gratuit = $gratuit || str_contains(mb_strtolower(json_encode($tarif, JSON_UNESCAPED_UNICODE)), 'gratuit');
+            }
         }
 
-        return $ressource;
+        $payants = array_values(array_filter($prix, fn (float $p) => $p > 0));
+
+        return [
+            'prixMin' => $payants === [] ? null : min($payants),
+            'prixMax' => $payants === [] ? null : max($payants),
+            'gratuit' => $payants === [] && ($gratuit || $prix !== []),
+        ];
+    }
+
+    private function description(array $evenement): ?string
+    {
+        $texte = $evenement['hasDescription'][0]['shortDescription']['@fr'] ?? $evenement['hasDescription'][0]['description']['@fr'] ?? null;
+        $texte = $texte !== null ? trim(html_entity_decode(strip_tags(str_replace(['</p>', '<br>', '<br/>'], "\n", $texte)), ENT_QUOTES | ENT_HTML5)) : null;
+
+        return $texte ?: null;
+    }
+
+    /** Types transmis au tri : les types de spectacle (et ChildrensEvent pour le jeune public), comme en N03. */
+    private function types(array $types): array
+    {
+        $types = array_values(array_unique(array_map(fn ($t) => (string) preg_replace('/^.*[#\/]/', '', (string) $t), $types)));
+
+        return array_values(array_filter($types, fn (string $t) => in_array($t, [...self::TYPES_SPECTACLE, 'ChildrensEvent'], true)));
     }
 }

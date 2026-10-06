@@ -222,3 +222,19 @@ it('ne prend pas pour une troupe le titre donné comme « artiste » par la Fnac
     $e = ($this->seance)($this->fnac, 'FN-3', 'Le Flocon magique', $this->marseille, '2026-12-22 15:00', artistes: ['Le Flocon Magique']);
     expect($e->spectacle_id)->toBe($b->spectacle_id); // seul « artiste » = le titre : comme inconnu, même billetterie → regroupé
 });
+
+it('montre toutes les annonces dans « Séances collectées », et isole les actives ou les disparues', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Edmond', $this->avignon);
+    $b = ($this->seance)($this->fnac, 'FN-1', 'Edmond', $this->avignon, '2026-10-18 20:30');
+    $b->update(['disparue_le' => now()]);
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    Livewire::test(OffresRelationManager::class, ['ownerRecord' => $a->spectacle, 'pageClass' => ViewSpectacle::class])
+        ->assertCanSeeTableRecords([$a, $b])
+        ->filterTable('etat', 'actives')
+        ->assertCanSeeTableRecords([$a])
+        ->assertCanNotSeeTableRecords([$b])
+        ->filterTable('etat', 'disparues')
+        ->assertCanSeeTableRecords([$b])
+        ->assertCanNotSeeTableRecords([$a]);
+});

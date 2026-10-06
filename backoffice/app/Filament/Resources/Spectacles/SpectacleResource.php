@@ -58,7 +58,7 @@ class SpectacleResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with('genre')
                 ->withCount(['representations as a_venir' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())])
-                ->withCount(['offres as seances_collectees' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())])
+                ->withCount(['offres as seances_collectees' => fn (Builder $q) => $q->whereNull('disparue_le')->whereDate('date_locale', '>=', today())])
                 ->withMin(['representations as prochaine' => fn (Builder $q) => $q->whereDate('date_locale', '>=', today())], 'date_locale'))
             ->defaultSort('prochaine')
             ->columns([
