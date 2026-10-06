@@ -8,6 +8,7 @@ use App\Enums\FileATraiter;
 use App\Enums\IssueFiltrage;
 use App\Enums\StatutElement;
 use App\Enums\TypeRegleFiltrage;
+use App\Filament\Resources\ATrier\Pages\ListATrier;
 use App\Filament\Resources\ReglesFiltrage\Pages\ManageReglesFiltrage;
 use App\Models\Admin;
 use App\Models\ElementATraiter;
@@ -19,6 +20,7 @@ use Database\Seeders\MotsGenresSeeder;
 use Database\Seeders\ParametresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
+use Database\Seeders\SourcesSeeder;
 use Filament\Actions\CreateAction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -142,4 +144,26 @@ it('affiche les écrans « Mots de tri » et « À trier »', function () {
 
     $this->get('/admin/mots-de-tri')->assertOk()->assertSee('bibliotheque');
     $this->get('/admin/a-trier')->assertOk()->assertSee('Edmond')->assertSee('Démonstration (factice)');
+});
+
+it('filtre « À trier » par source, garde une annonce et exclut une sélection depuis le back-office', function () {
+    $this->seed(SourcesSeeder::class);
+    $fnac = Source::firstWhere('code', 'fnac');
+    app(TrierAnnonce::class)->handle(annonce('Edmond', id: 'A-1'), $this->source);
+    app(TrierAnnonce::class)->handle(annonce('Soirée surprise', id: 'A-2'), $fnac);
+    app(TrierAnnonce::class)->handle(annonce('Le grand soir', id: 'A-3'), $fnac);
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+    $element = fn (string $titre) => ElementATraiter::where('file', FileATraiter::ATrier)->where('donnees->titre', $titre)->sole();
+
+    Livewire::test(ListATrier::class)
+        ->filterTable('source', $fnac->id)
+        ->assertCanSeeTableRecords([$element('Soirée surprise'), $element('Le grand soir')])
+        ->assertCanNotSeeTableRecords([$element('Edmond')])
+        ->callTableAction('garder', $element('Soirée surprise'))
+        ->callTableBulkAction('exclureSelection', [$element('Le grand soir')]);
+
+    expect($element('Soirée surprise')->decision['issue'])->toBe('garde')
+        ->and($element('Le grand soir')->decision['issue'])->toBe('exclu')
+        // la collecte suivante respecte la décision
+        ->and(app(TrierAnnonce::class)->handle(annonce('Soirée surprise', id: 'A-2'), $fnac))->toBe(IssueFiltrage::Garde);
 });

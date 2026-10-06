@@ -56,7 +56,9 @@ it('relance une version dont la collecte avait échoué', function () {
 
 it('ignore les sources désactivées et celles dont le connecteur n’est pas écrit', function () {
     $this->seed(SourcesSeeder::class);
-    $this->source->update(['actif' => false]);
+    // Seules restent actives : la source factice, désactivée ici, et Ticketmaster, sans connecteur (N05).
+    Source::where('code', '!=', 'ticketmaster')->update(['actif' => false]);
+    Source::where('code', 'ticketmaster')->update(['actif' => true]);
 
     expect(app(DetecterMisesAJour::class)->handle())->toBe([]);
     Queue::assertNothingPushed();
