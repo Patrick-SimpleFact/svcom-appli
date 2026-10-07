@@ -7,7 +7,10 @@ use App\Enums\FileATraiter;
 use App\Enums\IssueFiltrage;
 use App\Enums\StatutElement;
 use App\Filament\Resources\ATrier\Pages\ListATrier;
+use App\Filament\Resources\ReglesFiltrage\RegleFiltrageResource;
+use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
+use App\Models\RegleFiltrage;
 use App\Models\Source;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -60,9 +63,11 @@ class ATrierResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('id', 'desc')
+            ->defaultSort(fn (Builder $query) => Urgence::trier($query))
             ->paginated([25, 50, 100])
             ->columns([
+                Urgence::colonneUrgence(),
+                Urgence::colonneEcheance(),
                 TextColumn::make('donnees.titre')->label('Titre')->wrap()
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->where('donnees->titre', 'ilike', '%'.$search.'%'))
                     ->description(fn (ElementATraiter $record): string => collect([$record->donnees['lieu'] ?? null, $record->donnees['ville'] ?? null])->filter()->implode(' · '))
@@ -99,6 +104,7 @@ class ATrierResource extends Resource
             ->recordActions([
                 static::decision('garder', 'Garder', IssueFiltrage::Garde, 'success', Heroicon::OutlinedCheck),
                 static::decision('exclure', 'Exclure', IssueFiltrage::Exclu, 'danger', Heroicon::OutlinedXMark),
+                static::actionAjouterMot(),
             ])
             ->toolbarActions([
                 BulkAction::make('garderSelection')->label('Garder la sélection')->icon(Heroicon::OutlinedCheck)->color('success')
@@ -111,11 +117,26 @@ class ATrierResource extends Resource
             ->recordUrl(null);
     }
 
-    private static function decision(string $nom, string $libelle, IssueFiltrage $issue, string $couleur, Heroicon $icone): Action
+    /** Garder / Exclure une annonce (aussi dans la boîte de travail). */
+    public static function decision(string $nom, string $libelle, IssueFiltrage $issue, string $couleur, Heroicon $icone): Action
     {
         return Action::make($nom)->label($libelle)->icon($icone)->color($couleur)
-            ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente)
+            ->visible(fn (ElementATraiter $record): bool => $record->file === FileATraiter::ATrier && $record->statut === StatutElement::EnAttente)
             ->action(fn (ElementATraiter $record) => static::notifier(app(DeciderTri::class)->handle(new Collection([$record]), $issue), $issue === IssueFiltrage::Garde ? 'gardée(s)' : 'exclue(s)'));
+    }
+
+    /** Ajouter aux mots de tri un mot vu dans l'annonce : il vaudra pour les prochaines collectes (aussi dans la boîte de travail). */
+    public static function actionAjouterMot(): Action
+    {
+        return Action::make('ajouterMot')->label('Ajouter un mot')->icon(Heroicon::OutlinedTag)->color('gray')
+            ->visible(fn (ElementATraiter $record): bool => $record->file === FileATraiter::ATrier && $record->statut === StatutElement::EnAttente)
+            ->modalHeading('Ajouter un mot de tri')
+            ->modalDescription(fn (ElementATraiter $record): string => "Vu dans « {$record->donnees['titre']} ». Le mot vaudra pour toutes les sources à partir de la prochaine collecte ; cette annonce reste à trier.")
+            ->schema(RegleFiltrageResource::champs())
+            ->action(function (array $data): void {
+                RegleFiltrage::create(['type' => $data['type'], 'mot' => $data['mot'], 'actif' => true]);
+                Notification::make()->success()->title("« {$data['mot']} » ajouté aux mots de tri")->send();
+            });
     }
 
     private static function notifier(int $nombre, string $verbe): void

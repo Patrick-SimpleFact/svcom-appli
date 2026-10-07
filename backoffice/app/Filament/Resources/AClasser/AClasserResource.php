@@ -6,6 +6,7 @@ use App\Actions\EnregistrerCorrespondanceGenre;
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Filament\Resources\AClasser\Pages\ListAClasser;
+use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Genre;
 use App\Models\Source;
@@ -57,8 +58,9 @@ class AClasserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('id', 'desc')
+            ->defaultSort(fn (Builder $query) => Urgence::trier($query))
             ->columns([
+                Urgence::colonneUrgence(),
                 TextColumn::make('donnees.categorie')->label('Catégorie de la source')->weight('bold')->wrap(),
                 TextColumn::make('cible.nom')->label('Source'),
                 TextColumn::make('donnees.nb_annonces')->label('Annonces')
@@ -74,24 +76,30 @@ class AClasserResource extends Resource
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
             ])
             ->recordActions([
-                Action::make('classer')->label('Classer')->icon(Heroicon::OutlinedCheck)
-                    ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente && $record->cible instanceof Source)
-                    ->modalHeading(fn (ElementATraiter $record): string => "Classer « {$record->donnees['categorie']} »")
-                    ->modalDescription('La correspondance sera enregistrée pour cette source et appliquée tout de suite.')
-                    ->schema([
-                        Select::make('genre_id')->label('Genre')->options(Genre::orderBy('ordre')->pluck('libelle', 'id'))->required(),
-                        Toggle::make('jeune_public')->label('Jeune public'),
-                    ])
-                    ->action(function (ElementATraiter $record, array $data): void {
-                        $nombre = app(EnregistrerCorrespondanceGenre::class)->handle(
-                            $record->cible, $record->donnees['categorie'], Genre::findOrFail($data['genre_id']), (bool) $data['jeune_public'],
-                        );
-
-                        Notification::make()->success()->title('Catégorie classée')
-                            ->body($nombre > 0 ? "{$nombre} spectacle(s) reclassé(s)." : null)->send();
-                    }),
+                static::actionClasser(),
             ])
             ->recordUrl(null);
+    }
+
+    /** Choisir le genre d'une catégorie (aussi dans la boîte de travail). */
+    public static function actionClasser(): Action
+    {
+        return Action::make('classer')->label('Classer')->icon(Heroicon::OutlinedCheck)
+            ->visible(fn (ElementATraiter $record): bool => $record->file === FileATraiter::AClasser && $record->statut === StatutElement::EnAttente && $record->cible instanceof Source)
+            ->modalHeading(fn (ElementATraiter $record): string => "Classer « {$record->donnees['categorie']} »")
+            ->modalDescription('La correspondance sera enregistrée pour cette source et appliquée tout de suite.')
+            ->schema([
+                Select::make('genre_id')->label('Genre')->options(Genre::orderBy('ordre')->pluck('libelle', 'id'))->required(),
+                Toggle::make('jeune_public')->label('Jeune public'),
+            ])
+            ->action(function (ElementATraiter $record, array $data): void {
+                $nombre = app(EnregistrerCorrespondanceGenre::class)->handle(
+                    $record->cible, $record->donnees['categorie'], Genre::findOrFail($data['genre_id']), (bool) $data['jeune_public'],
+                );
+
+                Notification::make()->success()->title('Catégorie classée')
+                    ->body($nombre > 0 ? "{$nombre} spectacle(s) reclassé(s)." : null)->send();
+            });
     }
 
     public static function canCreate(): bool

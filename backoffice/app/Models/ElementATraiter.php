@@ -17,7 +17,7 @@ class ElementATraiter extends Model
 
     protected $table = 'elements_a_traiter';
 
-    protected $fillable = ['file', 'cible_type', 'cible_id', 'donnees', 'priorite', 'statut', 'decision', 'traite_par', 'traite_le'];
+    protected $fillable = ['file', 'cible_type', 'cible_id', 'donnees', 'priorite', 'echeance', 'ville_pilote', 'urgence', 'statut', 'decision', 'traite_par', 'traite_le'];
 
     protected function casts(): array
     {
@@ -27,6 +27,8 @@ class ElementATraiter extends Model
             'donnees' => 'array',
             'decision' => 'array',
             'traite_le' => 'datetime',
+            'echeance' => 'date',
+            'ville_pilote' => 'boolean',
         ];
     }
 

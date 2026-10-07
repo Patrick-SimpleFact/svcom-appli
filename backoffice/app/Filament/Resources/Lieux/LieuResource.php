@@ -9,7 +9,10 @@ use App\Filament\Resources\Lieux\RelationManagers\RepresentationsRelationManager
 use App\Filament\Resources\Lieux\Schemas\LieuForm;
 use App\Filament\Resources\Lieux\Tables\LieuxTable;
 use App\Models\Lieu;
+use App\Support\Texte;
 use BackedEnum;
+use Closure;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -56,6 +59,26 @@ class LieuResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false;
+    }
+
+    /** Choix du lieu à conserver lors d'une fusion : recherche sans accents parmi les lieux actifs, sauf celui à fusionner. */
+    public static function champLieuAConserver(Closure $lieuAExclure): Select
+    {
+        $libelle = fn (Lieu $lieu): string => $lieu->nom.($lieu->ville ? " — {$lieu->ville->nom}" : '');
+
+        return Select::make('conserve_id')
+            ->label('Lieu à conserver')
+            ->required()
+            ->searchable()
+            ->getSearchResultsUsing(fn (string $search): array => Lieu::actifs()
+                ->whereKeyNot($lieuAExclure()?->getKey())
+                ->where('nom_normalise', 'like', '%'.Texte::normaliser($search).'%')
+                ->with('ville')
+                ->limit(20)
+                ->get()
+                ->mapWithKeys(fn (Lieu $lieu) => [$lieu->id => $libelle($lieu)])
+                ->all())
+            ->getOptionLabelUsing(fn ($value): ?string => ($lieu = Lieu::find($value)) ? $libelle($lieu) : null);
     }
 
     public static function getPages(): array
