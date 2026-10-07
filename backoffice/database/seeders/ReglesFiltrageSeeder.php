@@ -21,12 +21,17 @@ class ReglesFiltrageSeeder extends Seeder
     ];
 
     public const EXCLURE = [
-        'exposition', 'visite', 'atelier', 'conference', 'marche', 'brocante', 'vide grenier', 'salon',
+        'exposition', 'visite', 'atelier', 'conference', 'brocante', 'vide grenier', 'salon',
         'randonnee', 'sport', 'match', 'cinema', 'projection', 'stage', 'club lecture', 'the dansant',
         'boum', 'baleti', 'soiree salsa', 'science', 'mediatheque', 'parcours de l art',
         'bibliotheque', 'fete de la science',
         // catégories Fnac hors spectacle (validé par Patrick le 05/10/2026, N02)
         'parc d attraction', 'aquarium', 'musee', 'tourisme et sejours', 'zoo', 'croisiere', // pas « tourisme » seul : la Fnac classe les cabarets en « Tourisme loisirs › Cabaret »
+        // marchés : expressions ciblées, pas « marche » seul (il écartait « Ça marche », « Marche forcée », « La loi du marché »… ; N07, 07/10/2026)
+        'marche de noel', 'marche de producteurs', 'marche des producteurs', 'marche artisanal', 'marche gourmand',
+        'marche nocturne', 'marche bio', 'marche du terroir', 'marche aux', 'marche des createurs', 'marche de createurs',
+        'marche couvert', 'marche d automne', 'marche d ete', 'marche hebdomadaire', 'marche paysan', 'marche fermier',
+        'marche du monde', 'marche des brasseurs', 'petit marche',
     ];
 
     public function run(): void
