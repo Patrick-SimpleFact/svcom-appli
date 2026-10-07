@@ -51,14 +51,22 @@ class CollecterSource implements ShouldBeUnique, ShouldQueue
         $executer->handle($this->source, $this->attempts(), version: $this->version);
     }
 
-    /** Après le dernier essai : la collecte est abandonnée et l'alerte part tout de suite (F7.9). */
+    /**
+     * Après le dernier essai : la collecte est abandonnée et l'alerte part tout de suite (F7.9).
+     * Aussi quand le worker est mort pendant le dernier essai (mémoire épuisée…) : Laravel appelle failed() au passage suivant,
+     * et la collecte restée « en cours » est abandonnée à son tour.
+     */
     public function failed(?Throwable $erreur): void
     {
-        Collecte::where('source_id', $this->source->id)
-            ->where('statut', StatutCollecte::Echouee)
-            ->latest('id')
-            ->first()
-            ?->update(['statut' => StatutCollecte::Abandonnee]);
+        $derniere = Collecte::where('source_id', $this->source->id)->latest('id')->first();
+
+        if (in_array($derniere?->statut, [StatutCollecte::Echouee, StatutCollecte::EnCours], true)) {
+            $derniere->update([
+                'statut' => StatutCollecte::Abandonnee,
+                'fin' => $derniere->fin ?? now(),
+                'erreur' => $derniere->erreur ?? 'Interrompue : le worker s’est arrêté pendant la collecte ('.($erreur?->getMessage() ?: 'cause inconnue').').',
+            ]);
+        }
 
         app(SuperviserSources::class)->handle($this->source);
     }

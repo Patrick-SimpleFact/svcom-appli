@@ -45,9 +45,10 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
         return [6, 22];
     }
 
+    /** Une ligne JSON par agenda (JSON Lines) : la lecture ne garde qu'un agenda à la fois en mémoire. */
     public function extensionBrut(): string
     {
-        return 'json';
+        return 'jsonl';
     }
 
     public function telecharger(Source $source): string
@@ -59,7 +60,9 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
             ->orderBy('id')
             ->get();
 
-        $brut = ['agendas' => []];
+        // Un agenda par ligne, ajouté au fur et à mesure : jamais tous les événements décodés en même temps
+        // (392 agendas = 138 Mo de JSON, ≈ 800 Mo une fois décodés d'un bloc, au-delà de la mémoire de PHP).
+        $brut = '';
 
         foreach ($agendas as $agenda) {
             try {
@@ -75,17 +78,18 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
             }
 
             $this->suivre($agenda, $evenements);
-            $brut['agendas'][] = ['uid' => $agenda->uid, 'slug' => $agenda->slug, 'events' => $evenements];
+            $brut .= json_encode(['uid' => $agenda->uid, 'slug' => $agenda->slug, 'events' => $evenements], JSON_UNESCAPED_UNICODE)."\n";
+            unset($evenements);
         }
 
-        return json_encode($brut, JSON_UNESCAPED_UNICODE);
+        return $brut;
     }
 
     public function lire(string $contenuBrut, Source $source): iterable
     {
         $vus = [];
 
-        foreach (json_decode($contenuBrut, true)['agendas'] ?? [] as $agenda) {
+        foreach (self::agendas($contenuBrut) as $agenda) {
             foreach ($agenda['events'] ?? [] as $evenement) {
                 $uid = (string) ($evenement['uid'] ?? '');
 
@@ -102,6 +106,35 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
                 } catch (InvalidArgumentException|Throwable $erreur) {
                     yield new LigneIllisible("Événement {$uid} : ".$erreur->getMessage(), $uid);
                 }
+            }
+        }
+    }
+
+    /**
+     * Les agendas du fichier brut, un par un. Accepte aussi l'ancien format (un seul objet JSON « agendas »,
+     * avant le 07/10/2026) pour rejouer une ancienne collecte.
+     *
+     * @return iterable<array{uid: string, slug: ?string, events: list<array>}>
+     */
+    private static function agendas(string $contenuBrut): iterable
+    {
+        if (str_starts_with($contenuBrut, '{"agendas":')) {
+            yield from json_decode($contenuBrut, true)['agendas'] ?? [];
+
+            return;
+        }
+
+        $debut = 0;
+        $longueur = strlen($contenuBrut);
+
+        while ($debut < $longueur) {
+            $fin = strpos($contenuBrut, "\n", $debut);
+            $fin = $fin === false ? $longueur : $fin;
+            $ligne = substr($contenuBrut, $debut, $fin - $debut);
+            $debut = $fin + 1;
+
+            if (trim($ligne) !== '') {
+                yield json_decode($ligne, true, flags: JSON_THROW_ON_ERROR);
             }
         }
     }

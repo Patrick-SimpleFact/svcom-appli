@@ -69,6 +69,15 @@ it('ne lit qu’une fois un événement relayé par plusieurs agendas', function
         ->and($annonces)->toHaveCount(collect($evenement['timings'])->filter(fn ($t) => $t['begin'] >= '2026-10-06')->count());
 });
 
+it('écrit et lit le fichier brut un agenda par ligne, et relit encore l’ancien format', function () {
+    $agendas = [['uid' => '79839448', 'slug' => 'avignon', 'events' => $this->evenements['events']], ['uid' => '2', 'slug' => 'b', 'events' => []]];
+    $lignes = collect($agendas)->map(fn (array $a) => json_encode($a, JSON_UNESCAPED_UNICODE))->implode("\n")."\n";
+
+    expect(app(ConnecteurOpenagenda::class)->extensionBrut())->toBe('jsonl')
+        ->and(($this->lire)($lignes)->pluck('identifiantExterne')->all())->toBe(($this->lire)(($this->brut)($agendas))->pluck('identifiantExterne')->all())
+        ->and(($this->lire)($lignes))->not->toBeEmpty();
+});
+
 it('se collecte toutes les 4 h, de 6 h à 22 h', function () {
     $connecteur = app(ConnecteurOpenagenda::class);
 
