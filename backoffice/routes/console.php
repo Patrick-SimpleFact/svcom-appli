@@ -16,3 +16,6 @@ Schedule::command('boite:prioriser')->everyThirtyMinutes()->withoutOverlapping()
 
 // Supervision des sources : alertes e-mail (échec, publication manquante à 7 h, chute de volume, données périmées, F7.9).
 Schedule::command('supervision:verifier')->everyFifteenMinutes()->withoutOverlapping();
+
+// Tableau de couverture des villes pilotes : mesure chaque heure, historique d'une ligne par ville et par jour (F7.13).
+Schedule::command('couverture:mesurer')->hourlyAt(45)->withoutOverlapping();

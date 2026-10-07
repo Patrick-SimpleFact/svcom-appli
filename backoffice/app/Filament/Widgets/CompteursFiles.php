@@ -8,6 +8,7 @@ use App\Filament\Pages\BoiteDeTravail;
 use App\Models\ElementATraiter;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Livewire\Attributes\On;
 
 /**
  * Un compteur par file : éléments en attente, dont urgents (ce soir, villes pilotes dans la semaine) ; un clic ouvre la file.
@@ -17,6 +18,10 @@ class CompteursFiles extends StatsOverviewWidget
     protected static bool $isDiscovered = false;
 
     protected ?string $pollingInterval = null;
+
+    /** Redessiné quand la page relance le calcul (bouton de l'en-tête). */
+    #[On('boite-reclassee')]
+    public function rafraichir(): void {}
 
     protected function getColumns(): int
     {
