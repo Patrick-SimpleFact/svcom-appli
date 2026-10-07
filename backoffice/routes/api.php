@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AppareilController;
 use App\Http\Controllers\Api\AutourController;
+use App\Http\Controllers\Api\CompteController;
 use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\RechercheController;
 use App\Http\Controllers\SortieController;
@@ -29,6 +30,20 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     Route::get('spectacles/{id}/representations', [FicheController::class, 'autresDates'])->whereNumber('id');
     Route::get('lieux/{id}', [FicheController::class, 'lieu'])->whereNumber('id');
     Route::get('artistes/{id}', [FicheController::class, 'artiste'])->whereNumber('id');
+
+    // §7 Compte
+    Route::post('auth/code', [CompteController::class, 'demanderCode']);
+    Route::post('auth/code/verification', [CompteController::class, 'verifierCode']);
+    Route::post('auth/apple', [CompteController::class, 'apple']);
+    Route::post('auth/google', [CompteController::class, 'google']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('auth/deconnexion', [CompteController::class, 'deconnexion']);
+        Route::get('moi', [CompteController::class, 'moi']);
+        Route::patch('moi', [CompteController::class, 'modifier']);
+        Route::post('moi/export', [CompteController::class, 'exporter']);
+        Route::delete('moi', [CompteController::class, 'supprimer']);
+    });
 });
 
 // §6 Sortie vers la billetterie : hors /v1 (ouverte par le navigateur intégré de l'app et la page web partagée, sans en-têtes),

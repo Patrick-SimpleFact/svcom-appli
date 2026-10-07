@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ChoixSuggestion;
 use App\Models\Concerns\IdentifiantNumerique;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Un téléphone qui utilise l'app (SCHEMA §5), avec ou sans compte.
@@ -55,5 +56,10 @@ class Appareil extends Model
                 && $this->nb_ouvertures - (int) $this->suggestion_ouvertures_a_la_reponse >= (int) Parametre::valeur('suggestion_relance_ouvertures'),
             default => false,
         };
+    }
+
+    public function utilisateur(): BelongsTo
+    {
+        return $this->belongsTo(Utilisateur::class);
     }
 }
