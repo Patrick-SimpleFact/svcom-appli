@@ -1,7 +1,9 @@
 <?php
 
+use App\Api\AutourDeMoi;
 use App\Models\Representation;
 use App\Support\Point;
+use Database\Seeders\ParametresSeeder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,14 +43,25 @@ it('répond à « autour d’Avignon ce soir » en moins de 500 ms sur 150 000 r
     expect(Representation::count())->toBe(150000);
 
     $avignon = new Point(43.9493, 4.8057);
-    Representation::autourDe($avignon, 5000, today())->orderBy('debut')->limit(30)->get(); // échauffement
+    Representation::autourDe($avignon, 5000, today())->orderBy('representations.debut')->limit(30)->get(); // échauffement
 
     $debut = hrtime(true);
-    $resultats = Representation::autourDe($avignon, 5000, today())->orderBy('debut')->limit(30)->get();
+    $resultats = Representation::autourDe($avignon, 5000, today())->orderBy('representations.debut')->limit(30)->get();
     $millisecondes = (hrtime(true) - $debut) / 1e6;
 
     expect($resultats)->not->toBeEmpty()
         ->and($millisecondes)->toBeLessThan(500);
 
     fwrite(STDERR, sprintf("\n  « Autour d’Avignon ce soir » : %d résultats en %.1f ms\n", $resultats->count(), $millisecondes));
+
+    // L'appel complet de l'API (rayon automatique, cartes, couverture), ce soir et sur un week-end (P02).
+    $this->seed(ParametresSeeder::class);
+    foreach (['ce_soir', 'week_end'] as $quand) {
+        $debut = hrtime(true);
+        $reponse = app(AutourDeMoi::class)->handle($avignon, $quand);
+        $millisecondes = (hrtime(true) - $debut) / 1e6;
+
+        expect($reponse['total'])->toBeGreaterThan(0)->and($millisecondes)->toBeLessThan(500);
+        fwrite(STDERR, sprintf("  API « autour de moi » (%s) : %d résultats, rayon %d m, en %.1f ms\n", $quand, $reponse['total'], $reponse['rayon_retenu_m'], $millisecondes));
+    }
 });

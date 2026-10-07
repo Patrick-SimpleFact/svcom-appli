@@ -1,0 +1,959 @@
+{
+  "info": {
+    "name": "Spettacoli — API v1",
+    "description": "API de l'app (docs/API.md). Chaque requête envoie X-Appareil et X-App-Version (variables de la collection). En local : désactiver « SSL certificate verification » dans les réglages de Postman (certificat de Herd).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://spettacoli.test/v1"
+    },
+    {
+      "key": "appareil",
+      "value": "postman-patrick-0001"
+    },
+    {
+      "key": "version_app",
+      "value": "1.0.0"
+    },
+    {
+      "key": "lat",
+      "value": "43.9493"
+    },
+    {
+      "key": "lon",
+      "value": "4.8055"
+    },
+    {
+      "key": "ville_id",
+      "value": "32360"
+    }
+  ],
+  "item": [
+    {
+      "name": "§2 Démarrage (P01)",
+      "item": [
+        {
+          "name": "Ouvrir l'app (configuration)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Enregistre l'ouverture et renvoie la configuration. latitude/longitude facultatives : messages de service de la commune la plus proche.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateforme\": \"ios\",\n  \"latitude\": 43.9493,\n  \"longitude\": 4.8055\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appareils",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ouvrir l'app sans position",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateforme\": \"android\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appareils",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erreur : version trop ancienne (426)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "0.9.0"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Doit répondre 426 version_obsolete.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateforme\": \"ios\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appareils",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erreur : sans en-tête X-Appareil (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Doit répondre 400 appareil_manquant.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateforme\": \"ios\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appareils",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erreur : plateforme invalide (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Doit répondre 422 donnees_invalides avec le détail dans champs.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateforme\": \"windows\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appareils",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "§3 Autour de moi (P02)",
+      "item": [
+        {
+          "name": "Ce soir autour de moi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Rayon automatique (2 → 50 km jusqu'à 8 représentations).",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Demain",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&quand=demain",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "quand",
+                  "value": "demain"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ce week-end",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&quand=week_end",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "quand",
+                  "value": "week_end"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Une date précise (samedi 17/10)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Date AAAA-MM-JJ, jusqu'à 3 mois.",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&quand=2026-10-17",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "quand",
+                  "value": "2026-10-17"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Autour d'une ville choisie (Avignon)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?ville_id={{ville_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "ville_id",
+                  "value": "{{ville_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rayon fixé à 10 km, tri par distance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "rayon : auto, 1000, 2000, 5000, 10000, 25000, 50000 ; tri : heure ou distance.",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&rayon=10000&tri=distance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "rayon",
+                  "value": "10000"
+                },
+                {
+                  "key": "tri",
+                  "value": "distance"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filtre de genre (théâtre = 1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Identifiants des genres : voir « genres » dans la réponse de « Ouvrir l'app ».",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&genres[]=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "genres[]",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pour vous (goûts du téléphone : humour = 2, concert = 3)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&pour_vous=1&gouts[]=2&gouts[]=3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "pour_vous",
+                  "value": "1"
+                },
+                {
+                  "key": "gouts[]",
+                  "value": "2"
+                },
+                {
+                  "key": "gouts[]",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Jeune public",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&jeune_public=1&quand=week_end",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "jeune_public",
+                  "value": "1"
+                },
+                {
+                  "key": "quand",
+                  "value": "week_end"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Paris ce week-end (gros volume, page 1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Copier la valeur de « suivant » dans le paramètre suivant pour la page 2.",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat=48.8566&lon=2.3522&quand=week_end",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "48.8566"
+                },
+                {
+                  "key": "lon",
+                  "value": "2.3522"
+                },
+                {
+                  "key": "quand",
+                  "value": "week_end"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Page suivante",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "« eyJwIjoyfQ » = page 2.",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat=48.8566&lon=2.3522&quand=week_end&suivant=eyJwIjoyfQ",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "48.8566"
+                },
+                {
+                  "key": "lon",
+                  "value": "2.3522"
+                },
+                {
+                  "key": "quand",
+                  "value": "week_end"
+                },
+                {
+                  "key": "suivant",
+                  "value": "eyJwIjoyfQ"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Campagne (couverture faible + suggestion de date)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat=46.0&lon=2.5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "46.0"
+                },
+                {
+                  "key": "lon",
+                  "value": "2.5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erreur : quand invalide (422)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&quand=hier",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "quand",
+                  "value": "hier"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erreur : ville inconnue (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/representations/autour?ville_id=999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "ville_id",
+                  "value": "999999"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Carte : repères d'Avignon",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Un repère par lieu dans le rectangle ; mêmes filtres possibles (quand, genres[], jeune_public).",
+            "url": {
+              "raw": "{{base_url}}/lieux/carte?sud=43.93&nord=43.97&ouest=4.78&est=4.83",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "lieux",
+                "carte"
+              ],
+              "query": [
+                {
+                  "key": "sud",
+                  "value": "43.93"
+                },
+                {
+                  "key": "nord",
+                  "value": "43.97"
+                },
+                {
+                  "key": "ouest",
+                  "value": "4.78"
+                },
+                {
+                  "key": "est",
+                  "value": "4.83"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Carte : Paris ce week-end",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/lieux/carte?sud=48.80&nord=48.90&ouest=2.25&est=2.42&quand=week_end",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "lieux",
+                "carte"
+              ],
+              "query": [
+                {
+                  "key": "sud",
+                  "value": "48.80"
+                },
+                {
+                  "key": "nord",
+                  "value": "48.90"
+                },
+                {
+                  "key": "ouest",
+                  "value": "2.25"
+                },
+                {
+                  "key": "est",
+                  "value": "2.42"
+                },
+                {
+                  "key": "quand",
+                  "value": "week_end"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

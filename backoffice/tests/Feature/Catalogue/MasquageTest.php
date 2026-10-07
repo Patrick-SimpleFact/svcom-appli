@@ -51,6 +51,17 @@ it('cache une séance dès que sa séance, son spectacle ou son lieu est masqué
     expect(($this->visible)())->toBeTrue();
 })->with(['séance', 'spectacle', 'lieu', 'source']);
 
+it('cache les séances d’une source désactivée, sauf celles qu’une autre source active vend aussi', function () {
+    ($this->vendue)($this->representation, $this->billetreduc);
+    $this->billetreduc->update(['actif' => false]);
+
+    expect(($this->visible)())->toBeFalse();
+
+    ($this->vendue)($this->representation, $this->fnac);
+
+    expect(($this->visible)())->toBeTrue();
+});
+
 it('garde visible une séance vendue aussi par une source non masquée', function () {
     ($this->vendue)($this->representation, $this->billetreduc);
     ($this->vendue)($this->representation, $this->fnac);

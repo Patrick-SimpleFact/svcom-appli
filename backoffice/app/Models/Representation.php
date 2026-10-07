@@ -131,26 +131,33 @@ class Representation extends Model
 
     /**
      * Ce que l'app peut montrer (F7.8) : représentation programmée, dont ni le spectacle ni le lieu ne sont masqués,
-     * et vendue par au moins une source non masquée (une représentation saisie à la main, sans offre, reste visible).
+     * et vendue par au moins une source active et non masquée (F7.3 : une source désactivée disparaît de l'app)
+     * ; une représentation saisie à la main, sans offre, reste visible.
      */
     public function scopeVisibles(Builder $requete): Builder
     {
+        // Jointures directes (alias vis_spectacle, vis_lieu) plutôt que des sous-requêtes : avec elles, PostgreSQL
+        // estimait une seule ligne et comparait chaque représentation à tous les lieux (Paris, un week-end : 2 s au lieu de 0,2 s).
+        // ⚠️ Pour charger des représentations, sélectionner « representations.* » (les jointures ont aussi un « id »).
         return $requete
+            ->join('spectacles as vis_spectacle', 'vis_spectacle.id', '=', 'representations.spectacle_id')
+            ->join('lieux as vis_lieu', 'vis_lieu.id', '=', 'representations.lieu_id')
             ->where('representations.statut', StatutRepresentation::Programmee)
-            ->whereHas('spectacle', fn (Builder $q) => $q->where('masque', false))
-            ->whereHas('lieu', fn (Builder $q) => $q->where('masque', false))
+            ->where('vis_spectacle.masque', false)
+            ->where('vis_lieu.masque', false)
             ->where(fn (Builder $q) => $q
-                ->whereHas('offres', fn (Builder $o) => $o->whereNull('disparue_le')->whereHas('source', fn (Builder $s) => $s->where('masquee', false)))
-                ->orWhereDoesntHave('offres'));
+                ->whereExists(fn ($o) => $o->selectRaw('1')->from('offres')->join('sources', 'sources.id', '=', 'offres.source_id')
+                    ->whereColumn('offres.representation_id', 'representations.id')->whereNull('offres.disparue_le')->where('sources.actif', true)->where('sources.masquee', false))
+                ->orWhereNotExists(fn ($o) => $o->selectRaw('1')->from('offres')->whereColumn('offres.representation_id', 'representations.id')));
     }
 
     /** Représentations visibles d'un jour donné, dans un rayon autour d'un point (index géographique). */
     public function scopeAutourDe(Builder $requete, Point $centre, int $rayonMetres, CarbonInterface|string $jour): Builder
     {
         return $requete
-            ->whereDate('date_locale', $jour)
+            ->whereDate('representations.date_locale', $jour)
             ->visibles()
-            ->whereRaw('ST_DWithin(position, ?::geography, ?)', [$centre->versEwkt(), $rayonMetres])
-            ->selectRaw('representations.*, ST_Distance(position, ?::geography) as distance_m', [$centre->versEwkt()]);
+            ->whereRaw('ST_DWithin(representations.position, ?::geography, ?)', [$centre->versEwkt(), $rayonMetres])
+            ->selectRaw('representations.*, ST_Distance(representations.position, ?::geography) as distance_m', [$centre->versEwkt()]);
     }
 }
