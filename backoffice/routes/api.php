@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AppareilController;
 use App\Http\Controllers\Api\AutourController;
+use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\RechercheController;
 use App\Http\Middleware\IdentifierAppareil;
 use Illuminate\Support\Facades\Route;
@@ -21,4 +22,10 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     // §4 Recherche
     Route::get('recherche/propositions', [RechercheController::class, 'propositions']);
     Route::get('recherche', [RechercheController::class, 'rechercher']);
+
+    // §5 Fiches
+    Route::get('spectacles/{id}', [FicheController::class, 'spectacle'])->whereNumber('id');
+    Route::get('spectacles/{id}/representations', [FicheController::class, 'autresDates'])->whereNumber('id');
+    Route::get('lieux/{id}', [FicheController::class, 'lieu'])->whereNumber('id');
+    Route::get('artistes/{id}', [FicheController::class, 'artiste'])->whereNumber('id');
 });

@@ -60,12 +60,12 @@ class Recherche
             'suivant' => $encore ? AutourDeMoi::curseur($page + 1) : null,
         ];
 
-        if ($page === 1) {
+        if ($page === 1 && ($f['journaliser'] ?? true)) {
             RechercheJournalisee::create([
                 'texte' => mb_substr(trim((string) ($f['texte'] ?? '')), 0, 200) ?: null,
                 'ville_id' => $f['ville_id'] ?? null,
                 'nb_resultats' => $total,
-                'filtres' => array_filter(collect($f)->except(['texte', 'centre', 'page', 'ville_id'])->all(), fn ($v) => $v !== null && $v !== [] && $v !== false) ?: null,
+                'filtres' => array_filter(collect($f)->except(['texte', 'centre', 'page', 'ville_id', 'journaliser'])->all(), fn ($v) => $v !== null && $v !== [] && $v !== false) ?: null,
             ]);
         }
 
@@ -88,6 +88,9 @@ class Recherche
             ->when($centre && ($f['rayon'] ?? null), fn (Builder $q) => $q->whereRaw('ST_DWithin(representations.position, ?::geography, ?)', [$centre->versEwkt(), $f['rayon']]))
             ->when($centre === null && ($f['ville_id'] ?? null), fn (Builder $q) => $q->where('representations.ville_id', $f['ville_id']))
             ->when(($f['genres'] ?? []) !== [], fn (Builder $q) => $q->whereIn('representations.genre_id', $f['genres']))
+            // Pages lieu et artiste (P04) : les dates à venir d'un lieu, ou de spectacles donnés.
+            ->when($f['lieu_id'] ?? null, fn (Builder $q, int $lieu) => $q->where('representations.lieu_id', $lieu))
+            ->when(array_key_exists('spectacle_ids', $f), fn (Builder $q) => $q->whereIn('representations.spectacle_id', $f['spectacle_ids']))
             ->when($f['jeune_public'] ?? false, fn (Builder $q) => $q->where('vis_spectacle.jeune_public', true))
             ->when($f['masquer_complets'] ?? false, fn (Builder $q) => $q->where('representations.complet', false))
             ->when($f['moment'] ?? null, function (Builder $q, string $moment) {

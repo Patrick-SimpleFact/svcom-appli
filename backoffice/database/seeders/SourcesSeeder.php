@@ -21,13 +21,13 @@ class SourcesSeeder extends Seeder
     {
         return [
             [
-                'code' => 'billetreduc', 'nom' => 'BilletRéduc', 'type_acces' => TypeAccesSource::Awin,
+                'code' => 'billetreduc', 'billetterie' => true, 'nom' => 'BilletRéduc', 'type_acces' => TypeAccesSource::Awin,
                 'licence' => 'Contrat d’affiliation Awin', 'mention_obligatoire' => null, 'type_lien' => TypeLienSource::Affilie,
                 'fiabilite' => self::FIABILITE_BILLETTERIE, 'config' => ['annonceur_awin' => '20796', 'flux_awin' => '47175'],
                 'remarques' => 'Source n°1 du théâtre et de l’humour ; donne le « complet ». Mise à jour vers minuit – 1 h.',
             ],
             [
-                'code' => 'fnac', 'nom' => 'Fnac Spectacles', 'type_acces' => TypeAccesSource::Awin,
+                'code' => 'fnac', 'billetterie' => true, 'nom' => 'Fnac Spectacles', 'type_acces' => TypeAccesSource::Awin,
                 'licence' => 'Contrat d’affiliation Awin', 'mention_obligatoire' => null, 'type_lien' => TypeLienSource::Affilie,
                 'fiabilite' => self::FIABILITE_BILLETTERIE, 'config' => ['annonceur_awin' => '12494', 'flux_awin' => '23455'],
                 'remarques' => 'Gros volume (≈ 108 000 produits dont beaucoup hors spectacle). Coordonnées 0,0 = inconnues. Mise à jour vers 7 h 30 – 8 h 30.',
@@ -46,7 +46,7 @@ class SourcesSeeder extends Seeder
                 'config' => [], 'remarques' => 'Pas de recherche nationale : liste d’agendas tenue dans le BO. Clé dans .env.',
             ],
             [
-                'code' => 'ticketmaster', 'nom' => 'Ticketmaster', 'type_acces' => TypeAccesSource::Api,
+                'code' => 'ticketmaster', 'billetterie' => true, 'nom' => 'Ticketmaster', 'type_acces' => TypeAccesSource::Api,
                 'licence' => 'Conditions de l’API Discovery de Ticketmaster', 'mention_obligatoire' => null,
                 'type_lien' => TypeLienSource::Direct, 'fiabilite' => self::FIABILITE_BILLETTERIE,
                 'config' => ['flux_national' => 'discovery-feed/v2', 'pays' => 'FR'],

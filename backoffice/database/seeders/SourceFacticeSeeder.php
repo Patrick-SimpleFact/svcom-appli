@@ -15,6 +15,7 @@ class SourceFacticeSeeder extends Seeder
     public function run(): void
     {
         Source::firstOrCreate(['code' => 'factice'], [
+            'billetterie' => true,
             'nom' => 'Démonstration (factice)',
             'type_acces' => TypeAccesSource::Api,
             'licence' => 'Données inventées',
@@ -26,6 +27,7 @@ class SourceFacticeSeeder extends Seeder
 
         // Seconde billetterie de démonstration : les mêmes séances écrites autrement (déduplication, K06).
         Source::firstOrCreate(['code' => 'factice_bis'], [
+            'billetterie' => true,
             'nom' => 'Démonstration bis (factice)',
             'type_acces' => TypeAccesSource::Api,
             'licence' => 'Données inventées',
