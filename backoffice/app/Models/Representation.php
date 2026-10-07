@@ -58,6 +58,12 @@ class Representation extends Model
         ];
     }
 
+    /** Position, commune et genre sont recopiés du lieu et du spectacle : jamais verrouillés (ils suivent un lieu corrigé). */
+    protected function champsNonVerrouillables(): array
+    {
+        return ['champs_verrouilles', 'position', 'ville_id', 'genre_id', 'created_at', 'updated_at'];
+    }
+
     protected static function booted(): void
     {
         static::saving(function (Representation $representation) {
@@ -123,12 +129,27 @@ class Representation extends Model
         return $this->belongsTo(Genre::class);
     }
 
-    /** Représentations d'un jour donné, dans un rayon autour d'un point (index géographique). */
+    /**
+     * Ce que l'app peut montrer (F7.8) : représentation programmée, dont ni le spectacle ni le lieu ne sont masqués,
+     * et vendue par au moins une source non masquée (une représentation saisie à la main, sans offre, reste visible).
+     */
+    public function scopeVisibles(Builder $requete): Builder
+    {
+        return $requete
+            ->where('representations.statut', StatutRepresentation::Programmee)
+            ->whereHas('spectacle', fn (Builder $q) => $q->where('masque', false))
+            ->whereHas('lieu', fn (Builder $q) => $q->where('masque', false))
+            ->where(fn (Builder $q) => $q
+                ->whereHas('offres', fn (Builder $o) => $o->whereNull('disparue_le')->whereHas('source', fn (Builder $s) => $s->where('masquee', false)))
+                ->orWhereDoesntHave('offres'));
+    }
+
+    /** Représentations visibles d'un jour donné, dans un rayon autour d'un point (index géographique). */
     public function scopeAutourDe(Builder $requete, Point $centre, int $rayonMetres, CarbonInterface|string $jour): Builder
     {
         return $requete
             ->whereDate('date_locale', $jour)
-            ->where('statut', StatutRepresentation::Programmee)
+            ->visibles()
             ->whereRaw('ST_DWithin(position, ?::geography, ?)', [$centre->versEwkt(), $rayonMetres])
             ->selectRaw('representations.*, ST_Distance(position, ?::geography) as distance_m', [$centre->versEwkt()]);
     }

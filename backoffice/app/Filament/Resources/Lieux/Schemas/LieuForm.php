@@ -72,7 +72,7 @@ class LieuForm
                             ->required()
                             ->default(PrecisionPosition::Exacte),
                         Text::make(fn (?Lieu $record): string => $record && filled($record->champs_verrouilles)
-                            ? 'Champs corrigés à la main (non écrasés par les imports) : '.implode(', ', $record->champs_verrouilles)
+                            ? 'Corrigé à la main (non écrasé par les imports) : '.$record->resumeCorrections()
                             : '')
                             ->visible(fn (?Lieu $record): bool => filled($record?->champs_verrouilles)),
                         Text::make(fn (?Lieu $record): string => 'Référence du Ministère : '.$record?->ref_ministere)

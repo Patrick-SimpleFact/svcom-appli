@@ -15,6 +15,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
@@ -47,7 +48,8 @@ class SourceResource extends Resource
             TextEntry::make('type_lien')->label('Lien de réservation')->badge(),
             TextEntry::make('licence'),
             TextEntry::make('mention_obligatoire')->label('Mention obligatoire')->placeholder('Aucune'),
-            IconEntry::make('actif')->boolean(),
+            IconEntry::make('actif')->label('Collecte active')->boolean(),
+            IconEntry::make('masquee')->label('Masquée dans l’app')->boolean()->trueColor('danger')->falseColor('gray'),
             TextEntry::make('zone')->label('Zone')->state(fn (Source $record): string => $record->zone ? implode(', ', $record->zone['villes'] ?? []) : 'Toute la France'),
             TextEntry::make('derniere_verification_le')->label('Dernière vérification')->dateTime('d/m/Y H:i', 'Europe/Paris')->placeholder('Jamais'),
             TextEntry::make('prochain_controle')->label('Prochain contrôle')
@@ -73,6 +75,7 @@ class SourceResource extends Resource
                     ->dateTime('d/m H:i', 'Europe/Paris')->placeholder('Jamais')
                     ->description(fn (Source $record): ?string => $record->erreur_detection ? '⚠️ '.mb_strimwidth($record->erreur_detection, 0, 60, '…') : null),
                 ToggleColumn::make('actif')->label('Active'),
+                IconColumn::make('masquee')->label('Masquée')->boolean()->trueIcon(Heroicon::OutlinedEyeSlash)->trueColor('danger')->falseIcon(''),
             ])
             ->recordActions([ViewAction::make()]);
     }

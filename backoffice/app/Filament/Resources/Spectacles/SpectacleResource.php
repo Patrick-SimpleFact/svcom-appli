@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Spectacles;
 
+use App\Filament\Resources\Spectacles\Pages\EditSpectacle;
 use App\Filament\Resources\Spectacles\Pages\ListSpectacles;
 use App\Filament\Resources\Spectacles\Pages\ViewSpectacle;
 use App\Filament\Resources\Spectacles\RelationManagers\OffresRelationManager;
@@ -10,12 +11,18 @@ use App\Models\Genre;
 use App\Models\Spectacle;
 use App\Support\Texte;
 use BackedEnum;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -25,7 +32,8 @@ use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /**
- * Catalogue des spectacles : en lecture seule à ce stade (alimenté par la collecte, bloc 2).
+ * Catalogue des spectacles, alimenté par la collecte. Chaque champ se corrige à la main (verrouillé : la collecte ne l'écrase plus)
+ * et un spectacle se masque d'un clic (F7.8, A02).
  */
 class SpectacleResource extends Resource
 {
@@ -41,15 +49,41 @@ class SpectacleResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'titre';
 
+    /** Libellés des champs, pour la mention « corrigé à la main ». */
+    public const LIBELLES = [
+        'titre' => 'titre', 'description' => 'description', 'genre_id' => 'genre', 'classification_fine' => 'classification',
+        'jeune_public' => 'jeune public', 'age_min' => 'âge minimum', 'duree_minutes' => 'durée', 'image_url' => 'image',
+    ];
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->columns(2)->components([
+            TextInput::make('titre')->required()->maxLength(255)->columnSpanFull(),
+            Select::make('genre_id')->label('Genre')->options(fn () => Genre::orderBy('ordre')->pluck('libelle', 'id'))->required(),
+            TextInput::make('classification_fine')->label('Classification')->maxLength(100),
+            Toggle::make('jeune_public')->label('Jeune public'),
+            TextInput::make('age_min')->label('Âge minimum')->integer()->minValue(0)->maxValue(18)->suffix('ans'),
+            TextInput::make('duree_minutes')->label('Durée')->integer()->minValue(1)->suffix('min'),
+            TextInput::make('image_url')->label('Image (adresse)')->url()->maxLength(2000),
+            Textarea::make('description')->rows(6)->columnSpanFull(),
+        ]);
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
+            TextEntry::make('masque')->label('')->badge()->color('danger')->columnSpanFull()
+                ->state(fn (Spectacle $record): ?string => $record->masque ? 'Masqué dans l’app' : null)
+                ->visible(fn (Spectacle $record): bool => $record->masque),
             TextEntry::make('titre')->columnSpanFull(),
             TextEntry::make('genre.libelle')->label('Genre')->badge(),
             TextEntry::make('classification_fine')->label('Classification')->placeholder('—'),
             IconEntry::make('jeune_public')->label('Jeune public')->boolean(),
             TextEntry::make('duree_minutes')->label('Durée')->suffix(' min')->placeholder('—'),
             TextEntry::make('description')->columnSpanFull()->placeholder('Aucune description'),
+            TextEntry::make('corrections')->label('Corrigé à la main (la collecte ne l’écrase plus)')->columnSpanFull()
+                ->state(fn (Spectacle $record): ?string => $record->resumeCorrections(self::LIBELLES))
+                ->visible(fn (Spectacle $record): bool => filled($record->champs_verrouilles)),
         ]);
     }
 
@@ -83,13 +117,15 @@ class SpectacleResource extends Resource
                 TextColumn::make('a_venir')->label('Représentations à venir')->numeric(),
                 TextColumn::make('seances_collectees')->label('Séances collectées')->numeric()->sortable(),
                 TextColumn::make('prochaine')->label('Prochaine')->date('d/m/Y')->sortable()->placeholder('—'),
+                IconColumn::make('masque')->label('Masqué')->boolean()->trueIcon(Heroicon::OutlinedEyeSlash)->trueColor('danger')->falseIcon('')->toggleable(),
                 TextColumn::make('demo')->label('')->badge()->formatStateUsing(fn (bool $state): string => $state ? 'Démo' : '')->color('gray'),
             ])
             ->filters([
                 SelectFilter::make('genre_id')->label('Genre')->options(fn () => Genre::orderBy('ordre')->pluck('libelle', 'id')),
                 TernaryFilter::make('demo')->label('Données de démonstration'),
+                TernaryFilter::make('masque')->label('Masqués'),
             ])
-            ->recordActions([ViewAction::make()]);
+            ->recordActions([ViewAction::make(), EditAction::make()->label('Corriger')]);
     }
 
     public static function getRelations(): array
@@ -98,11 +134,6 @@ class SpectacleResource extends Resource
     }
 
     public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function canEdit(Model $record): bool
     {
         return false;
     }
@@ -117,6 +148,7 @@ class SpectacleResource extends Resource
         return [
             'index' => ListSpectacles::route('/'),
             'view' => ViewSpectacle::route('/{record}'),
+            'edit' => EditSpectacle::route('/{record}/corriger'),
         ];
     }
 }
