@@ -13,3 +13,6 @@ Schedule::command('catalogue:entretenir')->hourly()->withoutOverlapping();
 
 // Boîte de travail : ordre d'urgence (ce soir, villes pilotes) recalculé avec les nouveaux éléments et le changement de jour (F7.10).
 Schedule::command('boite:prioriser')->everyThirtyMinutes()->withoutOverlapping();
+
+// Supervision des sources : alertes e-mail (échec, publication manquante à 7 h, chute de volume, données périmées, F7.9).
+Schedule::command('supervision:verifier')->everyFifteenMinutes()->withoutOverlapping();

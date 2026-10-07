@@ -43,6 +43,12 @@ class Source extends Model
         return $this->hasMany(Collecte::class);
     }
 
+    /** Alertes de supervision (F7.9). */
+    public function alertes(): HasMany
+    {
+        return $this->hasMany(Alerte::class);
+    }
+
     public function offres(): HasMany
     {
         return $this->hasMany(Offre::class);
