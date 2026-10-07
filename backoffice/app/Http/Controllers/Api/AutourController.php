@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Api\AutourDeMoi;
 use App\Api\Fenetre;
+use App\Comptes\Gouts;
 use App\Enums\PrecisionPosition;
 use App\Exceptions\ErreurApi;
 use App\Http\Controllers\Controller;
 use App\Models\Representation;
+use App\Models\Utilisateur;
 use App\Models\Ville;
 use App\Support\Point;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +33,8 @@ class AutourController extends Controller
 
         return response()->json($autour->handle($this->centre($donnees), $donnees['quand'] ?? 'ce_soir', [
             'genres' => $this->genres($donnees),
+            // Connecté : « Pour vous » vient du compte (genres, lieux et artistes suivis), plus des goûts envoyés par le téléphone.
+            'pour_vous_compte' => ($donnees['pour_vous'] ?? false) && ($u = auth('sanctum')->user()) instanceof Utilisateur ? app(Gouts::class)->pourVous($u) : null,
             'jeune_public' => (bool) ($donnees['jeune_public'] ?? false),
             'rayon' => in_array($donnees['rayon'] ?? 'auto', ['auto', null], true) ? null : (int) $donnees['rayon'],
             'tri' => $donnees['tri'] ?? 'heure',
@@ -106,6 +110,10 @@ class AutourController extends Controller
     /** « Pour vous » sans compte : les goûts gardés sur le téléphone tiennent lieu de genres (API §13, point 2). */
     private function genres(array $donnees): array
     {
+        if (($donnees['pour_vous'] ?? false) && auth('sanctum')->user() instanceof Utilisateur) {
+            return []; // remplacé par le « Pour vous » du compte
+        }
+
         $genres = ($donnees['pour_vous'] ?? false) ? ($donnees['gouts'] ?? []) : ($donnees['genres'] ?? []);
 
         return array_values(array_unique(array_map('intval', $genres)));

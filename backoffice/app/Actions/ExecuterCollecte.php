@@ -15,6 +15,7 @@ use App\Models\Source;
 use App\Support\Horizon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -144,6 +145,13 @@ class ExecuterCollecte
                 ...$compteurs,
                 ...$publication,
             ]);
+
+            // File des nouveautés (F3.4) : une erreur ici ne fait pas échouer une collecte déjà publiée.
+            try {
+                app(AlimenterNouveautes::class)->apresPublication($collecte->debut);
+            } catch (Throwable $erreur) {
+                Log::error('Nouveautés non alimentées après la collecte', ['collecte' => $collecte->id, 'erreur' => $erreur->getMessage()]);
+            }
         } catch (Throwable $erreur) {
             while (DB::transactionLevel() > ($niveau ?? DB::transactionLevel())) {
                 DB::rollBack(); // le lot en cours est annulé ; les offres des lots précédents restent préparées (non publiées)

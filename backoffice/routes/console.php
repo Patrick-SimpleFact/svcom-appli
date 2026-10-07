@@ -22,3 +22,6 @@ Schedule::command('couverture:mesurer')->hourlyAt(45)->withoutOverlapping();
 
 // Comptes supprimés depuis plus de 30 jours : effacés définitivement (F1.7).
 Schedule::command('comptes:purger')->dailyAt('04:45');
+
+// Rappels du jour J des favoris, dans la file des nouveautés (F3.4) ; la notification regroupée part à 18 h (P11).
+Schedule::command('nouveautes:rappels')->dailyAt('08:00')->timezone('Europe/Paris');

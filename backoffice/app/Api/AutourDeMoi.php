@@ -32,8 +32,13 @@ class AutourDeMoi
     /**
      * @param  array{genres?: list<int>, jeune_public?: bool, rayon?: int|null, tri?: string, page?: int}  $options
      */
+    /** « Pour vous » d'un compte (F3.3) : genres aimés OU lieux suivis OU spectacles des artistes suivis. */
+    private ?array $pourVous = null;
+
     public function handle(Point $centre, string $quand, array $options = []): array
     {
+        $this->pourVous = $options['pour_vous_compte'] ?? null;
+
         $fuseau = self::fuseau($centre);
         $fenetre = Fenetre::pour($quand, $fuseau);
         $genres = $options['genres'] ?? [];
@@ -68,6 +73,10 @@ class AutourDeMoi
         $requete = Representation::query()->visibles()
             ->whereRaw('ST_DWithin(representations.position, ?::geography, ?)', [$centre->versEwkt(), $rayon])
             ->when($genres !== [], fn (Builder $q) => $q->whereIn('representations.genre_id', $genres))
+            ->when($this->pourVous !== null, fn (Builder $q) => $q->where(fn (Builder $p) => $p
+                ->whereIn('representations.genre_id', $this->pourVous['genres'] ?: [0])
+                ->orWhereIn('representations.lieu_id', $this->pourVous['lieux'] ?: [0])
+                ->orWhereIn('representations.spectacle_id', $this->pourVous['spectacles'] ?: [0])))
             ->when($jeunePublic, fn (Builder $q) => $q->where('vis_spectacle.jeune_public', true));
 
         return $fenetre->appliquer($requete);
