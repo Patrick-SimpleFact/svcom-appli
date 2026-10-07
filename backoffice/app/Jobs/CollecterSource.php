@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\ExecuterCollecte;
+use App\Actions\SuperviserSources;
 use App\Enums\StatutCollecte;
 use App\Models\Collecte;
 use App\Models\Source;
@@ -50,7 +51,7 @@ class CollecterSource implements ShouldBeUnique, ShouldQueue
         $executer->handle($this->source, $this->attempts(), version: $this->version);
     }
 
-    /** Après le dernier essai : la collecte est abandonnée (l'alerte e-mail viendra à l'étape A03). */
+    /** Après le dernier essai : la collecte est abandonnée et l'alerte part tout de suite (F7.9). */
     public function failed(?Throwable $erreur): void
     {
         Collecte::where('source_id', $this->source->id)
@@ -58,5 +59,7 @@ class CollecterSource implements ShouldBeUnique, ShouldQueue
             ->latest('id')
             ->first()
             ?->update(['statut' => StatutCollecte::Abandonnee]);
+
+        app(SuperviserSources::class)->handle($this->source);
     }
 }
