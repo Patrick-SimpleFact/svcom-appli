@@ -27,6 +27,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Livewire\Attributes\On;
 
 /**
  * Les éléments urgents de toutes les files, avec les mêmes boutons que dans chaque file : la décision s'applique tout de suite.
@@ -38,6 +39,10 @@ class ElementsUrgents extends TableWidget
     protected static ?string $heading = 'À traiter en priorité';
 
     protected int|string|array $columnSpan = 'full';
+
+    /** Redessiné quand la page relance le calcul (bouton de l'en-tête). */
+    #[On('boite-reclassee')]
+    public function rafraichir(): void {}
 
     public function table(Table $table): Table
     {

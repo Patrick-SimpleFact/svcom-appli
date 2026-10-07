@@ -64,7 +64,7 @@ class BoiteDeTravail extends Dashboard
                 ->action(function (): void {
                     $nombre = app(PrioriserBoiteDeTravail::class)->handle();
                     Notification::make()->success()->title("{$nombre} élément(s) reclassé(s)")->send();
-                    $this->dispatch('$refresh');
+                    $this->dispatch('boite-reclassee');
                 }),
         ];
     }
