@@ -19,3 +19,6 @@ Schedule::command('supervision:verifier')->everyFifteenMinutes()->withoutOverlap
 
 // Tableau de couverture des villes pilotes : mesure chaque heure, historique d'une ligne par ville et par jour (F7.13).
 Schedule::command('couverture:mesurer')->hourlyAt(45)->withoutOverlapping();
+
+// Comptes supprimés depuis plus de 30 jours : effacés définitivement (F1.7).
+Schedule::command('comptes:purger')->dailyAt('04:45');

@@ -58,4 +58,8 @@ return [
         'liste_flux' => env('AWIN_FEEDLIST_URL'),
     ],
 
+    // Connexion à l'app (F1.4) : identifiants de l'app chez Apple et Google, séparés par des virgules (P06).
+    'apple' => ['client_ids' => env('APPLE_CLIENT_IDS')],
+    'google' => ['client_ids' => env('GOOGLE_CLIENT_IDS')],
+
 ];

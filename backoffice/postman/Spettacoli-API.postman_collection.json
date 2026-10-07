@@ -36,6 +36,18 @@
     {
       "key": "lieu_id",
       "value": "1435"
+    },
+    {
+      "key": "email",
+      "value": "patrick@simplefact.fr"
+    },
+    {
+      "key": "code",
+      "value": "123456"
+    },
+    {
+      "key": "jeton",
+      "value": ""
     }
   ],
   "item": [
@@ -1850,6 +1862,413 @@
                 "sortie",
                 "999999999"
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "§7 Compte (P06)",
+      "item": [
+        {
+          "name": "1. Recevoir un code par e-mail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Envoie un code à 6 chiffres à l'adresse de la variable « email » (valable 10 min). Un code par minute au plus.",
+            "url": {
+              "raw": "{{base_url}}/auth/code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "code"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Se connecter avec le code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Mettre le code reçu dans la variable « code » (onglet Variables de la collection). Le jeton de la réponse est enregistré automatiquement dans « jeton ». gouts / rayon_m : ce que le mode invité avait gardé sur le téléphone.",
+            "url": {
+              "raw": "{{base_url}}/auth/code/verification",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "code",
+                "verification"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{code}}\",\n  \"gouts\": [\n    1,\n    2\n  ],\n  \"rayon_m\": 5000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.jeton) { pm.collectionVariables.set('jeton', r.jeton); console.log('Jeton enregistré'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Mon compte",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Avec le jeton (en-tête Authorization).",
+            "url": {
+              "raw": "{{base_url}}/moi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Compléter le profil",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "profil_complet devient true.",
+            "url": {
+              "raw": "{{base_url}}/moi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prenom\": \"Patrick\",\n  \"naissance_mois\": 3,\n  \"naissance_annee\": 1970,\n  \"cgu_acceptees\": true,\n  \"lettre_info\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Erreur : moins de 15 ans (le compte est supprimé !)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "⚠️ Réponse 422 age_minimum et le compte est effacé : il faudra recommencer à l'étape 1.",
+            "url": {
+              "raw": "{{base_url}}/moi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"naissance_mois\": 12,\n  \"naissance_annee\": 2015\n}"
+            }
+          }
+        },
+        {
+          "name": "Recevoir mes données par e-mail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Envoie un e-mail avec un fichier JSON de toutes les données du compte.",
+            "url": {
+              "raw": "{{base_url}}/moi/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "export"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Se déconnecter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Le jeton ne sert plus (204).",
+            "url": {
+              "raw": "{{base_url}}/auth/deconnexion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "deconnexion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Supprimer mon compte",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "⚠️ Accès coupé et données effacées tout de suite (204).",
+            "url": {
+              "raw": "{{base_url}}/moi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erreur : sans jeton (401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/moi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Continuer avec Apple (jeton de l'app iOS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Ne fonctionnera qu'avec l'app (bloc 7) et APPLE_CLIENT_IDS dans .env ; sinon 503 connexion_indisponible.",
+            "url": {
+              "raw": "{{base_url}}/auth/apple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "apple"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jeton\": \"<identityToken fourni par Apple>\"\n}"
             }
           }
         }
