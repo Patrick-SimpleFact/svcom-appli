@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AppareilController;
 use App\Http\Controllers\Api\AutourController;
+use App\Http\Controllers\Api\RechercheController;
 use App\Http\Middleware\IdentifierAppareil;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,8 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     // §3 Autour de moi
     Route::get('representations/autour', [AutourController::class, 'representations']);
     Route::get('lieux/carte', [AutourController::class, 'carte']);
+
+    // §4 Recherche
+    Route::get('recherche/propositions', [RechercheController::class, 'propositions']);
+    Route::get('recherche', [RechercheController::class, 'rechercher']);
 });
