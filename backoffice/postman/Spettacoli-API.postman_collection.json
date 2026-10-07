@@ -954,6 +954,550 @@
           }
         }
       ]
+    },
+    {
+      "name": "§4 Recherche (P03)",
+      "item": [
+        {
+          "name": "Propositions : « Laur »",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Pendant la frappe : 3 au plus par type (spectacles, artistes, lieux, villes).",
+            "url": {
+              "raw": "{{base_url}}/recherche/propositions?q=Laur",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche",
+                "propositions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Laur"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Propositions : faute de frappe « obsevance »",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/recherche/propositions?q=obsevance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche",
+                "propositions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "obsevance"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Propositions : « avign »",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/recherche/propositions?q=avign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche",
+                "propositions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "avign"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recherche : « obsevance » (toutes dates)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Cartes groupées par jour (jours[].cartes[]).",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=obsevance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "obsevance"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recherche : un lieu sur un week-end",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=laurette&du=2026-10-17&au=2026-10-18",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "laurette"
+                },
+                {
+                  "key": "du",
+                  "value": "2026-10-17"
+                },
+                {
+                  "key": "au",
+                  "value": "2026-10-18"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recherche sans texte : danse à Bordeaux d'ici fin décembre",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/recherche?ville_id=12329&genres[]=5&au=2026-12-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "ville_id",
+                  "value": "12329"
+                },
+                {
+                  "key": "genres[]",
+                  "value": "5"
+                },
+                {
+                  "key": "au",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Moins de 15 € autour de Bordeaux (sans prix masqués comptés)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "sans_prix_masques : spectacles cachés faute de prix connu. Paliers : 0 = gratuit, 15, 30.",
+            "url": {
+              "raw": "{{base_url}}/recherche?lat=44.8378&lon=-0.5792&rayon=10000&prix_max=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "44.8378"
+                },
+                {
+                  "key": "lon",
+                  "value": "-0.5792"
+                },
+                {
+                  "key": "rayon",
+                  "value": "10000"
+                },
+                {
+                  "key": "prix_max",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Gratuit autour d'Avignon",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/recherche?lat={{lat}}&lon={{lon}}&rayon=25000&gratuit=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "rayon",
+                  "value": "25000"
+                },
+                {
+                  "key": "gratuit",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Matinées à Avignon, sans les complets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "moment : matinee, apres_midi, soiree.",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=avignon&moment=matinee&masquer_complets=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "avignon"
+                },
+                {
+                  "key": "moment",
+                  "value": "matinee"
+                },
+                {
+                  "key": "masquer_complets",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Paris, tri par prix",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "tri : date (défaut), distance (avec une position), prix. total_plus = true au-delà de 1 000.",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=paris&tri=prix",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "paris"
+                },
+                {
+                  "key": "tri",
+                  "value": "prix"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aucun résultat : correction proposée",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "correction : « Vouliez-vous dire Laurette Théâtre ? » (seulement si le texte ne correspond à rien).",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=loraite theatre",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "loraite theatre"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aucun résultat : élargir le rayon",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "elargir : { rayon_m: 50000, total }.",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=observance&lat=43.80&lon=4.80&rayon=5000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "observance"
+                },
+                {
+                  "key": "lat",
+                  "value": "43.80"
+                },
+                {
+                  "key": "lon",
+                  "value": "4.80"
+                },
+                {
+                  "key": "rayon",
+                  "value": "5000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Page suivante",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/recherche?q=paris&suivant=eyJwIjoyfQ",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "recherche"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "paris"
+                },
+                {
+                  "key": "suivant",
+                  "value": "eyJwIjoyfQ"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
