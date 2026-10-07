@@ -134,13 +134,27 @@ it('garde 48 h les offres d’une source muette, puis les retire', function () {
     expect($resultat['sources_muettes'])->toBe([])
         ->and($representation->fresh()->statut)->toBe(StatutRepresentation::Programmee);
 
-    $this->travel(2)->hours(); // 49 h sans réponse
+    $this->travel(2)->hours(); // 49 h sans réponse, alors que le détecteur l'interroge
+    $this->factice->update(['actif' => true, 'derniere_verification_le' => now()]);
     $resultat = app(EntretenirCatalogue::class)->handle();
     $aVenir = Offre::where('date_locale', '>=', today()->toDateString())->count();
     expect($resultat['sources_muettes'])->toBe(['factice'])
         ->and($aVenir)->toBeGreaterThan(0)
         ->and($resultat['nb_retires'])->toBe($aVenir) // les séances passées entre-temps ne sont pas « retirées »
         ->and($representation->fresh()->statut)->toBe(StatutRepresentation::Retiree);
+});
+
+it('ne retire rien quand c’est notre détecteur qui était arrêté, ou la source désactivée', function () {
+    $representation = ($this->offre)('F-9')->representation;
+    $this->travel(3)->days(); // aucun passage du détecteur pendant 3 jours (workers coupés)
+    $this->factice->update(['actif' => true, 'derniere_verification_le' => now()->subDays(3)]);
+
+    expect(app(EntretenirCatalogue::class)->handle()['sources_muettes'])->toBe([]);
+
+    $this->factice->update(['actif' => false, 'derniere_verification_le' => now()]);
+
+    expect(app(EntretenirCatalogue::class)->handle()['sources_muettes'])->toBe([])
+        ->and($representation->fresh()->statut)->toBe(StatutRepresentation::Programmee);
 });
 
 it('ne considère pas comme muette une source dont le flux n’a simplement pas changé', function () {

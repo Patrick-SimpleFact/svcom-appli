@@ -131,3 +131,14 @@ it('montre les alertes et les chiffres dans le tableau des sources', function ()
     Livewire::test(ListSources::class)->assertSee('1 ouverte(s)')->assertSee('❌ 17/10 09:20');
     expect(Alerte::firstWhere('type', TypeAlerte::Echec)->notifiee_le)->not->toBeNull();
 });
+
+it('abandonne et alerte quand le worker est mort pendant le dernier essai', function () {
+    ($this->collecte)('2026-10-17 08:00');
+    $orpheline = Collecte::create(['source_id' => $this->source->id, 'debut' => now()->subHours(2), 'statut' => StatutCollecte::EnCours, 'essai' => 4]);
+
+    (new CollecterSource($this->source))->failed(new RuntimeException('has been attempted too many times'));
+
+    expect($orpheline->fresh())->statut->toBe(StatutCollecte::Abandonnee)->fin->not->toBeNull()
+        ->and($orpheline->fresh()->erreur)->toContain('worker s’est arrêté')
+        ->and(($this->types)())->toBe(['echec']);
+});

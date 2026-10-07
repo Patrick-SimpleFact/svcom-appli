@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Entretien régulier du catalogue (COLLECTE §8.2, F7.15) :
- * - source muette depuis plus de 48 h (ni détection ni collecte réussie) : ses offres à venir sont retirées ;
+ * - source muette depuis plus de 48 h (ni détection ni collecte réussie) alors que le détecteur l'interroge bien : ses offres à venir sont retirées ;
  * - historique allégé : 30 jours après la séance, les offres (liens, prix, données de la source) sont supprimées ;
  *   la représentation, le spectacle et le lieu sont gardés sans limite ;
  * - spectacles restés vides (ni offre ni représentation) : supprimés ;
@@ -25,6 +25,9 @@ use Illuminate\Support\Facades\DB;
 class EntretenirCatalogue
 {
     public const SILENCE_MAX_HEURES = 48;
+
+    /** Le détecteur passe toutes les 30 min : au-delà d'une heure sans passage, il était arrêté. */
+    public const VERIFICATION_RECENTE_HEURES = 1;
 
     public const HISTORIQUE_OFFRES_JOURS = 30;
 
@@ -40,8 +43,11 @@ class EntretenirCatalogue
             ->where('debut', '<', now()->subSeconds((new CollecterSource(new Source))->timeout))
             ->update(['statut' => StatutCollecte::Echouee, 'fin' => now(), 'erreur' => 'Interrompue (le worker s’est arrêté pendant la collecte).']);
 
-        // 1. Sources muettes.
-        $muettes = Source::where(fn ($q) => $q->whereNull('dernier_contact_le')->orWhere('dernier_contact_le', '<', now()->subHours(self::SILENCE_MAX_HEURES)))
+        // 1. Sources muettes : seulement si le détecteur les a interrogées récemment. Si c'est notre côté qui était arrêté
+        // (workers coupés, source désactivée), le silence ne vient pas de la source : on ne retire rien.
+        $muettes = Source::where('actif', true)
+            ->where('derniere_verification_le', '>=', now()->subHours(self::VERIFICATION_RECENTE_HEURES))
+            ->where(fn ($q) => $q->whereNull('dernier_contact_le')->orWhere('dernier_contact_le', '<', now()->subHours(self::SILENCE_MAX_HEURES)))
             ->whereHas('offres', fn ($q) => $q->whereNull('disparue_le')->whereRaw('coalesce(date_fin, date_locale) >= ?', [today()->toDateString()]))
             ->get();
 
