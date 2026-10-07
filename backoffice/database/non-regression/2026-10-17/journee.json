@@ -1,0 +1,10 @@
+{
+    "date": "2026-10-17",
+    "origine": "POC du 02/10/2026 (poc/out/20261002-084554), spectacles vivants uniques après déduplication",
+    "villes": [
+        {"code": "paris", "nom": "Paris", "latitude": 48.8566, "longitude": 2.3522, "rayon_km": 8},
+        {"code": "bordeaux", "nom": "Bordeaux", "latitude": 44.8378, "longitude": -0.5792, "rayon_km": 10},
+        {"code": "avignon", "nom": "Avignon", "latitude": 43.9493, "longitude": 4.8055, "rayon_km": 10},
+        {"code": "figeac", "nom": "Figeac (zone rurale)", "latitude": 44.6086, "longitude": 2.0317, "rayon_km": 30}
+    ]
+}

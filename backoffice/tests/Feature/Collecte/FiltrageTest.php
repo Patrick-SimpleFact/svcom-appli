@@ -167,3 +167,13 @@ it('filtre « À trier » par source, garde une annonce et exclut une sélection
         // la collecte suivante respecte la décision
         ->and(app(TrierAnnonce::class)->handle(annonce('Soirée surprise', id: 'A-2'), $fnac))->toBe(IssueFiltrage::Garde);
 });
+
+it('distingue les marchés des titres où « marche » est un verbe ou un nom commun (N07)', function (AnnonceNormalisee $annonce, IssueFiltrage $issue) {
+    expect((new FiltreSpectacleVivant)->evaluer($annonce)->issue)->toBe($issue);
+})->with([
+    'Marche forcée' => [fn () => annonce('Marche forcée, du poète hongrois Miklos Radnoti', ['Théâtre', 'Lecture / Poésie / Contes']), IssueFiltrage::Garde],
+    'Ça marche' => [fn () => annonce('Félix Junier dans Ça marche', ['Spectacles', 'Stand-up']), IssueFiltrage::Garde],
+    'La loi du marché' => [fn () => annonce('La loi du marché', ['Théâtre']), IssueFiltrage::Garde],
+    'marché de Noël' => [fn () => annonce('Marché de Noël de l’abbaye', ['Festival']), IssueFiltrage::Exclu],
+    'marché de producteurs classé concert' => [fn () => annonce('Marché des producteurs et artisans', ['MusicEvent', 'Concert']), IssueFiltrage::ATrier],
+]);

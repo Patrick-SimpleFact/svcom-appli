@@ -1,0 +1,7 @@
+{
+    "date": "2026-10-17",
+    "origine": "Journée de test",
+    "villes": [
+        {"code": "avignon", "nom": "Avignon", "latitude": 43.9493, "longitude": 4.8055, "rayon_km": 10}
+    ]
+}
