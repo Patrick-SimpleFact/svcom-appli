@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(self::LIMITE_API_APPAREIL)->by('appareil:'.$request->header('X-Appareil')),
             Limit::perMinute(self::LIMITE_API_IP)->by('ip:'.$request->ip()),
         ]);
+        RateLimiter::for('sortie', fn (Request $request) => Limit::perMinute(60)->by('sortie:'.$request->ip()));
 
         // Date de dernière connexion d'un admin (sans l'inscrire au journal des actions).
         Event::listen(Login::class, function (Login $evenement): void {

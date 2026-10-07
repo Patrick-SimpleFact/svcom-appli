@@ -1800,6 +1800,60 @@
           }
         }
       ]
+    },
+    {
+      "name": "§6 Sortie vers la billetterie (P05)",
+      "item": [
+        {
+          "name": "Sortie : clic vers BilletRéduc (non compté depuis Postman)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Réponse 302 vers la billetterie (désactiver « Automatically follow redirects » pour la voir). ⚠️ Depuis Postman, le clic est enregistré mais NON compté : Postman est reconnu comme un outil de test. Pour un clic compté : ouvrir https://spettacoli.test/sortie/68303 dans Safari ou Chrome, puis Back-office › Statistiques › Clics vers les billetteries.",
+            "url": {
+              "raw": "https://spettacoli.test/sortie/68303?origine=fiche&bouton=principal",
+              "protocol": "https",
+              "host": [
+                "spettacoli",
+                "test"
+              ],
+              "path": [
+                "sortie",
+                "68303"
+              ],
+              "query": [
+                {
+                  "key": "origine",
+                  "value": "fiche"
+                },
+                {
+                  "key": "bouton",
+                  "value": "principal"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sortie : offre inconnue (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://spettacoli.test/sortie/999999999",
+              "protocol": "https",
+              "host": [
+                "spettacoli",
+                "test"
+              ],
+              "path": [
+                "sortie",
+                "999999999"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

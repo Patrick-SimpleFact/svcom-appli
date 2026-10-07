@@ -18,7 +18,7 @@ class FicheController extends Controller
     {
         $d = $request->validate(['representation' => ['nullable', 'integer'], ...self::REGLES_POSITION]);
 
-        return $this->json($fiches->spectacle($id, isset($d['representation']) ? (int) $d['representation'] : null, self::position($d)));
+        return $this->json($fiches->spectacle($id, isset($d['representation']) ? (int) $d['representation'] : null, self::position($d), $request->attributes->get('appareil')));
     }
 
     public function autresDates(Request $request, Fiches $fiches, int $id): JsonResponse
