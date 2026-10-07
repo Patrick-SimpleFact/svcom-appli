@@ -55,6 +55,21 @@ class Utilisateur extends Model
         return $this->hasOne(Preference::class);
     }
 
+    public function favoris(): HasMany
+    {
+        return $this->hasMany(Favori::class);
+    }
+
+    public function suivis(): HasMany
+    {
+        return $this->hasMany(Suivi::class);
+    }
+
+    public function nouveautes(): HasMany
+    {
+        return $this->hasMany(Nouveaute::class);
+    }
+
     public function appareils(): HasMany
     {
         return $this->hasMany(Appareil::class);

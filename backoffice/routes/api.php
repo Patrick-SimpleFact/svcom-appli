@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AppareilController;
 use App\Http\Controllers\Api\AutourController;
 use App\Http\Controllers\Api\CompteController;
 use App\Http\Controllers\Api\FicheController;
+use App\Http\Controllers\Api\GoutsController;
 use App\Http\Controllers\Api\RechercheController;
 use App\Http\Controllers\SortieController;
 use App\Http\Middleware\IdentifierAppareil;
@@ -43,6 +44,18 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
         Route::patch('moi', [CompteController::class, 'modifier']);
         Route::post('moi/export', [CompteController::class, 'exporter']);
         Route::delete('moi', [CompteController::class, 'supprimer']);
+
+        // §8 Préférences, favoris, suivis, nouveautés
+        Route::get('moi/preferences', [GoutsController::class, 'preferences']);
+        Route::put('moi/preferences', [GoutsController::class, 'modifierPreferences']);
+        Route::get('moi/favoris', [GoutsController::class, 'favoris']);
+        Route::post('moi/favoris', [GoutsController::class, 'ajouterFavori']);
+        Route::delete('moi/favoris/{id}', [GoutsController::class, 'retirerFavori'])->whereNumber('id');
+        Route::get('moi/suivis', [GoutsController::class, 'suivis']);
+        Route::post('moi/suivis', [GoutsController::class, 'suivre']);
+        Route::delete('moi/suivis/{id}', [GoutsController::class, 'nePlusSuivre'])->whereNumber('id');
+        Route::get('moi/nouveautes', [GoutsController::class, 'nouveautes']);
+        Route::post('moi/nouveautes/vues', [GoutsController::class, 'marquerVues']);
     });
 });
 

@@ -2273,6 +2273,392 @@
           }
         }
       ]
+    },
+    {
+      "name": "§8 Préférences, favoris, suivis (P07) — connecté",
+      "item": [
+        {
+          "name": "Mes préférences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Il faut d'abord être connecté (§7, étapes 1 et 2).",
+            "url": {
+              "raw": "{{base_url}}/moi/preferences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "preferences"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modifier mes préférences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "La zone des alertes garde la commune la plus proche (Avignon), jamais la position.",
+            "url": {
+              "raw": "{{base_url}}/moi/preferences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "preferences"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"genres\": [\n    1,\n    2\n  ],\n  \"rayon_m\": 10000,\n  \"zone_alertes\": {\n    \"lat\": 43.9493,\n    \"lon\": 4.8055,\n    \"rayon_km\": 30\n  },\n  \"alertes_actives\": true,\n  \"rappel_jour_j\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Ajouter un favori (Donne moi ta chance)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "201 la 1re fois, 200 ensuite (déjà en favori).",
+            "url": {
+              "raw": "{{base_url}}/moi/favoris",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "favoris"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spectacle_id\": \"{{spectacle_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mes favoris (ce soir, à venir, passés)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/moi/favoris",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "favoris"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Suivre le Théâtre de l'Observance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "201 la 1re fois ; 200 et deja_suivi = true ensuite.",
+            "url": {
+              "raw": "{{base_url}}/moi/suivis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "suivis"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"lieu\",\n  \"id\": \"{{lieu_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mes suivis (avec le nombre de nouveautés)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/moi/suivis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "suivis"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mes nouveautés",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Se remplit après une collecte : nouveau spectacle dans un lieu suivi, nouvelle date d'un artiste suivi, rappel du jour J.",
+            "url": {
+              "raw": "{{base_url}}/moi/nouveautes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "nouveautes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marquer les nouveautés comme vues",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/moi/nouveautes/vues",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "nouveautes",
+                "vues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Pour vous (connecté : genres + lieux et artistes suivis)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/representations/autour?lat={{lat}}&lon={{lon}}&pour_vous=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "representations",
+                "autour"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "pour_vous",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
