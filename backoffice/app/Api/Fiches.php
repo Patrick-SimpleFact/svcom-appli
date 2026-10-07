@@ -7,6 +7,7 @@ use App\Enums\TypeLienSource;
 use App\Enums\TypeRepresentation;
 use App\Exceptions\ErreurApi;
 use App\Models\Artiste;
+use App\Models\ClicSortant;
 use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Representation;
@@ -21,11 +22,15 @@ use Illuminate\Support\Collection;
  */
 class Fiches
 {
+    private ?string $empreinte = null;
+
     public function __construct(private Recherche $recherche) {}
 
     /** F5.2 : la fiche, positionnée sur la séance demandée si elle est à venir, sinon sur la prochaine (la plus proche si on a une position). */
-    public function spectacle(int $id, ?int $representationId = null, ?Point $position = null): array
+    public function spectacle(int $id, ?int $representationId = null, ?Point $position = null, ?string $appareil = null): array
     {
+        $this->empreinte = $appareil ? ClicSortant::empreinte($appareil) : null;
+
         $spectacle = Spectacle::with(['genre', 'festival', 'artistes'])->where('masque', false)->find($id) ?? throw new ErreurApi('introuvable', 'Spectacle introuvable.', 404);
         $aVenir = $this->aVenir()->where('representations.spectacle_id', $id);
 
@@ -56,7 +61,7 @@ class Fiches
             'termine' => $choisie === null,
             'lieu' => $lieu ? self::decrireLieu($lieu, $position) : null,
             'jour' => $choisie?->date_locale?->toDateString(),
-            'seances' => $seances->map(fn (Representation $r) => self::seance($r, $lieu, $offres->get($r->id, collect())))->values(),
+            'seances' => $seances->map(fn (Representation $r) => $this->seance($r, $lieu, $offres->get($r->id, collect())))->values(),
             'prix' => self::prix($seances),
             'autres_dates' => max(0, $this->aVenir()->where('representations.spectacle_id', $id)->count() - $seances->count()),
             'sources' => $offres->flatten()->map(fn (Offre $o) => $o->source->nom)->unique()->values(),
@@ -153,7 +158,7 @@ class Fiches
      * Une séance et ses billetteries (F5.4) : celles qui vendent des billets d'abord, puis, à chaque fois,
      * places disponibles → prix le plus bas → affiliation (celle qui nous rémunère, à prix égal seulement).
      */
-    private static function seance(Representation $r, ?Lieu $lieu, Collection $offres): array
+    private function seance(Representation $r, ?Lieu $lieu, Collection $offres): array
     {
         $triees = $offres->sortBy([
             fn (Offre $a, Offre $b) => $b->source->billetterie <=> $a->source->billetterie,
@@ -179,7 +184,8 @@ class Fiches
                 'prix_max' => $o->prix_max === null ? null : (float) $o->prix_max,
                 'complet' => $o->complet,
                 'recommandee' => $i === 0,
-                'lien_sortie' => url('/sortie/'.$o->id),
+                // L'empreinte de l'appareil voyage dans le lien (le navigateur intégré n'envoie pas X-Appareil) ; l'app ajoute origine et bouton.
+                'lien_sortie' => url('/sortie/'.$o->id).($this->empreinte ? '?a='.$this->empreinte : ''),
             ])->all(),
         ];
     }

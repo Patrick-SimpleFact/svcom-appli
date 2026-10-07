@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AppareilController;
 use App\Http\Controllers\Api\AutourController;
 use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\RechercheController;
+use App\Http\Controllers\SortieController;
 use App\Http\Middleware\IdentifierAppareil;
 use Illuminate\Support\Facades\Route;
 
@@ -29,3 +30,7 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     Route::get('lieux/{id}', [FicheController::class, 'lieu'])->whereNumber('id');
     Route::get('artistes/{id}', [FicheController::class, 'artiste'])->whereNumber('id');
 });
+
+// §6 Sortie vers la billetterie : hors /v1 (ouverte par le navigateur intégré de l'app et la page web partagée, sans en-têtes),
+// sans session ni cookie ; limite par adresse IP.
+Route::get('sortie/{offre}', SortieController::class)->whereNumber('offre')->middleware('throttle:sortie');

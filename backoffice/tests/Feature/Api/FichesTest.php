@@ -50,7 +50,7 @@ it('trie les billetteries : celles qui vendent des billets, puis places, prix, a
     ])
         ->and(array_column($billetteries, 'recommandee'))->toBe([true, false, false, false, false])
         ->and($billetteries[4]['billetterie'])->toBeFalse()
-        ->and($billetteries[0]['lien_sortie'])->toEndWith('/sortie/'.$billetteries[0]['offre_id']);
+        ->and($billetteries[0]['lien_sortie'])->toContain('/sortie/'.$billetteries[0]['offre_id'].'?a=');
 });
 
 it('ouvre la fiche sur la séance demandée, sinon la prochaine, ou la plus proche avec une position', function () {
