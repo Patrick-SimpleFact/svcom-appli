@@ -28,6 +28,14 @@
     {
       "key": "ville_id",
       "value": "32360"
+    },
+    {
+      "key": "spectacle_id",
+      "value": "6450"
+    },
+    {
+      "key": "lieu_id",
+      "value": "1435"
     }
   ],
   "item": [
@@ -1494,6 +1502,300 @@
                   "value": "eyJwIjoyfQ"
                 }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "§5 Fiches (P04)",
+      "item": [
+        {
+          "name": "Fiche : Donne moi ta chance (prochaine séance)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Séances du jour avec leurs billetteries triées (places → prix → affiliation), prix, description, lieu, sources et mentions.",
+            "url": {
+              "raw": "{{base_url}}/spectacles/{{spectacle_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "spectacles",
+                "{{spectacle_id}}"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Fiche avec ma position (séance la plus proche)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/spectacles/{{spectacle_id}}?lat={{lat}}&lon={{lon}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "spectacles",
+                "{{spectacle_id}}"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fiche sur une séance précise (3 billetteries)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "BilletRéduc, Fnac et Ticketmaster vendent cette séance : voir « recommandee ».",
+            "url": {
+              "raw": "{{base_url}}/spectacles/1139?representation=1502",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "spectacles",
+                "1139"
+              ],
+              "query": [
+                {
+                  "key": "representation",
+                  "value": "1502"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fiche OpenAgenda (lien vers l'organisateur)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "billetterie = false : « Voir sur le site de l'organisateur » ; mention obligatoire de la source.",
+            "url": {
+              "raw": "{{base_url}}/spectacles/4422",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "spectacles",
+                "4422"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Autres dates, par lieu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/spectacles/{{spectacle_id}}/representations?lat={{lat}}&lon={{lon}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "spectacles",
+                "{{spectacle_id}}",
+                "representations"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Page lieu : Théâtre de l'Observance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Informations du lieu + ses dates à venir groupées par jour (même format que la recherche).",
+            "url": {
+              "raw": "{{base_url}}/lieux/{{lieu_id}}?lat={{lat}}&lon={{lon}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "lieux",
+                "{{lieu_id}}"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Page artiste (aucun artiste en base pour l'instant)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "La table des artistes est vide (aucune collecte ne les extrait encore) : réponse 404 attendue.",
+            "url": {
+              "raw": "{{base_url}}/artistes/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "artistes",
+                "1"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Erreur : spectacle introuvable (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "{{base_url}}/spectacles/999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "spectacles",
+                "999999"
+              ],
+              "query": []
             }
           }
         }

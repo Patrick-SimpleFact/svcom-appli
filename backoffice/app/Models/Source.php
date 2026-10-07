@@ -19,7 +19,7 @@ class Source extends Model
 
     protected $fillable = [
         'code', 'nom', 'logo_url', 'type_acces', 'licence', 'mention_obligatoire',
-        'type_lien', 'actif', 'masquee', 'zone', 'fiabilite', 'config', 'remarques',
+        'type_lien', 'billetterie', 'actif', 'masquee', 'zone', 'fiabilite', 'config', 'remarques',
         'derniere_verification_le', 'dernier_contact_le', 'derniere_version_vue', 'erreur_detection',
     ];
 
@@ -30,6 +30,7 @@ class Source extends Model
             'type_lien' => TypeLienSource::class,
             'actif' => 'boolean',
             'masquee' => 'boolean',
+            'billetterie' => 'boolean',
             'zone' => 'array',
             'fiabilite' => 'array',
             'config' => 'array',
