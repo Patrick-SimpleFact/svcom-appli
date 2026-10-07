@@ -10,3 +10,6 @@ Schedule::command('collecte:detecter')->everyThirtyMinutes()->withoutOverlapping
 
 // Retraits des sources muettes (48 h), historique allégé (30 jours), spectacles vides (COLLECTE §8.2, F7.15).
 Schedule::command('catalogue:entretenir')->hourly()->withoutOverlapping();
+
+// Boîte de travail : ordre d'urgence (ce soir, villes pilotes) recalculé avec les nouveaux éléments et le changement de jour (F7.10).
+Schedule::command('boite:prioriser')->everyThirtyMinutes()->withoutOverlapping();

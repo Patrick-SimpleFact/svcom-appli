@@ -2,13 +2,19 @@
 
 namespace App\Actions;
 
+use App\Enums\FileATraiter;
+use App\Enums\StatutElement;
+use App\Models\ElementATraiter;
 use App\Models\Lieu;
+use App\Models\Offre;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
  * Deux fiches désignent le même lieu (ex. « Théâtre de l'Observance » et « Observance – salle 1 ») :
  * le doublon est rattaché au lieu conservé, qui récupère les informations qui lui manquaient (F7.5).
+ * Appliqué tout de suite (F7.2) : annonces et représentations passent au lieu conservé (position et commune comprises),
+ * et le doublon sort de la file « Lieux à vérifier ».
  */
 class FusionnerLieux
 {
@@ -40,6 +46,23 @@ class FusionnerLieux
             if ($complements !== []) {
                 $conserve->update($complements);
             }
+
+            Offre::where('lieu_id', $doublon->id)->update(['lieu_id' => $conserve->id]);
+
+            DB::update(<<<'SQL'
+                update representations r set lieu_id = l.id, position = l.position, ville_id = l.ville_id
+                from lieux l where l.id = ? and r.lieu_id = ?
+                SQL, [$conserve->id, $doublon->id]);
+
+            ElementATraiter::where('file', FileATraiter::LieuAVerifier)
+                ->where('cible_type', $doublon->getMorphClass())->where('cible_id', $doublon->id)
+                ->where('statut', StatutElement::EnAttente)
+                ->update([
+                    'statut' => StatutElement::Traite,
+                    'decision' => json_encode(['fusionne_dans' => $conserve->id]),
+                    'traite_par' => auth()->id(),
+                    'traite_le' => now(),
+                ]);
 
             // Les autres doublons déjà rattachés au doublon suivent vers le lieu conservé.
             Lieu::where('fusionne_dans_id', $doublon->id)->get()

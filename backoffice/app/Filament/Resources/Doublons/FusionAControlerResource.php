@@ -28,7 +28,7 @@ class FusionAControlerResource extends FileDoublonsResource
         return FileATraiter::FusionAControler;
     }
 
-    protected static function libellesDecisions(): array
+    public static function libellesDecisions(): array
     {
         return ['Confirmer', 'Séparer'];
     }

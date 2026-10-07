@@ -8,9 +8,7 @@ use App\Filament\Resources\Lieux\LieuResource;
 use App\Filament\Resources\Lieux\Pages\Concerns\ConvertitPosition;
 use App\Models\Lieu;
 use App\Models\Ville;
-use App\Support\Texte;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
@@ -36,11 +34,6 @@ class EditLieu extends EditRecord
         return $data;
     }
 
-    private static function libelleLieu(Lieu $lieu): string
-    {
-        return $lieu->nom.($lieu->ville ? " — {$lieu->ville->nom}" : '');
-    }
-
     protected function getHeaderActions(): array
     {
         return [
@@ -53,19 +46,7 @@ class EditLieu extends EditRecord
                 ->visible(fn (): bool => $this->record->fusionne_dans_id === null)
                 ->modalDescription('Ce lieu est un doublon : il sera rattaché au lieu choisi, qui récupère les informations qui lui manquent. Ce lieu sera masqué.')
                 ->schema([
-                    Select::make('conserve_id')
-                        ->label('Lieu à conserver')
-                        ->required()
-                        ->searchable()
-                        ->getSearchResultsUsing(fn (string $search): array => Lieu::actifs()
-                            ->whereKeyNot($this->record->getKey())
-                            ->where('nom_normalise', 'like', '%'.Texte::normaliser($search).'%')
-                            ->with('ville')
-                            ->limit(20)
-                            ->get()
-                            ->mapWithKeys(fn (Lieu $lieu) => [$lieu->id => self::libelleLieu($lieu)])
-                            ->all())
-                        ->getOptionLabelUsing(fn ($value): ?string => ($lieu = Lieu::find($value)) ? self::libelleLieu($lieu) : null),
+                    LieuResource::champLieuAConserver(fn () => $this->record),
                 ])
                 ->action(function (array $data) {
                     $conserve = app(FusionnerLieux::class)->handle($this->record, Lieu::findOrFail($data['conserve_id']));

@@ -7,6 +7,7 @@ use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Filament\Resources\Spectacles\SpectacleResource;
 use App\Filament\Resources\SpectaclesAControler\Pages\ListSpectaclesAControler;
+use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
 use App\Models\Spectacle;
@@ -79,8 +80,10 @@ class SpectacleAControlerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('id', 'desc')
+            ->defaultSort(fn (Builder $query) => Urgence::trier($query))
             ->columns([
+                Urgence::colonneUrgence(),
+                Urgence::colonneEcheance(),
                 TextColumn::make('cible.titre')->label('Spectacle')->weight('bold')->wrap()
                     ->url(fn (ElementATraiter $record): ?string => $record->cible ? SpectacleResource::getUrl('view', ['record' => $record->cible]) : null),
                 TextColumn::make('lieux')->label('Lieux réunis')->listWithLineBreaks()->wrap()
@@ -94,26 +97,38 @@ class SpectacleAControlerResource extends Resource
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
             ])
             ->recordActions([
-                Action::make('confirmer')->label('Même spectacle')->icon(Heroicon::OutlinedCheck)->color('success')
-                    ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente && $record->cible !== null)
-                    ->action(function (ElementATraiter $record): void {
-                        app(SeparerSpectacle::class)->confirmer($record->cible);
-                        Notification::make()->success()->title('Regroupement confirmé')->send();
-                    }),
-                Action::make('separer')->label('Séparer')->icon(Heroicon::OutlinedScissors)->color('danger')
-                    ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente && $record->cible !== null)
-                    ->modalHeading(fn (ElementATraiter $record): string => "Séparer « {$record->cible?->titre} »")
-                    ->modalDescription('Les dates des lieux cochés deviennent un autre spectacle (même titre, autre troupe). Les autres restent ici.')
-                    ->schema(fn (ElementATraiter $record): array => [
-                        CheckboxList::make('lieux')->label('Lieux à détacher')->required()
-                            ->options(static::lieux($record->cible)->map(fn (array $l) => "{$l['lieu']} — {$l['dates']} date(s) — {$l['artistes']}")->all()),
-                    ])
-                    ->action(function (ElementATraiter $record, array $data): void {
-                        app(SeparerSpectacle::class)->handle($record->cible, array_map('intval', $data['lieux']));
-                        Notification::make()->success()->title('Dates séparées dans un nouveau spectacle')->send();
-                    }),
+                static::actionConfirmer(),
+                static::actionSeparer(),
             ])
             ->recordUrl(null);
+    }
+
+    /** Les dates réunies sont bien le même spectacle (aussi dans la boîte de travail). */
+    public static function actionConfirmer(): Action
+    {
+        return Action::make('confirmer')->label('Même spectacle')->icon(Heroicon::OutlinedCheck)->color('success')
+            ->visible(fn (ElementATraiter $record): bool => $record->file === FileATraiter::SpectacleAControler && $record->statut === StatutElement::EnAttente && $record->cible !== null)
+            ->action(function (ElementATraiter $record): void {
+                app(SeparerSpectacle::class)->confirmer($record->cible);
+                Notification::make()->success()->title('Regroupement confirmé')->send();
+            });
+    }
+
+    /** Détacher les dates de certains lieux dans un autre spectacle (aussi dans la boîte de travail). */
+    public static function actionSeparer(): Action
+    {
+        return Action::make('separer')->label('Séparer')->icon(Heroicon::OutlinedScissors)->color('danger')
+            ->visible(fn (ElementATraiter $record): bool => $record->file === FileATraiter::SpectacleAControler && $record->statut === StatutElement::EnAttente && $record->cible !== null)
+            ->modalHeading(fn (ElementATraiter $record): string => "Séparer « {$record->cible?->titre} »")
+            ->modalDescription('Les dates des lieux cochés deviennent un autre spectacle (même titre, autre troupe). Les autres restent ici.')
+            ->schema(fn (ElementATraiter $record): array => [
+                CheckboxList::make('lieux')->label('Lieux à détacher')->required()
+                    ->options(static::lieux($record->cible)->map(fn (array $l) => "{$l['lieu']} — {$l['dates']} date(s) — {$l['artistes']}")->all()),
+            ])
+            ->action(function (ElementATraiter $record, array $data): void {
+                app(SeparerSpectacle::class)->handle($record->cible, array_map('intval', $data['lieux']));
+                Notification::make()->success()->title('Dates séparées dans un nouveau spectacle')->send();
+            });
     }
 
     public static function canCreate(): bool

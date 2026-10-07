@@ -28,7 +28,7 @@ class DoublonProbableResource extends FileDoublonsResource
         return FileATraiter::DoublonProbable;
     }
 
-    protected static function libellesDecisions(): array
+    public static function libellesDecisions(): array
     {
         return ['Même séance', 'Séances différentes'];
     }

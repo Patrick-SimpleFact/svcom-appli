@@ -6,6 +6,7 @@ use App\Actions\DeciderDoublon;
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Enums\TypeDecisionDedoublonnage;
+use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
 use Filament\Actions\Action;
@@ -32,7 +33,7 @@ abstract class FileDoublonsResource extends Resource
     abstract protected static function file(): FileATraiter;
 
     /** Libellés des deux boutons : [fusionner, séparer]. */
-    abstract protected static function libellesDecisions(): array;
+    abstract public static function libellesDecisions(): array;
 
     public static function getEloquentQuery(): Builder
     {
@@ -51,8 +52,10 @@ abstract class FileDoublonsResource extends Resource
         [$fusionner, $separer] = static::libellesDecisions();
 
         return $table
-            ->defaultSort('id', 'desc')
+            ->defaultSort(fn (Builder $query) => Urgence::trier($query))
             ->columns([
+                Urgence::colonneUrgence(),
+                Urgence::colonneEcheance(),
                 static::colonneOffre('offre_a_id', 'Séance déjà connue'),
                 static::colonneOffre('offre_b_id', 'Nouvelle annonce'),
                 TextColumn::make('lieu')->label('Lieu')->wrap()
@@ -76,10 +79,11 @@ abstract class FileDoublonsResource extends Resource
             ->recordUrl(null);
     }
 
-    private static function decision(string $nom, string $libelle, TypeDecisionDedoublonnage $type, Heroicon $icone, string $couleur): Action
+    /** Même séance / séances différentes (aussi dans la boîte de travail). */
+    public static function decision(string $nom, string $libelle, TypeDecisionDedoublonnage $type, Heroicon $icone, string $couleur): Action
     {
         return Action::make($nom)->label($libelle)->icon($icone)->color($couleur)
-            ->visible(fn (ElementATraiter $record): bool => $record->statut === StatutElement::EnAttente)
+            ->visible(fn (ElementATraiter $record): bool => $record->file === static::file() && $record->statut === StatutElement::EnAttente)
             ->requiresConfirmation()
             ->modalDescription('La décision est mémorisée et réappliquée à chaque collecte.')
             ->action(function (ElementATraiter $record) use ($type, $libelle): void {

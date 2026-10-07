@@ -43,14 +43,21 @@ class RegleFiltrageResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
+        return $schema->components(static::champs())->columns(1);
+    }
+
+    /** Effet + mot (aussi depuis la file « À trier »). */
+    public static function champs(): array
+    {
+        return [
             ToggleButtons::make('type')->label('Effet')->options(TypeRegleFiltrage::class)->inline()->required()
                 ->default(TypeRegleFiltrage::Exclure->value)
                 ->colors([TypeRegleFiltrage::Exclure->value => 'danger', TypeRegleFiltrage::Inclure->value => 'success']),
             TextInput::make('mot')->label('Mot ou expression')->required()->maxLength(100)
                 ->helperText('Comparé sans accents ni majuscules, au singulier comme au pluriel (« bibliothèque » trouve aussi « Bibliothèques »).')
                 ->dehydrateStateUsing(fn (?string $state): string => Texte::normaliser($state))
-                ->rule(fn (Get $get, ?RegleFiltrage $record): Closure => function (string $attribut, mixed $valeur, Closure $echec) use ($get, $record) {
+                ->rule(fn (Get $get, mixed $record): Closure => function (string $attribut, mixed $valeur, Closure $echec) use ($get, $record) {
+                    $record = $record instanceof RegleFiltrage ? $record : null; // depuis « À trier », l'enregistrement est l'annonce
                     $mot = Texte::normaliser($valeur);
 
                     if ($mot === '') {
@@ -59,7 +66,7 @@ class RegleFiltrageResource extends Resource
                         $echec("« {$mot} » est déjà dans cette liste.");
                     }
                 }),
-        ])->columns(1);
+        ];
     }
 
     public static function table(Table $table): Table
