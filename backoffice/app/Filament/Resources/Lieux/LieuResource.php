@@ -61,13 +61,13 @@ class LieuResource extends Resource
         return false;
     }
 
-    /** Choix du lieu à conserver lors d'une fusion : recherche sans accents parmi les lieux actifs, sauf celui à fusionner. */
-    public static function champLieuAConserver(Closure $lieuAExclure): Select
+    /** Choix d'un lieu (lieu à conserver d'une fusion, lieu d'une séance) : recherche sans accents parmi les lieux actifs, sauf celui à exclure. */
+    public static function champLieuAConserver(Closure $lieuAExclure, string $nom = 'conserve_id', string $libelle = 'Lieu à conserver'): Select
     {
-        $libelle = fn (Lieu $lieu): string => $lieu->nom.($lieu->ville ? " — {$lieu->ville->nom}" : '');
+        $nomComplet = fn (Lieu $lieu): string => $lieu->nom.($lieu->ville ? " — {$lieu->ville->nom}" : '');
 
-        return Select::make('conserve_id')
-            ->label('Lieu à conserver')
+        return Select::make($nom)
+            ->label($libelle)
             ->required()
             ->searchable()
             ->getSearchResultsUsing(fn (string $search): array => Lieu::actifs()
@@ -76,9 +76,9 @@ class LieuResource extends Resource
                 ->with('ville')
                 ->limit(20)
                 ->get()
-                ->mapWithKeys(fn (Lieu $lieu) => [$lieu->id => $libelle($lieu)])
+                ->mapWithKeys(fn (Lieu $lieu) => [$lieu->id => $nomComplet($lieu)])
                 ->all())
-            ->getOptionLabelUsing(fn ($value): ?string => ($lieu = Lieu::find($value)) ? $libelle($lieu) : null);
+            ->getOptionLabelUsing(fn ($value): ?string => ($lieu = Lieu::find($value)) ? $nomComplet($lieu) : null);
     }
 
     public static function getPages(): array

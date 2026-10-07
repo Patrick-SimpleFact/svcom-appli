@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sources\Pages;
 use App\Collecte\RegistreConnecteurs;
 use App\Filament\Resources\Collectes\CollecteResource;
 use App\Filament\Resources\Sources\SourceResource;
+use App\Filament\Support\Masquage;
 use App\Jobs\CollecterSource;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Toggle;
@@ -41,6 +42,7 @@ class ViewSource extends ViewRecord
 
                     $this->redirect(CollecteResource::getUrl('index'));
                 }),
+            ...Masquage::boutons('masquee', 'Ses séances disparaissent de l’app, sauf celles qu’une autre billetterie vend aussi ; la collecte continue (pour l’arrêter : décocher « Active »).'),
         ];
     }
 }
