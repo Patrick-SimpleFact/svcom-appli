@@ -53,11 +53,11 @@ class ParametresSeeder extends Seeder
             ['cle' => 'controle_fusions_actif', 'groupe' => 'Collecte', 'libelle' => 'File « Fusions à contrôler » active', 'description' => 'À désactiver quand la règle aura fait ses preuves (COLLECTE §7.2).', 'type' => $b, 'valeur' => true],
 
             // App
-['cle' => 'alertes_destinataires', 'groupe' => 'Supervision', 'libelle' => 'Destinataires des alertes', 'description' => 'Adresses e-mail séparées par des virgules. Vide : tous les admins actifs (F7.9).', 'type' => $t, 'valeur' => ''],
+            ['cle' => 'alertes_destinataires', 'groupe' => 'Supervision', 'libelle' => 'Destinataires des alertes', 'description' => 'Adresses e-mail séparées par des virgules. Vide : tous les admins actifs (F7.9).', 'type' => $t, 'valeur' => ''],
             ['cle' => 'alerte_chute_volume_pct', 'groupe' => 'Supervision', 'libelle' => 'Chute de volume alertée (%)', 'description' => 'Alerte si une collecte reçoit ce pourcentage de moins que la moyenne des 7 derniers jours (F7.9).', 'type' => $e, 'valeur' => 30],
             ['cle' => 'alerte_heure_publication', 'groupe' => 'Supervision', 'libelle' => 'Heure de contrôle des publications', 'description' => 'À partir de cette heure, alerte pour toute source active sans publication réussie depuis la veille à la même heure (F7.9).', 'type' => $t, 'valeur' => '07:00'],
             ['cle' => 'couverture_rayon_km', 'groupe' => 'Supervision', 'libelle' => 'Rayon du tableau de couverture (km)', 'description' => 'La couverture d’une ville compte les spectacles dans ce rayon autour de son centre, comme « autour de moi » (F7.13).', 'type' => $e, 'valeur' => 10],
-                        ['cle' => 'version_minimale_app', 'groupe' => 'App', 'libelle' => 'Version minimale de l’app', 'description' => 'En dessous, l’écran « mettez à jour » s’affiche (F2.8).', 'type' => $t, 'valeur' => '1.0.0'],
+            ['cle' => 'version_minimale_app', 'groupe' => 'App', 'libelle' => 'Version minimale de l’app', 'description' => 'En dessous, l’écran « mettez à jour » s’affiche (F2.8).', 'type' => $t, 'valeur' => '1.0.0'],
         ];
     }
 

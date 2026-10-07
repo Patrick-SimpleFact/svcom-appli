@@ -32,6 +32,8 @@ class ReglesFiltrageSeeder extends Seeder
         'marche nocturne', 'marche bio', 'marche du terroir', 'marche aux', 'marche des createurs', 'marche de createurs',
         'marche couvert', 'marche d automne', 'marche d ete', 'marche hebdomadaire', 'marche paysan', 'marche fermier',
         'marche du monde', 'marche des brasseurs', 'petit marche',
+        // billets d'entrée de musées et d'expositions vendus par Ticketmaster (« ANDY WARHOL - ENTRÉE SIMPLE », P02, 07/10/2026)
+        'entree simple',
     ];
 
     public function run(): void

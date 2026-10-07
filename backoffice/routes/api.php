@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AppareilController;
+use App\Http\Controllers\Api\AutourController;
 use App\Http\Middleware\IdentifierAppareil;
 use Illuminate\Support\Facades\Route;
 
@@ -11,4 +12,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->group(function () {
     // §2 Démarrage de l'app
     Route::post('appareils', [AppareilController::class, 'enregistrer']);
+
+    // §3 Autour de moi
+    Route::get('representations/autour', [AutourController::class, 'representations']);
+    Route::get('lieux/carte', [AutourController::class, 'carte']);
 });
