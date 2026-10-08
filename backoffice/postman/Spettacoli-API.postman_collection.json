@@ -3117,6 +3117,54 @@
           }
         }
       ]
+    },
+    {
+      "name": "§11 Mesure (P10)",
+      "item": [
+        {
+          "name": "Envoyer un lot d'événements",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "202 { recus, ignores }. lat/lon (facultatifs) servent seulement à trouver la commune, jamais enregistrés. Événements de plus de 7 jours ou dans le futur ignorés. 200 événements par lot au plus. Résumé chaque nuit (php artisan mesure:quotidienne --jour=AAAA-MM-JJ pour une journée précise).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 43.9493,\n  \"lon\": 4.8055,\n  \"evenements\": [\n    {\n      \"type\": \"ouverture\",\n      \"horodatage\": \"{{$isoTimestamp}}\"\n    },\n    {\n      \"type\": \"premier_clic_carte\",\n      \"horodatage\": \"{{$isoTimestamp}}\",\n      \"donnees\": {\n        \"secondes\": 14\n      }\n    },\n    {\n      \"type\": \"fiche_vue\",\n      \"horodatage\": \"{{$isoTimestamp}}\",\n      \"donnees\": {\n        \"spectacle_id\": 812,\n        \"origine\": \"liste_ce_soir\"\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/evenements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "evenements"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

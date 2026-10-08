@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CompteController;
 use App\Http\Controllers\Api\ContributionController;
 use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\GoutsController;
+use App\Http\Controllers\Api\MesureController;
 use App\Http\Controllers\Api\RechercheController;
 use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\SortieController;
@@ -44,6 +45,9 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     // §9 Suggestion à l'ouverture
     Route::get('suggestion', [SuggestionController::class, 'suggestion']);
     Route::post('suggestion/{affichage}', [SuggestionController::class, 'action'])->whereNumber('affichage');
+
+    // §11 Mesure
+    Route::post('evenements', [MesureController::class, 'evenements']);
 
     // §10 Contributions
     Route::post('signalements', [ContributionController::class, 'signaler']);
