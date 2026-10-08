@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccueilController;
+use App\Http\Controllers\BetaController;
 use App\Http\Controllers\EspaceSalleController;
 use App\Http\Controllers\PageLegaleController;
 use App\Http\Controllers\PartageController;
@@ -10,6 +11,12 @@ use Illuminate\Support\Facades\Route;
 // Page d'accueil du site (W05a).
 Route::get('/', [AccueilController::class, 'accueil'])->name('accueil');
 Route::post('accueil/autour', [AccueilController::class, 'apercuPosition'])->name('accueil.autour')->middleware('throttle:30,1');
+
+// Liste d'attente de la bêta (W05b) : double opt-in, désinscription en un bouton.
+Route::post('beta', [BetaController::class, 'inscrire'])->name('beta.inscrire')->middleware('throttle:5,60');
+Route::get('beta/{inscription}/confirmer', [BetaController::class, 'confirmer'])->name('beta.confirmer')->middleware('signed')->whereNumber('inscription');
+Route::get('beta/{inscription}/desinscrire', [BetaController::class, 'desinscription'])->name('beta.desinscrire')->middleware('signed')->whereNumber('inscription');
+Route::post('beta/{inscription}/desinscrire', [BetaController::class, 'desinscrire'])->middleware('signed')->whereNumber('inscription');
 
 // Lien partagé (F5.8, API §12) et fichiers qui permettent au téléphone d'ouvrir l'app à la place de la page.
 Route::get('s/{lien}', [PartageController::class, 'fiche'])->where('lien', '[a-z0-9-]+')->middleware('throttle:sortie');

@@ -60,6 +60,10 @@ Vous pouvez accéder à vos données, les corriger, les effacer, en recevoir une
 
 Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la **CNIL** (www.cnil.fr).
 
+## Liste d’attente de la bêta
+
+Si vous vous inscrivez pour tester l’application en avant-première, nous gardons votre **adresse e-mail**, votre type de téléphone (iPhone ou Android) et, si vous l’indiquez, votre ville. Votre inscription n’est valable qu’après avoir cliqué sur le lien de confirmation reçu par e-mail ; sans confirmation, elle est effacée sous **30 jours**. Nous vous écrivons uniquement pour l’ouverture de la bêta. Chaque e-mail contient un lien pour quitter la liste : votre adresse est alors effacée.
+
 ## Site spettacoli.fr
 
 Sur la page d’accueil, votre **ville est estimée à partir de votre adresse IP**, grâce à une base installée sur nos propres serveurs (DB-IP) : votre adresse n’est envoyée à aucun service extérieur, et ni l’adresse ni la ville ne sont enregistrées. Si vous cliquez sur « Voir les spectacles autour de moi », votre position sert uniquement à afficher les spectacles proches et n’est pas enregistrée.

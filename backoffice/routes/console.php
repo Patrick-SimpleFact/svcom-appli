@@ -1,5 +1,6 @@
 <?php
 
+use App\Web\ListeAttenteBeta;
 use Illuminate\Support\Facades\Schedule;
 
 // Fichiers bruts des collectes : 30 jours de conservation (F7.15).
@@ -40,3 +41,6 @@ Schedule::command('lieux:reparer-noms')->dailyAt('10:30')->timezone('Europe/Pari
 
 // Base de ville par adresse IP (page d'accueil du site, W05a) : DB-IP Lite, mise à jour chaque mois.
 Schedule::command('geoip:telecharger')->monthlyOn(3, '04:00');
+
+// Liste d'attente bêta : inscriptions jamais confirmées effacées après 30 jours (W05b).
+Schedule::call(fn () => app(ListeAttenteBeta::class)->purger())->name('beta:purger')->dailyAt('04:55');
