@@ -49,10 +49,19 @@
         button.bouton { border: 0; cursor: pointer; font: inherit; font-weight: 700; width: 100%; margin-top: 18px; }
         .facultatif { font-weight: 400; color: var(--gris); }
         .pot { position: absolute; left: -10000px; }
+        .legal h2 { font-size: 19px; margin: 26px 0 6px; }
+        .legal p, .legal li { line-height: 1.55; }
+        .legal mark { background: #ffe58a; color: #1d1a17; padding: 0 3px; border-radius: 3px; }
+        footer.pied { max-width: 520px; margin: 0 auto; padding: 8px 16px 32px; font-size: 13px; color: var(--gris); display: flex; gap: 14px; flex-wrap: wrap; }
     </style>
 </head>
 <body>
     <header class="marque">Spettacoli</header>
     <main>@yield('contenu')</main>
+    <footer class="pied">
+        <a href="{{ url('/mentions-legales') }}">Mentions légales</a>
+        <a href="{{ url('/confidentialite') }}">Confidentialité</a>
+        <a href="{{ url('/conditions') }}">Conditions d’utilisation</a>
+    </footer>
 </body>
 </html>
