@@ -15,6 +15,7 @@ use App\Models\Spectacle;
 use App\Support\Point;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * Fiches (F5, F4.2, API §5) : la fiche d'un spectacle avec les séances du jour et leurs billetteries triées (F5.4),
@@ -67,7 +68,15 @@ class Fiches
             'sources' => $offres->flatten()->map(fn (Offre $o) => $o->source->nom)->unique()->values(),
             'mentions' => $offres->flatten()->map(fn (Offre $o) => $o->source->mention_obligatoire)->filter()->unique()->values(),
             'mis_a_jour_le' => $offres->flatten()->max('vue_le')?->toIso8601String(),
+            // F5.8 : lien à partager ; ouvre l'app si elle est installée, sinon une page web minimale.
+            'lien_partage' => self::lienPartage($spectacle, $choisie?->id),
         ];
+    }
+
+    /** Adresse du lien partagé (API §12) : /s/{titre}-{id}, sur la séance choisie si elle est connue. */
+    public static function lienPartage(Spectacle $spectacle, ?int $representationId = null): string
+    {
+        return url('/s/'.(Str::slug(Str::limit($spectacle->titre, 60, '')) ?: 'spectacle').'-'.$spectacle->id).($representationId ? '?r='.$representationId : '');
     }
 
     /** F5.3 : toutes les dates à venir, regroupées par lieu, le plus proche d'abord (sinon la date la plus proche d'abord). */
