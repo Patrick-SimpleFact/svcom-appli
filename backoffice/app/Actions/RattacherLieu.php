@@ -60,7 +60,7 @@ class RattacherLieu
             ??= LieuSource::where('source_id', $source->id)->where('cle', $cle)->value('lieu_id');
 
         if ($lieuId !== null) {
-            return $this->lieuFinal(Lieu::findOrFail($lieuId));
+            return $this->nommer($this->lieuFinal(Lieu::findOrFail($lieuId)), $annonce);
         }
 
         $lieu = DB::transaction(function () use ($annonce, $source, $cle) {
@@ -250,6 +250,8 @@ class RattacherLieu
     private function completer(Lieu $lieu, AnnonceNormalisee $annonce, ?Ville $ville, ?Point $position, ?PrecisionPosition $precision): void
     {
         $valeurs = array_filter([
+            // Un nom fabriqué avec l'adresse cède la place au vrai nom dès qu'une source le donne.
+            'nom' => $lieu->nomFabrique() && filled($annonce->lieuNom) ? mb_substr($annonce->lieuNom, 0, 255) : null,
             'adresse' => blank($lieu->adresse) && $annonce->lieuAdresse !== null ? mb_substr($annonce->lieuAdresse, 0, 255) : null,
             'code_postal' => blank($lieu->code_postal) && $annonce->lieuCodePostal !== null ? mb_substr($annonce->lieuCodePostal, 0, 10) : null,
             'ville_id' => $lieu->ville_id === null ? $ville?->id : null,
@@ -264,6 +266,16 @@ class RattacherLieu
         if ($valeurs !== []) {
             $lieu->update($valeurs);
         }
+    }
+
+    /** Lieu déjà connu de la source : s'il ne porte que son adresse et que l'annonce donne un nom, il prend ce nom. */
+    private function nommer(Lieu $lieu, AnnonceNormalisee $annonce): Lieu
+    {
+        if ($lieu->nomFabrique() && filled($annonce->lieuNom)) {
+            $lieu->update(['nom' => mb_substr($annonce->lieuNom, 0, 255)]);
+        }
+
+        return $lieu;
     }
 
     private function rang(?PrecisionPosition $precision): int

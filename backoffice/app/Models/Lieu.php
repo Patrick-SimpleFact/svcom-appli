@@ -95,6 +95,15 @@ class Lieu extends Model
         return $this->belongsTo(self::class, 'fusionne_dans_id');
     }
 
+    /**
+     * Nom fabriqué avec l'adresse, faute de nom fourni par la source (export DATAtourisme, certains événements) :
+     * à remplacer dès qu'une source donne le vrai nom, sauf correction à la main.
+     */
+    public function nomFabrique(): bool
+    {
+        return filled($this->adresse) && $this->nom === $this->adresse && ! $this->estVerrouille('nom');
+    }
+
     /** Lieux réels (non fusionnés dans un autre). */
     public function scopeActifs(Builder $requete): Builder
     {
