@@ -41,6 +41,8 @@ class ParametresSeeder extends Seeder
             ['cle' => 'suggestion_relance_jours', 'groupe' => 'Suggestions', 'libelle' => 'Relance après un « Non merci » : jours', 'description' => 'Les deux conditions doivent être réunies (F6.2).', 'type' => $e, 'valeur' => 30],
             ['cle' => 'suggestion_relance_ouvertures', 'groupe' => 'Suggestions', 'libelle' => 'Relance après un « Non merci » : ouvertures', 'description' => 'F6.2.', 'type' => $e, 'valeur' => 10],
             ['cle' => 'suggestion_relances_max', 'groupe' => 'Suggestions', 'libelle' => 'Nombre maximal de relances', 'description' => 'F6.2.', 'type' => $e, 'valeur' => 1],
+            ['cle' => 'suggestions_villes_test_seulement', 'groupe' => 'Suggestions', 'libelle' => 'Suggestions seulement dans les villes test', 'description' => 'Pour démarrer dans quelques villes : cocher « Suggestions (test) » dans l’écran Villes (F6.4).', 'type' => $b, 'valeur' => false],
+            ['cle' => 'suggestion_rayon_km', 'groupe' => 'Suggestions', 'libelle' => 'Distance maximale d’une suggestion (km)', 'description' => 'Un spectacle « près de vous » (F6.1).', 'type' => $e, 'valeur' => 15],
             ['cle' => 'suggestion_part_sponsorisee_max', 'groupe' => 'Suggestions', 'libelle' => 'Part maximale de suggestions sponsorisées', 'description' => 'Entre 0 et 1 (0,5 = une sur deux au plus, F6.4).', 'type' => $d, 'valeur' => 0.5],
 
             // Pistes utilisateurs (F8)

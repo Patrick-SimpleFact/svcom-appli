@@ -23,6 +23,7 @@ class Ville extends Model
         'position',
         'fuseau_horaire',
         'est_pilote',
+        'suggestions_test',
     ];
 
     protected function casts(): array
@@ -32,6 +33,7 @@ class Ville extends Model
             'population' => 'integer',
             'position' => PointGeographique::class,
             'est_pilote' => 'boolean',
+            'suggestions_test' => 'boolean',
         ];
     }
 

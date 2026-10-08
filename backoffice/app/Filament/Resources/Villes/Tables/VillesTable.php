@@ -35,10 +35,15 @@ class VillesTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 ToggleColumn::make('est_pilote')
                     ->label('Ville pilote'),
+                ToggleColumn::make('suggestions_test')
+                    ->label('Suggestions (test)')
+                    ->tooltip('Utilisé quand le réglage « Suggestions seulement dans les villes test » est activé (F6.4).'),
             ])
             ->filters([
                 TernaryFilter::make('est_pilote')
                     ->label('Ville pilote'),
+                TernaryFilter::make('suggestions_test')
+                    ->label('Suggestions (test)'),
             ]);
     }
 }

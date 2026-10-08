@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Models\AffichageSuggestion;
 use App\Models\ClicSortant;
 use App\Models\Offre;
 use Illuminate\Http\Request;
@@ -34,6 +35,11 @@ class EnregistrerClic
 
         $origine = $requete->query('origine');
         $distance = $requete->query('distance_km');
+
+        // Clic venu d'une suggestion (F6.5) : noté sur l'affichage, pour les statistiques et le rapport annonceur.
+        if (ctype_digit((string) $requete->query('affichage')) && $representation) {
+            AffichageSuggestion::whereKey((int) $requete->query('affichage'))->where('representation_id', $representation->id)->update(['clic_billetterie' => true]);
+        }
 
         return ClicSortant::create([
             'horodatage' => now(),

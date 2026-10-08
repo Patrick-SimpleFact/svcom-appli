@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ChoixSuggestion;
 use App\Http\Controllers\Controller;
 use App\Models\Appareil;
 use App\Models\Genre;
@@ -50,7 +51,11 @@ class AppareilController extends Controller
 
         $poserQuestion = $appareil->doitPoserQuestionSuggestion();
         if ($poserQuestion) {
-            $appareil->suggestion_question_le = now(); // posée une fois : on attend la réponse (P09)
+            // Relance après un « Non merci » : comptée dès qu'elle est posée (un 2e refus est définitif, F6.2).
+            if ($appareil->suggestion_choix === ChoixSuggestion::NonMerci) {
+                $appareil->suggestion_relances++;
+            }
+            $appareil->suggestion_question_le = now();
         }
         $appareil->save();
 
@@ -68,7 +73,7 @@ class AppareilController extends Controller
     }
 
     /** Commune dont le centre est le plus proche de la position (index géographique). */
-    private static function communeProche(Point $position): ?int
+    public static function communeProche(Point $position): ?int
     {
         return Ville::whereRaw('ST_DWithin(position, ?::geography, ?)', [$position->versEwkt(), self::RAYON_COMMUNE_METRES])
             ->orderByRaw('position <-> ?::geography', [$position->versEwkt()])

@@ -52,6 +52,10 @@
     {
       "key": "representation_id",
       "value": "1495"
+    },
+    {
+      "key": "affichage_id",
+      "value": "1"
     }
   ],
   "item": [
@@ -2659,6 +2663,191 @@
                   "value": "1"
                 }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "§9 Suggestion à l'ouverture (P09)",
+      "item": [
+        {
+          "name": "1. Accepter les suggestions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Réponse à la question (oui, non_merci) ou réglage du Profil / « Ne plus me proposer » (desactive). Il faut d'abord POST /v1/appareils (§2).",
+            "url": {
+              "raw": "{{base_url}}/appareils/suggestion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils",
+                "suggestion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"choix\": \"oui\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2. La suggestion du jour",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "204 si rien à montrer : pas accepté, déjà vue aujourd'hui, interrupteur coupé, rien de proche dans les goûts. gouts[] = goûts gardés sur le téléphone (ignorés si connecté : ceux du compte). Pour la revoir le même jour, changer la variable « appareil » et refaire 1.",
+            "url": {
+              "raw": "{{base_url}}/suggestion?lat={{lat}}&lon={{lon}}&gouts[]=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "suggestion"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "{{lat}}"
+                },
+                {
+                  "key": "lon",
+                  "value": "{{lon}}"
+                },
+                {
+                  "key": "gouts[]",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. « Voir le spectacle »",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Ou action « passee » (bouton Passer). affichage_id vient de la réponse de 2. Le clic billetterie : /sortie/{offre}?origine=suggestion_auto&affichage={{affichage_id}}.",
+            "url": {
+              "raw": "{{base_url}}/suggestion/{{affichage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "suggestion",
+                "{{affichage_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"fiche\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ne plus me proposer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Jamais relancé ensuite (F6.2).",
+            "url": {
+              "raw": "{{base_url}}/appareils/suggestion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appareils",
+                "suggestion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"choix\": \"desactive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         }

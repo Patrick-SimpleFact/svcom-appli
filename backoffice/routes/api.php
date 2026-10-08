@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ContributionController;
 use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\GoutsController;
 use App\Http\Controllers\Api\RechercheController;
+use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\SortieController;
 use App\Http\Middleware\IdentifierAppareil;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->group(function () {
     // §2 Démarrage de l'app
     Route::post('appareils', [AppareilController::class, 'enregistrer']);
+    Route::put('appareils/suggestion', [SuggestionController::class, 'choix']);
 
     // §3 Autour de moi
     Route::get('representations/autour', [AutourController::class, 'representations']);
@@ -38,6 +40,10 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     Route::post('auth/code/verification', [CompteController::class, 'verifierCode']);
     Route::post('auth/apple', [CompteController::class, 'apple']);
     Route::post('auth/google', [CompteController::class, 'google']);
+
+    // §9 Suggestion à l'ouverture
+    Route::get('suggestion', [SuggestionController::class, 'suggestion']);
+    Route::post('suggestion/{affichage}', [SuggestionController::class, 'action'])->whereNumber('affichage');
 
     // §10 Contributions
     Route::post('signalements', [ContributionController::class, 'signaler']);
