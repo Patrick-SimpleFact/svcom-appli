@@ -60,6 +60,10 @@ Vous pouvez accéder à vos données, les corriger, les effacer, en recevoir une
 
 Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la **CNIL** (www.cnil.fr).
 
+## Site spettacoli.fr
+
+Sur la page d’accueil, votre **ville est estimée à partir de votre adresse IP**, grâce à une base installée sur nos propres serveurs (DB-IP) : votre adresse n’est envoyée à aucun service extérieur, et ni l’adresse ni la ville ne sont enregistrées. Si vous cliquez sur « Voir les spectacles autour de moi », votre position sert uniquement à afficher les spectacles proches et n’est pas enregistrée.
+
 ## Cookies
 
 Le site ne dépose **aucun cookie publicitaire ni de mesure d’audience**. Seuls des cookies techniques indispensables sont utilisés (connexion à l’espace salle, sécurité des formulaires).
