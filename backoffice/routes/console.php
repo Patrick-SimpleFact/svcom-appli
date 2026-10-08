@@ -28,3 +28,6 @@ Schedule::command('nouveautes:rappels')->dailyAt('08:00')->timezone('Europe/Pari
 
 // E-mails des pistes utilisateurs effacés 12 mois après le traitement (F8.6, F7.15).
 Schedule::command('pistes:effacer-emails')->dailyAt('04:50');
+
+// Mesure d'usage : résumé de la veille, partition du mois suivant, purge des événements de plus de 13 mois (SCHEMA §9, F7.15).
+Schedule::command('mesure:quotidienne')->dailyAt('03:15')->timezone('Europe/Paris');
