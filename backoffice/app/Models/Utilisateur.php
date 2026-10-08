@@ -37,6 +37,8 @@ class Utilisateur extends Model
             'lettre_info_consentie_le' => 'datetime',
             'derniere_connexion' => 'datetime',
             'supprime_le' => 'datetime',
+            // Droits (F6.6, anticipé) : ex. sans_sponsorise ; vide au MVP1.
+            'droits' => 'array',
         ];
     }
 
