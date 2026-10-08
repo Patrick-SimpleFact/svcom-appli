@@ -4,8 +4,14 @@ namespace App\Filament\Widgets;
 
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
+use App\Enums\StatutPiste;
+use App\Enums\StatutSignalement;
 use App\Filament\Pages\BoiteDeTravail;
+use App\Filament\Resources\Pistes\PisteResource;
+use App\Filament\Resources\Signalements\SignalementResource;
 use App\Models\ElementATraiter;
+use App\Models\Piste;
+use App\Models\Signalement;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Livewire\Attributes\On;
@@ -58,6 +64,26 @@ class CompteursFiles extends StatsOverviewWidget
             // Les files avec le plus d'urgences d'abord.
             ->sortByDesc(fn (Stat $stat, string $file) => ($compteurs->get($file)->ce_soir ?? 0) * 1_000_000 + ($compteurs->get($file)->urgents ?? 0))
             ->values()
+            ->push(...$this->contributions())
             ->all();
+    }
+
+    /** Signalements et pistes des utilisateurs (F5.6, F8) : leurs propres tables, à la suite des files techniques. */
+    private function contributions(): array
+    {
+        $signalements = Signalement::where('statut', StatutSignalement::Nouveau)->count();
+        $pistes = Piste::tetesDeGroupe()->whereIn('statut', StatutPiste::OUVERTS)->count();
+        $pistesNouvelles = Piste::tetesDeGroupe()->where('statut', StatutPiste::Nouvelle)->count();
+
+        return [
+            Stat::make('Signalements', number_format($signalements, 0, ',', ' '))
+                ->description($signalements === 0 ? 'Rien en attente' : 'Erreurs signalées par les utilisateurs')
+                ->color($signalements > 0 ? 'warning' : 'gray')
+                ->url(SignalementResource::getUrl()),
+            Stat::make('Pistes utilisateurs', number_format($pistes, 0, ',', ' '))
+                ->description($pistes === 0 ? 'Rien en attente' : "{$pistesNouvelles} nouvelle(s), une réponse attendue")
+                ->color($pistesNouvelles > 0 ? 'warning' : 'gray')
+                ->url(PisteResource::getUrl()),
+        ];
     }
 }

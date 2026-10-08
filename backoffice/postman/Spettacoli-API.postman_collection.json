@@ -48,6 +48,10 @@
     {
       "key": "jeton",
       "value": ""
+    },
+    {
+      "key": "representation_id",
+      "value": "1495"
     }
   ],
   "item": [
@@ -2654,6 +2658,271 @@
                   "key": "pour_vous",
                   "value": "1"
                 }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "§10 Contributions (P08)",
+      "item": [
+        {
+          "name": "Signaler une erreur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Sans compte. Motifs : horaire_faux, annule, mauvais_lieu, doublon, autre. Un 2e envoi du même téléphone pour la même séance met à jour le 1er (200).",
+            "url": {
+              "raw": "{{base_url}}/signalements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "signalements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"representation_id\": {{representation_id}},\n  \"motif\": \"annule\",\n  \"commentaire\": \"Le concert est annulé sur le site du lieu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Lieu déjà connu ? (pendant la frappe)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "« Le Théâtre des Halles est déjà dans Spettacoli » (F8.2). lieu = null si inconnu.",
+            "url": {
+              "raw": "{{base_url}}/pistes/lieu-connu?nom=theatre des hales&ville_id={{ville_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pistes",
+                "lieu-connu"
+              ],
+              "query": [
+                {
+                  "key": "nom",
+                  "value": "theatre des hales"
+                },
+                {
+                  "key": "ville_id",
+                  "value": "{{ville_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Proposer une salle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Sans compte (avec le jeton, la piste va dans « Mes propositions »). Au-delà du maximum par jour et par téléphone (réglage, 5) : 429 limite_atteinte.",
+            "url": {
+              "raw": "{{base_url}}/pistes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pistes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"salle\",\n  \"ville_id\": {{ville_id}},\n  \"nom\": \"ForumSirius\",\n  \"lien\": \"https://www.forumsirius.fr\",\n  \"commentaire\": \"Beaucoup de concerts de jazz\",\n  \"email\": \"{{email}}\",\n  \"travaille_pour_le_lieu\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Proposer une billetterie ou un agenda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "La ville est facultative pour ce type. Les pistes vers le même site sont regroupées.",
+            "url": {
+              "raw": "{{base_url}}/pistes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pistes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"billetterie_ou_agenda\",\n  \"nom\": \"Agenda de l'office de tourisme\",\n  \"lien\": \"https://www.avignon-tourisme.com/agenda\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Proposer une salle (connecté)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Rattachée au compte : visible dans « Mes propositions ».",
+            "url": {
+              "raw": "{{base_url}}/pistes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pistes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"salle\",\n  \"ville_id\": {{ville_id}},\n  \"nom\": \"La Factory\",\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mes propositions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton}}"
+              }
+            ],
+            "description": "Statut (nouvelle, etudiee, integree, ecartee) et réponse envoyée (F8.6).",
+            "url": {
+              "raw": "{{base_url}}/moi/propositions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moi",
+                "propositions"
               ]
             }
           }
