@@ -292,3 +292,28 @@ it('propose la recherche BAN dans la file « Lieux à vérifier »', function ()
     expect($lieu->fresh()->adresse)->toBe('Avenue de Sainte-Catherine')
         ->and($lieu->fresh()->precision_position)->toBe(PrecisionPosition::Adresse);
 });
+
+it('un lieu nommé par son adresse prend le vrai nom dès qu’une source le donne (correctif du 08/10)', function () {
+    $sansNom = ['lieuAdresse' => '11 Cours Carnot', 'lieuCodePostal' => '84000', 'lieuVille' => 'Avignon', 'lieuLatitude' => 43.9480, 'lieuLongitude' => 4.8100];
+    $lieu = ($this->rattacher)(annonceLieu($sansNom), $this->fnac);
+    expect($lieu->nom)->toBe('11 Cours Carnot')->and($lieu->nomFabrique())->toBeTrue();
+
+    // Même source, même lieu, qui donne enfin le nom.
+    ($this->rattacher)(annonceLieu([...$sansNom, 'lieuNom' => 'Médiathèque Carnot'], 'A-2'), $this->billetreduc);
+    expect($lieu->fresh()->nom)->toBe('Médiathèque Carnot')->and(Lieu::count())->toBe(2);
+});
+
+it('ne remplace jamais un nom corrigé à la main ; la commande de réparation reprend le nom d’une source', function () {
+    $fabrique = fn (string $adresse) => Lieu::create(['nom' => $adresse, 'type' => TypeLieu::Autre, 'adresse' => $adresse, 'ville_id' => $this->avignon->id, 'position' => new Point(43.95, 4.81)]);
+    $aReparer = $fabrique('2 place Pie');
+    $corrige = $fabrique('3 rue des Lices');
+    $corrige->forceFill(['champs_verrouilles' => ['nom']])->saveQuietly();
+    foreach ([$aReparer, $corrige] as $l) {
+        LieuSource::create(['source_id' => $this->fnac->id, 'cle' => 'c'.$l->id, 'nom' => 'Salle '.$l->id, 'adresse' => $l->adresse, 'lieu_id' => $l->id]);
+    }
+
+    $this->artisan('lieux:reparer-noms')->assertSuccessful();
+
+    expect($aReparer->fresh()->nom)->toBe('Salle '.$aReparer->id)
+        ->and($corrige->fresh()->nom)->toBe('3 rue des Lices');
+});

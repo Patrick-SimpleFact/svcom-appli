@@ -34,3 +34,6 @@ Schedule::command('mesure:quotidienne')->dailyAt('03:15')->timezone('Europe/Pari
 
 // Notification du soir : les nouveautés de la journée regroupées, une par personne et par jour au plus (F3.4).
 Schedule::command('notifications:envoyer')->dailyAt('18:00')->timezone('Europe/Paris')->withoutOverlapping();
+
+// Filet de sécurité : un lieu nommé par son adresse prend le vrai nom fourni depuis par une source (correctif du 08/10/2026).
+Schedule::command('lieux:reparer-noms')->dailyAt('10:30')->timezone('Europe/Paris');
