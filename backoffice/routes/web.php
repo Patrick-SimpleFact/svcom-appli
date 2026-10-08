@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EspaceSalleController;
+use App\Http\Controllers\PageLegaleController;
 use App\Http\Controllers\PartageController;
 use App\Http\Middleware\ConnecteEspaceSalle;
 use Illuminate\Support\Facades\Route;
@@ -29,3 +30,6 @@ Route::prefix('espace-salle')->name('espace-salle.')->group(function () {
         Route::post('deconnexion', [EspaceSalleController::class, 'deconnexion'])->name('deconnexion');
     });
 });
+
+// Pages légales (F1.6, API §12).
+Route::get('{slug}', PageLegaleController::class)->whereIn('slug', ['confidentialite', 'conditions', 'mentions-legales'])->name('page-legale');
