@@ -64,6 +64,20 @@ class FusionnerLieux
                     'traite_le' => now(),
                 ]);
 
+            // Ce qui désigne le lieu hors du catalogue suit aussi : accès des théâtres (F9), suivis (F3), demandes, annonceurs, pistes.
+            // Un compte qui avait déjà le lieu conservé garde une seule ligne.
+            foreach (['statuts_utilisateur' => ['utilisateur_id', 'statut'], 'suivis' => ['utilisateur_id', 'type']] as $table => [$personne, $nature]) {
+                $cibles = $table === 'suivis' ? ['cible_id', "and s.type = 'lieu'"] : ['lieu_id', ''];
+                DB::delete("delete from {$table} s where s.{$cibles[0]} = ? {$cibles[1]} and exists (select 1 from {$table} t where t.{$personne} = s.{$personne}
+                    and t.{$nature} = s.{$nature} and t.{$cibles[0]} = ?)", [$doublon->id, $conserve->id]);
+                DB::table($table)->where($cibles[0], $doublon->id)->when($table === 'suivis', fn ($q) => $q->where('type', 'lieu'))->update([$cibles[0] => $conserve->id]);
+            }
+            foreach (['demandes_espace_salle' => ['lieu_id', 'lieu_propose_id'], 'annonceurs' => ['lieu_id'], 'pistes' => ['lieu_id']] as $table => $colonnes) {
+                foreach ($colonnes as $colonne) {
+                    DB::table($table)->where($colonne, $doublon->id)->update([$colonne => $conserve->id]);
+                }
+            }
+
             // Les autres doublons déjà rattachés au doublon suivent vers le lieu conservé.
             Lieu::where('fusionne_dans_id', $doublon->id)->get()
                 ->each(fn (Lieu $lieu) => $lieu->update(['fusionne_dans_id' => $conserve->id]));

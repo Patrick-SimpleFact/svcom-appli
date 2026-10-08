@@ -10,7 +10,7 @@
     $resume = collect([$jour?->isoFormat('dddd D MMMM'), $lieu ? collect([$lieu['nom'], $lieu['ville']])->filter()->implode(', ') : null])->filter()->implode(' · ');
     $ouvrir = $app['schema'].'://spectacle/'.$f['id'].(request('r') ? '?representation='.(int) request('r') : '');
 @endphp
-@extends('partage.mise-en-page')
+@extends('web.mise-en-page')
 
 @section('titre', $f['titre'])
 
