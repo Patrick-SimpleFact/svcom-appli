@@ -3163,6 +3163,38 @@
               ]
             }
           }
+        },
+        {
+          "name": "Notification ouverte",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Appareil",
+                "value": "{{appareil}}"
+              },
+              {
+                "key": "X-App-Version",
+                "value": "{{version_app}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "F3.7 : l'app le signale quand on touche la notification (notification_id reçu dans ses données). 204, même si l'identifiant n'est pas celui de ce téléphone.",
+            "url": {
+              "raw": "{{base_url}}/notifications/1/ouverte",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "1",
+                "ouverte"
+              ]
+            }
+          }
         }
       ]
     }
