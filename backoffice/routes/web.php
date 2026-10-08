@@ -1,14 +1,15 @@
 <?php
 
+use App\Http\Controllers\AccueilController;
 use App\Http\Controllers\EspaceSalleController;
 use App\Http\Controllers\PageLegaleController;
 use App\Http\Controllers\PartageController;
 use App\Http\Middleware\ConnecteEspaceSalle;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Page d'accueil du site (W05a).
+Route::get('/', [AccueilController::class, 'accueil'])->name('accueil');
+Route::post('accueil/autour', [AccueilController::class, 'apercuPosition'])->name('accueil.autour')->middleware('throttle:30,1');
 
 // Lien partagé (F5.8, API §12) et fichiers qui permettent au téléphone d'ouvrir l'app à la place de la page.
 Route::get('s/{lien}', [PartageController::class, 'fiche'])->where('lien', '[a-z0-9-]+')->middleware('throttle:sortie');

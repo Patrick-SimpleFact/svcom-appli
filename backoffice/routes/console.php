@@ -37,3 +37,6 @@ Schedule::command('notifications:envoyer')->dailyAt('18:00')->timezone('Europe/P
 
 // Filet de sécurité : un lieu nommé par son adresse prend le vrai nom fourni depuis par une source (correctif du 08/10/2026).
 Schedule::command('lieux:reparer-noms')->dailyAt('10:30')->timezone('Europe/Paris');
+
+// Base de ville par adresse IP (page d'accueil du site, W05a) : DB-IP Lite, mise à jour chaque mois.
+Schedule::command('geoip:telecharger')->monthlyOn(3, '04:00');

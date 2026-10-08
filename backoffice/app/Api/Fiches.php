@@ -76,7 +76,12 @@ class Fiches
     /** Adresse du lien partagé (API §12) : /s/{titre}-{id}, sur la séance choisie si elle est connue. */
     public static function lienPartage(Spectacle $spectacle, ?int $representationId = null): string
     {
-        return url('/s/'.(Str::slug(Str::limit($spectacle->titre, 60, '')) ?: 'spectacle').'-'.$spectacle->id).($representationId ? '?r='.$representationId : '');
+        return self::lienPartageDe($spectacle->id, $spectacle->titre, $representationId);
+    }
+
+    public static function lienPartageDe(int $id, string $titre, ?int $representationId = null): string
+    {
+        return url('/s/'.(Str::slug(Str::limit($titre, 60, '')) ?: 'spectacle').'-'.$id).($representationId ? '?r='.$representationId : '');
     }
 
     /** F5.3 : toutes les dates à venir, regroupées par lieu, le plus proche d'abord (sinon la date la plus proche d'abord). */
