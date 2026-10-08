@@ -37,6 +37,21 @@
         .bientot i { width: 9px; height: 9px; border-radius: 50%; background: var(--rouge); flex: none; }
         @media (max-width: 420px) { .bientot { font-size: 14.5px; padding: 0 16px; } }
 
+        .beta { margin-top: 30px; max-width: 520px; }
+        .beta-titre { font-weight: 700; margin: 0 0 10px; }
+        .beta-ligne { display: flex; gap: 8px; flex-wrap: wrap; }
+        .beta input[type=email], .beta .ville-saisie { flex: 1 1 220px; min-height: 52px; border-radius: 26px; border: 1px solid var(--trait); background: var(--carte); padding: 0 20px; font: inherit; font-size: 16px; color: var(--encre); }
+        .beta .ville-saisie { flex: 1 1 180px; }
+        .beta-envoyer { margin-top: 14px; }
+        .beta-options { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 12px; font-size: 15px; color: var(--gris); }
+        .choix { display: inline-flex; gap: 6px; align-items: center; color: var(--encre); font-weight: 600; min-height: 44px; cursor: pointer; }
+        .choix input { width: 18px; height: 18px; accent-color: var(--rouge); }
+        .consentement { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--gris); margin-top: 10px; }
+        .consentement input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--rouge); }
+        .beta-erreur { color: #b42318; font-size: 14px; margin: 8px 0 0; }
+        .beta-merci { background: var(--carte); border-left: 4px solid var(--rouge); border-radius: 10px; padding: 12px 16px; margin: 0; }
+        .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        .pot { position: absolute; left: -10000px; }
         .telephone-zone { display: flex; flex-direction: column; align-items: center; gap: 14px; }
         .telephone { width: 340px; max-width: 100%; border-radius: 46px; background: var(--encre); padding: 12px; box-shadow: 0 30px 60px -20px rgba(22,22,29,.35); }
         .ecran { background: var(--fond); border-radius: 36px; padding: 26px 18px 18px; min-height: 560px; }
@@ -112,6 +127,35 @@
                         <span class="bientot"><i aria-hidden="true"></i>Bientôt sur l’App Store et Google Play</span>
                     @endif
                 </div>
+
+                @unless ($app['app_store'] || $app['google_play'])
+                    {{-- Liste d'attente de la bêta (W05b) : double opt-in, effacement en un clic. --}}
+                    <form class="beta" id="beta" method="post" action="{{ route('beta.inscrire') }}">
+                        @csrf
+                        <input type="hidden" name="debut" value="{{ encrypt(now()->timestamp) }}">
+                        <div class="pot" aria-hidden="true"><label>Ne pas remplir <input type="text" name="site_entreprise" tabindex="-1" autocomplete="off"></label></div>
+                        <p class="beta-titre">Testez Spettacoli en avant-première</p>
+                        @if (session('beta'))
+                            <p class="beta-merci" role="status">{{ session('beta') }}</p>
+                        @else
+                            <div class="beta-ligne">
+                                <label class="sr" for="beta-email">Votre e-mail</label>
+                                <input id="beta-email" type="email" name="email" placeholder="Votre e-mail" autocomplete="email" required value="{{ old('email') }}">
+                                <input id="beta-ville" class="ville-saisie" type="text" name="ville" placeholder="Votre ville (facultatif)" value="{{ old('ville') }}" maxlength="100" aria-label="Votre ville (facultatif)">
+                            </div>
+                            <div class="beta-options">
+                                <span>Votre téléphone :</span>
+                                @foreach (\App\Models\InscriptionBeta::PLATEFORMES as $code => $nom)
+                                    <label class="choix"><input type="radio" name="plateforme" value="{{ $code }}" @checked(old('plateforme') === $code) required> {{ $nom }}</label>
+                                @endforeach
+                            </div>
+                            <label class="consentement"><input type="checkbox" name="consentement" value="1" @checked(old('consentement'))>
+                                <span>J’accepte de recevoir un e-mail à l’ouverture de la bêta. Rien d’autre, désinscription en un clic (<a href="{{ url('/confidentialite') }}">confidentialité</a>).</span></label>
+                            @foreach ($errors->beta->all() as $erreur)<p class="beta-erreur">{{ $erreur }}</p>@endforeach
+                            <button class="bouton noir beta-envoyer" type="submit">Prévenez-moi</button>
+                        @endif
+                    </form>
+                @endunless
             </div>
             @if ($apercu)
             <div class="telephone-zone">
