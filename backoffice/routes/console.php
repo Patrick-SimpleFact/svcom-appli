@@ -25,3 +25,6 @@ Schedule::command('comptes:purger')->dailyAt('04:45');
 
 // Rappels du jour J des favoris, dans la file des nouveautés (F3.4) ; la notification regroupée part à 18 h (P11).
 Schedule::command('nouveautes:rappels')->dailyAt('08:00')->timezone('Europe/Paris');
+
+// E-mails des pistes utilisateurs effacés 12 mois après le traitement (F8.6, F7.15).
+Schedule::command('pistes:effacer-emails')->dailyAt('04:50');

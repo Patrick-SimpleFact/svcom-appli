@@ -2,11 +2,13 @@
 
 namespace App\Comptes;
 
+use App\Contributions\Contributions;
 use App\Exceptions\ErreurApi;
 use App\Mail\ExportDonneesMail;
 use App\Models\Appareil;
 use App\Models\ConnexionExterne;
 use App\Models\Genre;
+use App\Models\Piste;
 use App\Models\StatutUtilisateur;
 use App\Models\Utilisateur;
 use Illuminate\Support\Facades\DB;
@@ -139,6 +141,7 @@ class Comptes
             'cree_le' => $u->created_at?->toIso8601String(),
             'derniere_connexion' => $u->derniere_connexion?->toIso8601String(),
             'appareils' => $u->appareils()->get(['plateforme', 'version_app', 'premiere_ouverture', 'derniere_ouverture'])->toArray(),
+            'pistes' => app(Contributions::class)->propositions($u),
         ];
     }
 
@@ -154,6 +157,8 @@ class Comptes
             $u->preferences()->delete();
             $u->statuts()->delete();
             $u->appareils()->update(['utilisateur_id' => null]);
+            // Pistes gardées pour le back-office, sans l'e-mail ni le lien vers le compte.
+            Piste::where('utilisateur_id', $u->id)->update(['email' => null, 'utilisateur_id' => null]);
             $u->update([
                 'prenom' => null, 'email' => null, 'naissance_mois' => null, 'naissance_annee' => null,
                 'lettre_info' => false, 'lettre_info_consentie_le' => null, 'supprime_le' => now(),

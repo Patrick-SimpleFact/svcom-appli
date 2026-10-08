@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AppareilController;
 use App\Http\Controllers\Api\AutourController;
 use App\Http\Controllers\Api\CompteController;
+use App\Http\Controllers\Api\ContributionController;
 use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\GoutsController;
 use App\Http\Controllers\Api\RechercheController;
@@ -38,6 +39,11 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     Route::post('auth/apple', [CompteController::class, 'apple']);
     Route::post('auth/google', [CompteController::class, 'google']);
 
+    // §10 Contributions
+    Route::post('signalements', [ContributionController::class, 'signaler']);
+    Route::post('pistes', [ContributionController::class, 'proposer']);
+    Route::get('pistes/lieu-connu', [ContributionController::class, 'lieuConnu']);
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('auth/deconnexion', [CompteController::class, 'deconnexion']);
         Route::get('moi', [CompteController::class, 'moi']);
@@ -56,6 +62,9 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
         Route::delete('moi/suivis/{id}', [GoutsController::class, 'nePlusSuivre'])->whereNumber('id');
         Route::get('moi/nouveautes', [GoutsController::class, 'nouveautes']);
         Route::post('moi/nouveautes/vues', [GoutsController::class, 'marquerVues']);
+
+        // §10 « Mes propositions »
+        Route::get('moi/propositions', [ContributionController::class, 'propositions']);
     });
 });
 
