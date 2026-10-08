@@ -30,4 +30,9 @@ class StatutUtilisateur extends Model
     {
         return $this->belongsTo(Lieu::class);
     }
+
+    public function utilisateur(): BelongsTo
+    {
+        return $this->belongsTo(Utilisateur::class);
+    }
 }

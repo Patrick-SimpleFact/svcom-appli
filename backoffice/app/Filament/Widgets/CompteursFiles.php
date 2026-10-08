@@ -3,12 +3,15 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\FileATraiter;
+use App\Enums\StatutDemandeSalle;
 use App\Enums\StatutElement;
 use App\Enums\StatutPiste;
 use App\Enums\StatutSignalement;
 use App\Filament\Pages\BoiteDeTravail;
+use App\Filament\Resources\DemandesEspaceSalle\DemandeEspaceSalleResource;
 use App\Filament\Resources\Pistes\PisteResource;
 use App\Filament\Resources\Signalements\SignalementResource;
+use App\Models\DemandeEspaceSalle;
 use App\Models\ElementATraiter;
 use App\Models\Piste;
 use App\Models\Signalement;
@@ -84,6 +87,10 @@ class CompteursFiles extends StatsOverviewWidget
                 ->description($pistes === 0 ? 'Rien en attente' : "{$pistesNouvelles} nouvelle(s), une réponse attendue")
                 ->color($pistesNouvelles > 0 ? 'warning' : 'gray')
                 ->url(PisteResource::getUrl()),
+            Stat::make('Demandes d’espace salle', (string) ($demandes = DemandeEspaceSalle::where('statut', StatutDemandeSalle::EnAttente)->count()))
+                ->description($demandes === 0 ? 'Rien en attente' : 'Des théâtres attendent une réponse')
+                ->color($demandes > 0 ? 'warning' : 'gray')
+                ->url(DemandeEspaceSalleResource::getUrl()),
         ];
     }
 }

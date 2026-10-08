@@ -36,6 +36,19 @@
         .petit { font-size: 13px; color: var(--gris); }
         a { color: inherit; }
         [hidden] { display: none !important; }
+        form .champ { margin-top: 14px; }
+        label { display: block; font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+        input[type=text], input[type=email], input[type=tel], input[type=url], textarea { width: 100%; font: inherit; color: var(--encre); background: var(--carte);
+            border: 1px solid var(--trait); border-radius: 10px; padding: 10px 12px; min-height: 44px; }
+        textarea { min-height: 96px; }
+        .case { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+        .case input { margin-top: 4px; width: 20px; height: 20px; flex: none; }
+        .erreur { color: #b42318; font-size: 14px; margin-top: 4px; }
+        @media (prefers-color-scheme: dark) { .erreur { color: #ff8a7a; } }
+        .alerte { background: var(--carte); border-left: 4px solid var(--rouge); padding: 10px 14px; border-radius: 8px; margin-top: 14px; }
+        button.bouton { border: 0; cursor: pointer; font: inherit; font-weight: 700; width: 100%; margin-top: 18px; }
+        .facultatif { font-weight: 400; color: var(--gris); }
+        .pot { position: absolute; left: -10000px; }
     </style>
 </head>
 <body>

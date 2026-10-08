@@ -1,4 +1,4 @@
-@extends('partage.mise-en-page')
+@extends('web.mise-en-page')
 @section('titre', 'Spectacle introuvable')
 @section('contenu')
     <h1>Ce spectacle n’est plus disponible</h1>

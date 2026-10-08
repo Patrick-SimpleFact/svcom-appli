@@ -12,4 +12,5 @@
     @isset($ouvrir)
         <p class="petit" style="margin-top:12px">Vous avez l’app ? <a href="{{ $ouvrir }}">Ouvrir dans Spettacoli</a></p>
     @endisset
+    <p class="petit" style="margin-top:12px"><a href="{{ url('/espace-salle/demande') }}">Vous êtes un théâtre ?</a></p>
 </section>
