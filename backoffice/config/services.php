@@ -62,4 +62,16 @@ return [
     'apple' => ['client_ids' => env('APPLE_CLIENT_IDS')],
     'google' => ['client_ids' => env('GOOGLE_CLIENT_IDS')],
 
+    // Notifications envoyées directement, sans intermédiaire (D6, P11). Clés à créer au bloc 7 (compte Apple Developer, projet Firebase).
+    'apns' => [
+        'cle' => env('APNS_KEY_PATH'), // fichier .p8 (Certificates, Identifiers & Profiles › Keys)
+        'cle_id' => env('APNS_KEY_ID'),
+        'equipe_id' => env('APNS_TEAM_ID'),
+        'bundle_id' => env('APNS_BUNDLE_ID'),
+        'production' => (bool) env('APNS_PRODUCTION', false), // false = serveur « sandbox » (app installée depuis Xcode)
+    ],
+    'fcm' => [
+        'compte_service' => env('FCM_CREDENTIALS_PATH'), // JSON du compte de service Firebase
+    ],
+
 ];

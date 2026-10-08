@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ContributionController;
 use App\Http\Controllers\Api\FicheController;
 use App\Http\Controllers\Api\GoutsController;
 use App\Http\Controllers\Api\MesureController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RechercheController;
 use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\SortieController;
@@ -48,6 +49,7 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
 
     // §11 Mesure
     Route::post('evenements', [MesureController::class, 'evenements']);
+    Route::post('notifications/{id}/ouverte', [NotificationController::class, 'ouverte'])->whereNumber('id');
 
     // §10 Contributions
     Route::post('signalements', [ContributionController::class, 'signaler']);

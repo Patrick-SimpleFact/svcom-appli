@@ -31,3 +31,6 @@ Schedule::command('pistes:effacer-emails')->dailyAt('04:50');
 
 // Mesure d'usage : résumé de la veille, partition du mois suivant, purge des événements de plus de 13 mois (SCHEMA §9, F7.15).
 Schedule::command('mesure:quotidienne')->dailyAt('03:15')->timezone('Europe/Paris');
+
+// Notification du soir : les nouveautés de la journée regroupées, une par personne et par jour au plus (F3.4).
+Schedule::command('notifications:envoyer')->dailyAt('18:00')->timezone('Europe/Paris')->withoutOverlapping();
