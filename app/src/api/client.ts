@@ -28,9 +28,25 @@ export function quandVersionObsolete(rappel: (() => void) | null) {
   surVersionObsolete = rappel;
 }
 
+type Parametres = Record<string, string | number | boolean | number[] | null | undefined>;
+
+/** Paramètres d'URL ; une liste devient `cle[]=a&cle[]=b` (format attendu par Laravel), les valeurs vides sont omises. */
+export function chaineParametres(parametres: Parametres = {}): string {
+  const morceaux = Object.entries(parametres).flatMap(([cle, valeur]) => {
+    if (valeur === null || valeur === undefined) {
+      return [];
+    }
+    const valeurs = Array.isArray(valeur) ? valeur.map((v) => [`${cle}[]`, v] as const) : [[cle, valeur] as const];
+
+    return valeurs.map(([c, v]) => `${encodeURIComponent(c)}=${encodeURIComponent(String(v))}`);
+  });
+
+  return morceaux.length ? `?${morceaux.join('&')}` : '';
+}
+
 /** Appel de l'API avec les en-têtes communs (X-Appareil, X-App-Version) ; renvoie le JSON ou lève une ErreurApi. */
-export async function appelApi<T>(chemin: string, options: { methode?: string; corps?: unknown } = {}): Promise<T> {
-  const reponse = await fetch(`${API_URL}${chemin}`, {
+export async function appelApi<T>(chemin: string, options: { methode?: string; corps?: unknown; parametres?: Parametres } = {}): Promise<T> {
+  const reponse = await fetch(`${API_URL}${chemin}${chaineParametres(options.parametres)}`, {
     method: options.methode ?? 'GET',
     headers: {
       Accept: 'application/json',
@@ -55,17 +71,6 @@ export async function appelApi<T>(chemin: string, options: { methode?: string; c
   }
 
   throw new ErreurApi(code ?? 'erreur_interne', reponse.status);
-}
-
-/** Le back-office répond-il ? (route de santé de Laravel, sans en-têtes particuliers) */
-export async function apiJoignable(): Promise<boolean> {
-  try {
-    const reponse = await fetch(`${API_URL}/up`, { headers: { Accept: 'text/html' } });
-
-    return reponse.ok;
-  } catch {
-    return false;
-  }
 }
 
 /** Compare deux versions « 1.2.3 » : négatif si a < b, 0 si égales, positif si a > b. */
