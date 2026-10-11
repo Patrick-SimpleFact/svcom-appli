@@ -47,7 +47,6 @@ function Bienvenue({ commencer }: { commencer: () => void }) {
 
 /** Genres de F2.3 à cocher, rayon par défaut ; rien n'est obligatoire. */
 function VosGouts() {
-  const { configuration, configurationTerminee } = useDemarrage();
   const { terminerPremierLancement } = useGouts();
   const [genres, setGenres] = useState<number[]>(GOUTS_PAR_DEFAUT.genres);
   const [rayon, setRayon] = useState<RayonM>(GOUTS_PAR_DEFAUT.rayon_m);
@@ -62,6 +61,26 @@ function VosGouts() {
           <Text style={styles.sousTitre}>On s’en sert pour trier les spectacles autour de vous. Modifiable à tout moment.</Text>
         </View>
 
+        <ChoixGouts genres={genres} basculer={basculer} rayon={rayon} choisirRayon={setRayon} />
+      </ScrollView>
+      <View style={styles.pied}>
+        <Bouton texte="Continuer" onPress={() => terminerPremierLancement({ genres, rayon_m: rayon })} />
+        <Pressable style={styles.passer} onPress={() => terminerPremierLancement(null)} accessibilityRole="button">
+          <Text style={styles.passerTexte}>Passer cette étape</Text>
+        </Pressable>
+      </View>
+    </>
+  );
+}
+
+/** Genres à cocher et distance par paliers (F1.1, F2.4) : premier lancement et Profil › Mes goûts. */
+export function ChoixGouts(props: { genres: number[]; basculer: (id: number) => void; rayon: RayonM; choisirRayon: (r: RayonM) => void }) {
+  const { genres, basculer, rayon } = props;
+  const setRayon = props.choisirRayon;
+  const { configuration, configurationTerminee } = useDemarrage();
+
+  return (
+    <>
         {configuration ? (
           <View style={styles.grille}>
             {configuration.genres.map((genre) => (
@@ -93,13 +112,6 @@ function VosGouts() {
             accessibilityLabel="Distance maximale"
           />
         </View>
-      </ScrollView>
-      <View style={styles.pied}>
-        <Bouton texte="Continuer" onPress={() => terminerPremierLancement({ genres, rayon_m: rayon })} />
-        <Pressable style={styles.passer} onPress={() => terminerPremierLancement(null)} accessibilityRole="button">
-          <Text style={styles.passerTexte}>Passer cette étape</Text>
-        </Pressable>
-      </View>
     </>
   );
 }

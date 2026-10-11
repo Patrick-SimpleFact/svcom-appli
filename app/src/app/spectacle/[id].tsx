@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -83,10 +83,34 @@ function ContenuFiche({ fiche, representation, origine, position }: { fiche: Fic
   const lieu = fiche.lieu;
   const genre = fiche.classification || fiche.genre?.libelle || '';
 
+  // Lien choisi dans « Où réserver ? » : ouvert seulement une fois la feuille refermée (voir `onDismiss`).
+  const enAttente = useRef<string | null>(null);
+  const feuilleOuverte = useRef(false);
+  useEffect(() => {
+    feuilleOuverte.current = feuille;
+  }, [feuille]);
+
+  /** Navigateur intégré : « Fermer » ramène à la fiche, et le suivi d'affiliation fonctionne (F5.4). */
+  const naviguer = (adresse: string) => WebBrowser.openBrowserAsync(adresse, { controlsColor: Couleurs.rouge, dismissButtonStyle: 'close' });
+
   const ouvrir = (b: Billetterie, bouton: 'principal' | 'autre') => {
+    const adresse = lienSortie(b, origine, bouton, lieu?.distance_m ?? null);
+    if (feuilleOuverte.current && Platform.OS === 'ios') {
+      // iOS ne sait pas présenter le navigateur pendant qu'une feuille se referme : l'app semblait figée.
+      enAttente.current = adresse;
+      setFeuille(false);
+      return;
+    }
     setFeuille(false);
-    // Navigateur intégré : « Fermer » ramène à la fiche, et le suivi d'affiliation fonctionne (F5.4).
-    WebBrowser.openBrowserAsync(lienSortie(b, origine, bouton, lieu?.distance_m ?? null), { controlsColor: Couleurs.rouge, dismissButtonStyle: 'close' });
+    naviguer(adresse);
+  };
+
+  const apresFermeture = () => {
+    const adresse = enAttente.current;
+    enAttente.current = null;
+    if (adresse) {
+      naviguer(adresse);
+    }
   };
 
   const mentions = [
@@ -198,7 +222,7 @@ function ContenuFiche({ fiche, representation, origine, position }: { fiche: Fic
       <BarreReservation resa={resa} seance={seance} ouvrir={ouvrir} comparer={() => setFeuille(true)} choisir={setChoisie} basSur={marges.bottom} />
 
       {resa.cas === 'reserver' ? (
-        <Modal visible={feuille} transparent animationType="slide" onRequestClose={() => setFeuille(false)}>
+        <Modal visible={feuille} transparent animationType="slide" onRequestClose={() => setFeuille(false)} onDismiss={apresFermeture}>
           <Pressable style={styles.voile} onPress={() => setFeuille(false)} accessibilityLabel="Fermer">
             <Pressable style={[styles.feuille, { paddingBottom: 26 + marges.bottom }]} onPress={() => {}}>
               <View style={styles.poignee} />
