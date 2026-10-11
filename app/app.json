@@ -38,6 +38,11 @@
         }
       ]
     ],
+    "extra": {
+      "boutiques": {
+        "android": "https://play.google.com/store/apps/details?id=fr.spettacoli.app"
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

@@ -1,0 +1,98 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
+
+import { appelApi, comparerVersions, quandVersionObsolete, VERSION_APP } from '@/api/client';
+
+/** Message de service saisi dans le BO (F2.8) : maintenance, incident… */
+export type MessageService = { id: number; type: 'info' | 'alerte'; texte: string };
+
+/** Configuration du moment renvoyée par `POST /v1/appareils` (API §2). */
+export type Configuration = {
+  version_minimale: string;
+  parametres: {
+    rayon_auto_min_representations: number;
+    seuil_couverture_faible: number;
+    delais_messages_s: number[];
+    paliers_prix: number[];
+    pistes_max_par_jour: number;
+  };
+  genres: { id: number; slug: string; libelle: string }[];
+  motifs_signalement: string[];
+  messages_service: MessageService[];
+  poser_question_suggestion: boolean;
+  liens: Record<string, string>;
+};
+
+type Etat = {
+  /** `null` tant que le BO n'a pas répondu (ou s'il est injoignable : l'app continue sans). */
+  configuration: Configuration | null;
+  versionObsolete: boolean;
+  messagesAffiches: MessageService[];
+  fermerMessage: (id: number) => void;
+};
+
+const CLE_FERMES = 'spettacoli.messages_fermes';
+
+const Contexte = createContext<Etat>({ configuration: null, versionObsolete: false, messagesAffiches: [], fermerMessage: () => {} });
+
+export const useDemarrage = () => useContext(Contexte);
+
+/** Messages encore à afficher : ceux du BO, moins ceux que l'utilisateur a fermés. */
+export function messagesAAfficher(messages: MessageService[], fermes: number[]): MessageService[] {
+  return messages.filter((m) => !fermes.includes(m.id));
+}
+
+/**
+ * Démarrage de l'app (M02, API §2) : à chaque ouverture, l'appareil s'annonce au BO et reçoit la configuration du moment
+ * (paramètres, genres, messages de service, version minimale).
+ */
+export function Demarrage({ children }: { children: ReactNode }) {
+  const [configuration, setConfiguration] = useState<Configuration | null>(null);
+  const [versionObsolete, setVersionObsolete] = useState(false);
+  const [fermes, setFermes] = useState<number[]>([]);
+
+  useEffect(() => {
+    quandVersionObsolete(() => setVersionObsolete(true));
+
+    AsyncStorage.getItem(CLE_FERMES)
+      .then((json) => setFermes(json ? (JSON.parse(json) as number[]) : []))
+      .catch(() => {});
+
+    // Pas de position ni de jeton de notification à cette étape (M04 et M12).
+    appelApi<Configuration>('/v1/appareils', { methode: 'POST', corps: { plateforme: Platform.OS === 'android' ? 'android' : 'ios' } })
+      .then((config) => {
+        setConfiguration(config);
+        if (comparerVersions(VERSION_APP, config.version_minimale) < 0) {
+          setVersionObsolete(true);
+        }
+      })
+      // Réseau ou BO indisponible : l'app continue sans configuration (les écrans d'erreur arrivent en M05).
+      .catch(() => {});
+
+    return () => quandVersionObsolete(null);
+  }, []);
+
+  const fermerMessage = useCallback((id: number) => {
+    setFermes((avant) => {
+      // Seuls les messages encore actifs sont gardés, pour que la liste ne grossisse pas indéfiniment.
+      const actifs = new Set(configuration?.messages_service.map((m) => m.id));
+      const apres = [...avant.filter((f) => actifs.has(f)), id];
+      AsyncStorage.setItem(CLE_FERMES, JSON.stringify(apres)).catch(() => {});
+
+      return apres;
+    });
+  }, [configuration]);
+
+  const valeur = useMemo(
+    () => ({
+      configuration,
+      versionObsolete,
+      messagesAffiches: messagesAAfficher(configuration?.messages_service ?? [], fermes),
+      fermerMessage,
+    }),
+    [configuration, versionObsolete, fermes, fermerMessage],
+  );
+
+  return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
+}
