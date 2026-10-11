@@ -91,8 +91,10 @@ class Propositions
             ->orderByDesc('est_pilote')
             ->orderByDesc('population')
             ->limit(self::PAR_TYPE)
-            ->get(['id', 'nom', 'departement'])
-            ->map(fn ($v) => ['id' => $v->id, 'nom' => $v->nom, 'sous_titre' => "({$v->departement})"])
+            ->selectRaw('id, nom, departement, ST_Y(position::geometry) as lat, ST_X(position::geometry) as lon')
+            ->get()
+            // lat/lon : centre de la commune, pour placer la carte de l'app sur une ville choisie (M06).
+            ->map(fn ($v) => ['id' => $v->id, 'nom' => $v->nom, 'sous_titre' => "({$v->departement})", 'lat' => round((float) $v->lat, 6), 'lon' => round((float) $v->lon, 6)])
             ->all();
     }
 
