@@ -27,6 +27,8 @@ export type Configuration = {
 type Etat = {
   /** `null` tant que le BO n'a pas répondu (ou s'il est injoignable : l'app continue sans). */
   configuration: Configuration | null;
+  /** `true` dès que le BO a répondu ou a échoué : on sait alors s'il y aura une configuration. */
+  configurationTerminee: boolean;
   versionObsolete: boolean;
   messagesAffiches: MessageService[];
   fermerMessage: (id: number) => void;
@@ -34,7 +36,7 @@ type Etat = {
 
 const CLE_FERMES = 'spettacoli.messages_fermes';
 
-const Contexte = createContext<Etat>({ configuration: null, versionObsolete: false, messagesAffiches: [], fermerMessage: () => {} });
+const Contexte = createContext<Etat>({ configuration: null, configurationTerminee: false, versionObsolete: false, messagesAffiches: [], fermerMessage: () => {} });
 
 export const useDemarrage = () => useContext(Contexte);
 
@@ -49,6 +51,7 @@ export function messagesAAfficher(messages: MessageService[], fermes: number[]):
  */
 export function Demarrage({ children }: { children: ReactNode }) {
   const [configuration, setConfiguration] = useState<Configuration | null>(null);
+  const [configurationTerminee, setConfigurationTerminee] = useState(false);
   const [versionObsolete, setVersionObsolete] = useState(false);
   const [fermes, setFermes] = useState<number[]>([]);
 
@@ -68,7 +71,8 @@ export function Demarrage({ children }: { children: ReactNode }) {
         }
       })
       // Réseau ou BO indisponible : l'app continue sans configuration (les écrans d'erreur arrivent en M05).
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setConfigurationTerminee(true));
 
     return () => quandVersionObsolete(null);
   }, []);
@@ -87,11 +91,12 @@ export function Demarrage({ children }: { children: ReactNode }) {
   const valeur = useMemo(
     () => ({
       configuration,
+      configurationTerminee,
       versionObsolete,
       messagesAffiches: messagesAAfficher(configuration?.messages_service ?? [], fermes),
       fermerMessage,
     }),
-    [configuration, versionObsolete, fermes, fermerMessage],
+    [configuration, configurationTerminee, versionObsolete, fermes, fermerMessage],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
