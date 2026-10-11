@@ -39,11 +39,6 @@ export function supprimerMonCompte(): Promise<unknown> {
   return appelApi('/v1/moi', { methode: 'DELETE' });
 }
 
-/** Suggestion à l'ouverture (F6) : acceptée (`oui`) ou coupée (`desactive`) depuis le Profil. */
-export function choisirSuggestion(choix: 'oui' | 'desactive'): Promise<unknown> {
-  return appelApi('/v1/appareils/suggestion', { methode: 'PUT', corps: { choix } });
-}
-
 /** Les goûts du téléphone au format des préférences du compte. */
 export function versPreferences(gouts: Gouts): Pick<Preferences, 'genres' | 'rayon_m'> {
   return { genres: gouts.genres, rayon_m: gouts.rayon_m };

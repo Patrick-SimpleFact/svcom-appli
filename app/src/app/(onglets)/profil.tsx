@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
@@ -10,15 +9,13 @@ import Svg, { Path, Rect } from 'react-native-svg';
 
 import { modifierMoi, useCompte } from '@/compte/compte';
 import {
-  choisirSuggestion, exporterMesDonnees, ligneCompte, lirePreferences, modifierPreferences, nombreSuivis, type Preferences, resumeGenres, supprimerMonCompte,
+  exporterMesDonnees, ligneCompte, lirePreferences, modifierPreferences, nombreSuivis, type Preferences, resumeGenres, supprimerMonCompte,
 } from '@/compte/profil';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { libelleRayon, useGouts } from '@/gouts/gouts';
-
-/** Choix de la suggestion à l'ouverture fait dans le Profil, gardé sur le téléphone (la question elle-même arrive en M13). */
-const CLE_SUGGESTION = 'spettacoli.suggestion';
+import { choisir, useChoixSuggestion } from '@/suggestion/suggestion';
 
 /** Les pistes (F8) et « Mes propositions » arrivent en M14. */
 const bientot = () => {};
@@ -30,7 +27,7 @@ export default function Profil() {
   const { gouts } = useGouts();
   const [preferences, setPreferences] = useState<Preferences | null>(null);
   const [suivis, setSuivis] = useState<number | null>(null);
-  const [suggestion, setSuggestion] = useState(false);
+  const suggestion = useChoixSuggestion() === 'oui';
   const [localisation, setLocalisation] = useState<string>('…');
   const [suppression, setSuppression] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -45,12 +42,6 @@ export default function Profil() {
   );
 
   useEffect(() => {
-    AsyncStorage.getItem(CLE_SUGGESTION)
-      .then((v) => setSuggestion(v === 'oui'))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
     if (!utilisateur) {
       return;
     }
@@ -61,11 +52,8 @@ export default function Profil() {
   const libelleGenre = (id: number) => configuration?.genres.find((g) => g.id === id)?.libelle ?? '';
   const ouvrirPage = (adresse?: string) => adresse && WebBrowser.openBrowserAsync(adresse);
 
-  const basculerSuggestion = (oui: boolean) => {
-    setSuggestion(oui);
-    AsyncStorage.setItem(CLE_SUGGESTION, oui ? 'oui' : 'desactive').catch(() => {});
-    choisirSuggestion(oui ? 'oui' : 'desactive').catch(() => {});
-  };
+  // Réglage permanent de la suggestion à l'ouverture (F6.2), partagé avec la question de l'accueil.
+  const basculerSuggestion = (oui: boolean) => choisir(oui ? 'oui' : 'desactive');
 
   const basculerPreference = (champ: 'alertes_actives' | 'rappel_jour_j', valeur: boolean) => {
     setPreferences((p) => (p ? { ...p, [champ]: valeur } : p));

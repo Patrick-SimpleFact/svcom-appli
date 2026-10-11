@@ -13,6 +13,7 @@ import { CarteSansHoraire, CarteSpectacle, ouvrirFiche } from '@/components/cart
 import { ChoixVille } from '@/components/choix-ville';
 import { Bandeau, BandeauCouverture, IlManqueUnSpectacle, MessageVide, Squelettes } from '@/components/etats-liste';
 import { OngletsGenres, PucesQuand } from '@/components/filtres-autour';
+import { QuestionSuggestion } from '@/components/question-suggestion';
 import { VueCarte } from '@/components/vue-carte';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
@@ -371,6 +372,7 @@ function ListeAutour(props: {
         />
       ) : null}
       {ancien ? <Bandeau texte={ancien} /> : null}
+      <QuestionSuggestion />
       <PucesQuand quand={quand} choisir={changer(setQuand)} />
       <OngletsGenres onglets={onglets} actif={onglet} choisir={changer(setOnglet)} />
       {reponse?.couverture_faible ? <BandeauCouverture proposer={proposerUnePiste} /> : null}
