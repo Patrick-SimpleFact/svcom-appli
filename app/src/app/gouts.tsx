@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +7,7 @@ import { modifierPreferences, versPreferences } from '@/compte/profil';
 import { ChoixGouts } from '@/components/premier-lancement';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { type RayonM, useGouts } from '@/gouts/gouts';
+import { revenir } from '@/navigation';
 
 /** Profil › Mes goûts (F1.6) : genres et rayon par défaut, gardés sur le téléphone et, avec un compte, retrouvés partout (F1.2). */
 export default function MesGouts() {
@@ -28,7 +28,7 @@ export default function MesGouts() {
         await modifierPreferences(versPreferences(choix));
       }
       modifierGouts(choix);
-      router.back();
+      revenir();
     } catch {
       setErreur(true);
     } finally {
@@ -40,7 +40,7 @@ export default function MesGouts() {
     <View style={styles.fond}>
       <View style={styles.entete}>
         <Text style={styles.titre} accessibilityRole="header">Mes goûts</Text>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button">
+        <Pressable onPress={revenir} hitSlop={12} accessibilityRole="button">
           <Text style={styles.fermer}>Fermer</Text>
         </Pressable>
       </View>

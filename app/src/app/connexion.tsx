@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -11,6 +11,7 @@ import { useFavoris } from '@/favoris/favoris';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { lireGouts, useGouts } from '@/gouts/gouts';
+import { revenir } from '@/navigation';
 
 type Etape = 'email' | 'code' | 'profil' | 'trop_jeune';
 
@@ -50,7 +51,7 @@ export default function Connexion() {
     } else if (params.raison === 'suivre' && (params.lieu || params.artiste)) {
       await suivre(params.lieu ? 'lieu' : 'artiste', Number(params.lieu ?? params.artiste)).catch(() => {});
     }
-    router.back();
+    revenir();
   };
 
   const agir = async (action: () => Promise<void>) => {
@@ -120,7 +121,7 @@ export default function Connexion() {
   return (
     <KeyboardAvoidingView style={styles.fond} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.entete}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button">
+        <Pressable onPress={revenir} hitSlop={12} accessibilityRole="button">
           <Text style={styles.fermer}>Fermer</Text>
         </Pressable>
       </View>
@@ -180,7 +181,7 @@ export default function Connexion() {
               Les comptes Spettacoli sont réservés aux 15 ans et plus. Rien n’a été conservé. Vous pouvez continuer à utiliser l’app sans compte : la recherche, les fiches
               et les réservations restent disponibles.
             </Text>
-            <Bouton texte="Continuer sans compte" actif envoi={false} onPress={() => router.back()} />
+            <Bouton texte="Continuer sans compte" actif envoi={false} onPress={revenir} />
           </>
         )}
         {erreur ? <Text style={styles.erreur} accessibilityRole="alert">{erreur}</Text> : null}
