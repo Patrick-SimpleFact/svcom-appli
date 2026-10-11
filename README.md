@@ -11,7 +11,7 @@ Mac Intel, versions relevées le 02/10/2026 :
 | Herd | 1.30.1 | PHP 8.4.16, Composer 2.10, serveur web local du back-office |
 | Docker Desktop | 29.6 | base de données locale |
 | Node.js / npm | 22.22 / 11.19 | outils de l'app mobile (bloc 7) |
-| Xcode | 26.3 | app iPhone (bloc 7) |
+| Xcode | **26.4 minimum** (Expo SDK 57) — 26.3 installé le 08/10, à mettre à jour | app iPhone (bloc 7) |
 | Android Studio | **à installer** avant le bloc 7 | app Android |
 
 ### Base de données locale
