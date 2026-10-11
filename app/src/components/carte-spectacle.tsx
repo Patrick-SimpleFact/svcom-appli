@@ -15,7 +15,7 @@ export function ouvrirFiche(spectacleId: number, representationId: number | unde
 const LIBELLES_BADGES: Partial<Record<Badge, string>> = { gratuit: 'Gratuit', derniere_places: 'Dernières places', horaire_a_confirmer: 'Horaire à confirmer' };
 
 /** Carte d'un spectacle à horaire (maquette « Accueil autour de moi ») : talon horaire à gauche, détails à droite. */
-export function CarteSpectacle({ carte, genre, onPress }: { carte: Carte; genre: string; onPress?: () => void }) {
+export function CarteSpectacle({ carte, genre, jour, onPress }: { carte: Carte; genre: string; jour?: string; onPress?: () => void }) {
   const { heure, suite } = talon(carte);
   const complete = estComplete(carte);
 
@@ -26,6 +26,8 @@ export function CarteSpectacle({ carte, genre, onPress }: { carte: Carte; genre:
       accessibilityRole="button"
       accessibilityLabel={`${heure}, ${carte.spectacle.titre}, ${carte.lieu.nom}${complete ? ', complet' : ''}`}>
       <View style={styles.talon}>
+        {/* Recherche sur plusieurs jours : le jour au-dessus de l'heure (F4.4). */}
+        {jour ? <Text style={styles.jour}>{jour}</Text> : null}
         <Text style={styles.heure}>{heure}</Text>
         {suite ? <Text style={styles.suite}>{suite}</Text> : null}
       </View>
@@ -60,7 +62,7 @@ function Details(props: {
   spectacle: Carte['spectacle'];
   genre: string;
   lieu: Carte['lieu'];
-  distanceM: number;
+  distanceM: number | null;
   badges: Badge[];
   complete?: boolean;
   mention?: string;
@@ -72,7 +74,8 @@ function Details(props: {
       <Text style={styles.genre} numberOfLines={1}>{props.spectacle.classification || props.genre}</Text>
       <Text style={styles.titre} numberOfLines={2}>{props.spectacle.titre}</Text>
       <Text style={styles.lieu} numberOfLines={1}>
-        {props.lieu.nom} · {distance(props.distanceM, props.lieu.position_approximative)}
+        {props.lieu.nom}
+        {props.distanceM !== null ? ` · ${distance(props.distanceM, props.lieu.position_approximative)}` : props.lieu.ville ? ` · ${props.lieu.ville}` : ''}
       </Text>
       {props.mention ? <Text style={styles.mention}>{props.mention}</Text> : null}
       {props.complete || badges.length ? (
@@ -122,6 +125,7 @@ const styles = StyleSheet.create({
   pointilles: { position: 'absolute', left: LARGEUR_TALON - 0.75, top: 0, bottom: 0, width: 1.5, overflow: 'hidden' },
   cadrePointille: { position: 'absolute', left: 0, top: -2, bottom: -2, width: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#DDD8D1' },
   heure: { fontFamily: Polices.titre, fontSize: 21, letterSpacing: -0.2, color: Couleurs.encre },
+  jour: { fontFamily: Polices.texteTresGras, fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase', color: Couleurs.gris },
   suite: { fontFamily: Polices.texte, fontSize: 11, color: Couleurs.gris, textAlign: 'center', paddingHorizontal: 4 },
   details: { flex: 1, minWidth: 0, paddingVertical: 11, paddingHorizontal: 14, gap: 3 },
   genre: { fontFamily: Polices.texteTresGras, fontSize: 11, letterSpacing: 0.9, textTransform: 'uppercase', color: Couleurs.rouge },

@@ -49,7 +49,7 @@ export function chargerAutresDates(spectacleId: number, position: Position): Pro
 
 /** Une carte de recherche, affichée comme celles de l'accueil : à l'heure (talon), ou sans horaire précis (mention). */
 export function versCarte(c: CarteRecherche): { horaire: Carte } | { journee: CarteJournee } {
-  const base = { spectacle: c.spectacle, lieu: c.lieu, distance_m: c.distance_m ?? 0, date_locale: c.date_locale, badges: c.badges, gratuit: c.gratuit };
+  const base = { spectacle: c.spectacle, lieu: c.lieu, distance_m: c.distance_m, date_locale: c.date_locale, badges: c.badges, gratuit: c.gratuit };
   if (c.type === 'seance' && c.seances.length) {
     return { horaire: { ...base, type: 'seance', seances: c.seances } };
   }
