@@ -1,12 +1,11 @@
 import { BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { useFonts } from 'expo-font';
-import { DefaultTheme, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
-import AppTabs from '@/components/app-tabs';
 import { EcranMiseAJour } from '@/components/mise-a-jour';
 import { PremierLancement } from '@/components/premier-lancement';
 import { Couleurs } from '@/constants/theme';
@@ -61,5 +60,6 @@ function Contenu() {
     return null;
   }
 
-  return premierLancementFait ? <AppTabs /> : <PremierLancement />;
+  // Onglets, et par-dessus les écrans ouverts depuis une carte (fiche spectacle, F5).
+  return premierLancementFait ? <Stack screenOptions={{ headerShown: false }} /> : <PremierLancement />;
 }

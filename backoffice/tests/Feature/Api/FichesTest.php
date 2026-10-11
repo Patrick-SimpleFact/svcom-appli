@@ -121,3 +121,12 @@ it('nettoie les descriptions sans effacer les chevrons qui ne sont pas des balis
     'vide' => ['<p> </p>', null],
     'absente' => [null, null],
 ]);
+
+it('complète la date des mentions obligatoires (DATAtourisme)', function () {
+    $r = ($this->seance)($this->observance, '2026-10-17 19:30');
+    ($this->offre)($r, 'datatourisme', null, ['vue_le' => now()->subDays(2)]);
+    ($this->offre)($r, 'openagenda', null);
+
+    expect(($this->get)("/v1/spectacles/{$this->spectacle->id}")->json('mentions'))
+        ->toEqualCanonicalizing(['Source : DATAtourisme, mise à jour du 12/10/2026', 'Source : OpenAgenda']);
+});

@@ -66,7 +66,10 @@ class Fiches
             'prix' => self::prix($seances),
             'autres_dates' => max(0, $this->aVenir()->where('representations.spectacle_id', $id)->count() - $seances->count()),
             'sources' => $offres->flatten()->map(fn (Offre $o) => $o->source->nom)->unique()->values(),
-            'mentions' => $offres->flatten()->map(fn (Offre $o) => $o->source->mention_obligatoire)->filter()->unique()->values(),
+            // Mentions obligatoires des licences ; « :date » = dernière fois que la source a donné l'information (DATAtourisme).
+            'mentions' => $offres->flatten()->filter(fn (Offre $o) => $o->source->mention_obligatoire)->groupBy('source_id')
+                ->map(fn ($groupe) => str_replace(':date', $groupe->max('vue_le')?->timezone('Europe/Paris')->format('d/m/Y') ?? '', $groupe->first()->source->mention_obligatoire))
+                ->values(),
             'mis_a_jour_le' => $offres->flatten()->max('vue_le')?->toIso8601String(),
             // F5.8 : lien à partager ; ouvre l'app si elle est installée, sinon une page web minimale.
             'lien_partage' => self::lienPartage($spectacle, $choisie?->id),

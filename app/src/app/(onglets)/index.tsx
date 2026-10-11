@@ -9,7 +9,7 @@ import {
 } from '@/autour/autour';
 import { coordonnees, usePosition } from '@/autour/position';
 import { type Ville, useVilleChoisie } from '@/autour/ville';
-import { CarteSansHoraire, CarteSpectacle } from '@/components/carte-spectacle';
+import { CarteSansHoraire, CarteSpectacle, ouvrirFiche } from '@/components/carte-spectacle';
 import { ChoixVille } from '@/components/choix-ville';
 import { Bandeau, BandeauCouverture, IlManqueUnSpectacle, MessageVide, Squelettes } from '@/components/etats-liste';
 import { OngletsGenres, PucesQuand } from '@/components/filtres-autour';
@@ -403,7 +403,9 @@ function ListeAutour(props: {
     <FlatList
       data={liste.etat === 'prete' ? liste.cartes : []}
       keyExtractor={(c) => `${c.spectacle.id}-${c.lieu.id}-${c.date_locale}`}
-      renderItem={({ item }) => <CarteSpectacle carte={item} genre={libelleGenre(item.spectacle.genre_id)} />}
+      renderItem={({ item }) => (
+        <CarteSpectacle carte={item} genre={libelleGenre(item.spectacle.genre_id)} onPress={() => ouvrirFiche(item.spectacle.id, item.seances[0]?.representation_id, centre)} />
+      )}
       contentContainerStyle={styles.contenu}
       ItemSeparatorComponent={Espace}
       onEndReached={pageSuivante}
@@ -420,7 +422,7 @@ function ListeAutour(props: {
               <View style={styles.journee}>
                 <Text style={styles.rubrique}>Toute la journée</Text>
                 {reponse.toute_la_journee.map((c) => (
-                  <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} />
+                  <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} onPress={() => ouvrirFiche(c.spectacle.id, c.representation_id, centre)} />
                 ))}
               </View>
             ) : null}
