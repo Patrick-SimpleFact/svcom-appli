@@ -32,6 +32,15 @@ export async function chercherVilles(texte: string): Promise<Ville[]> {
   return reponse.villes;
 }
 
+/** Écrans qui affichent la ville de recherche (l'accueil) : prévenus quand un autre écran la change (recherche, F4.2). */
+const abonnes = new Set<(v: Ville | null) => void>();
+
+/** Change la ville de recherche de l'accueil ; `null` = revenir à « Ma position ». */
+export function definirVilleRecherche(choix: Ville | null) {
+  (choix ? AsyncStorage.setItem(CLE, JSON.stringify({ ville: choix, choisie_le: Date.now() })) : AsyncStorage.removeItem(CLE)).catch(() => {});
+  abonnes.forEach((f) => f(choix));
+}
+
 export function useVilleChoisie() {
   const [ville, setVille] = useState<Ville | null>(null);
   const [lue, setLue] = useState(false);
@@ -41,13 +50,14 @@ export function useVilleChoisie() {
       .then((json) => setVille(lireVille(json, Date.now())))
       .catch(() => {})
       .finally(() => setLue(true));
+    abonnes.add(setVille);
+
+    return () => {
+      abonnes.delete(setVille);
+    };
   }, []);
 
-  /** `null` = revenir à « Ma position ». */
-  const choisir = useCallback((choix: Ville | null) => {
-    setVille(choix);
-    (choix ? AsyncStorage.setItem(CLE, JSON.stringify({ ville: choix, choisie_le: Date.now() })) : AsyncStorage.removeItem(CLE)).catch(() => {});
-  }, []);
+  const choisir = useCallback((choix: Ville | null) => definirVilleRecherche(choix), []);
 
   return { ville, lue, choisir };
 }

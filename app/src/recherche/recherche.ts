@@ -24,15 +24,30 @@ export type Resultats = {
   suivant: string | null;
 };
 
-/** Ce que l'on cherche ; sans lieu ni position : toute la France (API §4). */
+/** Quand ? (F4.3) ; sans valeur : toutes les dates à venir. `du`/`au` portent les jours envoyés à l'API. */
+export type Quand = 'aujourdhui' | 'demain' | 'week_end' | 'date' | 'periode';
+export type Moment = 'matinee' | 'apres_midi' | 'soiree';
+export type Tri = 'date' | 'distance' | 'prix';
+
+/** Ce que l'on cherche, avec les filtres de F4.3 ; sans lieu ni position : toute la France (API §4). */
 export type Criteres = {
   q?: string;
-  ville?: { id: number; nom: string };
+  /** `lat`/`lon` : pour « En faire ma ville de recherche » (vue carte de l'accueil, M06). */
+  ville?: { id: number; nom: string; lat?: number; lon?: number };
+  /** « Autour de moi » : la position du téléphone, jamais enregistrée (F2.11). */
+  position?: { lat: number; lon: number };
+  /** Rayon autour de la ville ou de la position (10 km par défaut côté BO). */
   rayon?: number;
   genres?: number[];
   jeune_public?: boolean;
+  quand?: Quand;
   du?: string;
   au?: string;
+  moment?: Moment;
+  /** 0 = gratuit ; sinon « moins de N € » (paliers du BO, F7.12). */
+  prix_max?: number;
+  masquer_complets?: boolean;
+  tri?: Tri;
   /** Résumé lisible (« Avignon », « Ce week-end », « Danse »…), pour le titre et les recherches récentes. */
   libelle: string;
 };
@@ -45,13 +60,19 @@ export function chercher(c: Criteres, suivant?: string | null): Promise<Resultat
   return appelApi<Resultats>('/v1/recherche', {
     parametres: {
       q: c.q,
-      ville_id: c.ville?.id,
-      rayon: c.rayon,
-      genres: c.genres,
+      ville_id: c.position ? undefined : c.ville?.id,
+      lat: c.position?.lat,
+      lon: c.position?.lon,
+      rayon: c.ville || c.position ? c.rayon : undefined,
+      genres: c.genres?.length ? c.genres : undefined,
       jeune_public: c.jeune_public ? 1 : undefined,
       du: c.du,
       au: c.au,
-      tri: 'date',
+      moment: c.moment,
+      gratuit: c.prix_max === 0 ? 1 : undefined,
+      prix_max: c.prix_max ? c.prix_max : undefined,
+      masquer_complets: c.masquer_complets ? 1 : undefined,
+      tri: c.tri ?? 'date',
       suivant,
     },
   });
@@ -109,3 +130,124 @@ export function jourTalon(jour: string): string {
 
 /** Villes pilotes proposées avant la frappe (maquette « Rechercher »). */
 export const VILLES_PILOTES = ['Paris', 'Bordeaux', 'Avignon'];
+
+// ─── Filtres (F4.3) ────────────────────────────────────────────────────────────
+
+const JOURS_LONGS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const MOIS_COURTS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+function date(jour: string): Date {
+  const [a, m, j] = jour.split('-').map(Number);
+
+  return new Date(a, m - 1, j);
+}
+
+/** Jours envoyés à l'API pour un choix « Quand ? » (jour choisi ou période fournis par le calendrier). */
+export function joursDe(quand: Quand, maintenant: Date, choisis: { du?: string; au?: string } = {}): { du?: string; au?: string } {
+  const decale = (n: number) => jourDe(new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate() + n));
+  switch (quand) {
+    case 'aujourdhui':
+      return { du: decale(0), au: decale(0) };
+    case 'demain':
+      return { du: decale(1), au: decale(1) };
+    case 'week_end':
+      return weekEnd(maintenant);
+    case 'date':
+      return { du: choisis.du, au: choisis.du };
+    default:
+      return { du: choisis.du, au: choisis.au ?? choisis.du };
+  }
+}
+
+export const LIBELLES_MOMENTS: Record<Moment, string> = { matinee: 'Matinée', apres_midi: 'Après-midi', soiree: 'Soirée' };
+export const LIBELLES_TRIS: Record<Tri, string> = { date: 'Par date', distance: 'Par distance', prix: 'Par prix' };
+
+/** « Gratuit », « Moins de 15 € ». */
+export function libellePrixMax(prix: number): string {
+  return prix === 0 ? 'Gratuit' : `Moins de ${prix} €`;
+}
+
+/** Libellé de la puce « Quand ? ». */
+export function libelleQuand(c: Criteres): string | null {
+  switch (c.quand) {
+    case 'aujourdhui':
+      return 'Aujourd’hui';
+    case 'demain':
+      return 'Demain';
+    case 'week_end':
+      return 'Ce week-end';
+    case 'date':
+      return c.du ? `${JOURS_LONGS[date(c.du).getDay()].replace(/^./, (l) => l.toUpperCase())} ${date(c.du).getDate()} ${MOIS[date(c.du).getMonth()]}` : null;
+    case 'periode':
+      return c.du && c.au ? `Du ${date(c.du).getDate()} ${MOIS_COURTS[date(c.du).getMonth()]} au ${date(c.au).getDate()} ${MOIS_COURTS[date(c.au).getMonth()]}` : null;
+    default:
+      return null;
+  }
+}
+
+export type Puce = { cle: 'ou' | 'quand' | 'genres' | 'moment' | 'prix' | 'complets'; libelle: string };
+
+/** Filtres actifs, en puces retirables au-dessus des résultats (F4.3). */
+export function puces(c: Criteres, libelleGenre: (id: number) => string): Puce[] {
+  const liste: Puce[] = [];
+  if (c.position || c.ville) {
+    liste.push({ cle: 'ou', libelle: `${c.position ? 'Autour de moi' : c.ville!.nom} · ${(c.rayon ?? 10000) / 1000} km` });
+  }
+  const quand = libelleQuand(c);
+  if (quand) {
+    liste.push({ cle: 'quand', libelle: quand });
+  }
+  const genres = [...(c.genres ?? []).map(libelleGenre).filter(Boolean), ...(c.jeune_public ? ['Jeune public'] : [])];
+  if (genres.length) {
+    liste.push({ cle: 'genres', libelle: genres.join(', ') });
+  }
+  if (c.moment) {
+    liste.push({ cle: 'moment', libelle: LIBELLES_MOMENTS[c.moment] });
+  }
+  if (c.prix_max !== undefined) {
+    liste.push({ cle: 'prix', libelle: libellePrixMax(c.prix_max) });
+  }
+  if (c.masquer_complets) {
+    liste.push({ cle: 'complets', libelle: 'Sans les complets' });
+  }
+
+  return liste;
+}
+
+/** Retire un filtre ; le texte cherché et le tri restent. */
+export function retirer(c: Criteres, cle: Puce['cle']): Criteres {
+  const { ...suite } = c;
+  switch (cle) {
+    case 'ou':
+      delete suite.ville;
+      delete suite.position;
+      delete suite.rayon;
+      break;
+    case 'quand':
+      delete suite.quand;
+      delete suite.du;
+      delete suite.au;
+      break;
+    case 'genres':
+      delete suite.genres;
+      delete suite.jeune_public;
+      break;
+    case 'moment':
+      delete suite.moment;
+      break;
+    case 'prix':
+      delete suite.prix_max;
+      break;
+    case 'complets':
+      delete suite.masquer_complets;
+      break;
+  }
+
+  return suite;
+}
+
+/** « Tout effacer » : il ne reste que le texte cherché (et le tri). */
+export function toutEffacer(c: Criteres): Criteres {
+  return { q: c.q, tri: c.tri, libelle: c.q ?? 'Tous les spectacles' };
+}

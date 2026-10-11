@@ -1,17 +1,20 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { definirVilleRecherche } from '@/autour/ville';
 import { CarteSansHoraire, CarteSpectacle, ouvrirFiche } from '@/components/carte-spectacle';
+import { FiltresRecherche } from '@/components/filtres-recherche';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { jourLong } from '@/fiche/fiche';
 import { ajouterJours, versCarte } from '@/fiche/pages';
 import {
-  ajouterRecente, chargerPropositions, chercher, type Criteres, enregistrerRecentes, jourTalon, lireRecentes, type Propositions, type Recente, type Resultats, VILLES_PILOTES, weekEnd,
+  ajouterRecente, chargerPropositions, chercher, type Criteres, enregistrerRecentes, jourTalon, LIBELLES_TRIS, lireRecentes, type Propositions, puces, type Recente, type Resultats, retirer,
+  type Tri, toutEffacer, VILLES_PILOTES, weekEnd,
 } from '@/recherche/recherche';
 
 /** Genres proposés en raccourci (maquette « Rechercher »). */
@@ -29,6 +32,7 @@ export default function Recherche() {
   const [propositions, setPropositions] = useState<Propositions | null>(null);
   const [recentes, setRecentes] = useState<Recente[]>([]);
   const [etat, setEtat] = useState<Etat>({ mode: 'saisie' });
+  const [filtres, setFiltres] = useState(false);
   const pageEnCours = useRef(false);
 
   useEffect(() => {
@@ -79,7 +83,7 @@ export default function Recherche() {
     }
   };
 
-  const ouvrirVille = (ville: { id: number; nom: string }) => {
+  const ouvrirVille = (ville: { id: number; nom: string; lat?: number; lon?: number }) => {
     setTexte(ville.nom);
     const criteres = { ville, libelle: ville.nom };
     lancer(criteres, { type: 'ville', libelle: ville.nom, criteres });
@@ -104,7 +108,7 @@ export default function Recherche() {
     const p = await chargerPropositions(nom).catch(() => null);
     const ville = p?.villes.find((v) => v.nom === nom) ?? p?.villes[0];
     if (ville) {
-      ouvrirVille({ id: ville.id, nom: ville.nom });
+      ouvrirVille({ id: ville.id, nom: ville.nom, lat: ville.lat, lon: ville.lon });
     }
   };
 
@@ -137,12 +141,12 @@ export default function Recherche() {
 
   let contenu;
   if (etat.mode === 'resultats') {
-    contenu = <ListeResultats etat={etat} relancer={lancer} libelleGenre={libelleGenre} />;
+    contenu = <ListeResultats etat={etat} relancer={lancer} libelleGenre={libelleGenre} ouvrirFiltres={() => setFiltres(true)} />;
   } else if (saisie.length >= 2 && propositions) {
     contenu = <ListePropositions propositions={propositions} ouvrir={ouvrir} ouvrirVille={ouvrirVille} />;
   } else {
     const raccourcis: { libelle: string; criteres: Criteres }[] = [
-      { libelle: 'Ce week-end', criteres: { ...weekEnd(new Date()), libelle: 'Ce week-end' } },
+      { libelle: 'Ce week-end', criteres: { quand: 'week_end', ...weekEnd(new Date()), libelle: 'Ce week-end' } },
       ...genres.filter((g) => GENRES_RACCOURCIS.includes(g.slug)).map((g) => ({ libelle: g.libelle, criteres: { genres: [g.id], libelle: g.libelle } })),
       { libelle: 'Jeune public', criteres: { jeune_public: true, libelle: 'Jeune public' } },
     ];
@@ -245,6 +249,17 @@ export default function Recherche() {
         scrollEventThrottle={200}>
         {contenu}
       </ScrollView>
+      {etat.mode === 'resultats' ? (
+        <FiltresRecherche
+          visible={filtres}
+          criteres={etat.criteres}
+          fermer={() => setFiltres(false)}
+          appliquer={(c) => {
+            setFiltres(false);
+            lancer(c);
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -252,12 +267,17 @@ export default function Recherche() {
 const TYPES: Record<Recente['type'], string> = { texte: 'Recherche', ville: 'Ville', lieu: 'Lieu', artiste: 'Artiste', spectacle: 'Spectacle' };
 
 /** Pendant la frappe : propositions regroupées par type (maquette : artistes, lieux, spectacles, villes). */
-function ListePropositions({ propositions, ouvrir, ouvrirVille }: { propositions: Propositions; ouvrir: (r: Recente) => void; ouvrirVille: (v: { id: number; nom: string }) => void }) {
+function ListePropositions(props: {
+  propositions: Propositions;
+  ouvrir: (r: Recente) => void;
+  ouvrirVille: (v: { id: number; nom: string; lat?: number; lon?: number }) => void;
+}) {
+  const { propositions, ouvrir, ouvrirVille } = props;
   const groupes = [
     { titre: 'Artistes', marque: 'Ar', fond: '#E3EAFB', encre: '#1E3A8A', items: propositions.artistes.map((a) => ({ cle: `a${a.id}`, libelle: a.nom, sous: a.sous_titre, choisir: () => ouvrir({ type: 'artiste', libelle: a.nom, id: a.id }) })) },
     { titre: 'Lieux', marque: 'Li', fond: '#FCE9CF', encre: '#7A3E00', items: propositions.lieux.map((l) => ({ cle: `l${l.id}`, libelle: l.nom, sous: l.sous_titre, choisir: () => ouvrir({ type: 'lieu', libelle: l.nom, id: l.id }) })) },
     { titre: 'Spectacles', marque: 'Sp', fond: '#FBE1DC', encre: '#8E2410', items: propositions.spectacles.map((s) => ({ cle: `s${s.id}`, libelle: s.titre, sous: s.sous_titre, choisir: () => ouvrir({ type: 'spectacle', libelle: s.titre, id: s.id }) })) },
-    { titre: 'Villes', marque: 'Vi', fond: '#DDF0E7', encre: '#0F5A43', items: propositions.villes.map((v) => ({ cle: `v${v.id}`, libelle: v.nom, sous: v.sous_titre, choisir: () => ouvrirVille({ id: v.id, nom: v.nom }) })) },
+    { titre: 'Villes', marque: 'Vi', fond: '#DDF0E7', encre: '#0F5A43', items: propositions.villes.map((v) => ({ cle: `v${v.id}`, libelle: v.nom, sous: v.sous_titre, choisir: () => ouvrirVille({ id: v.id, nom: v.nom, lat: v.lat, lon: v.lon }) })) },
   ].filter((g) => g.items.length);
 
   if (!groupes.length) {
@@ -287,12 +307,57 @@ function ListePropositions({ propositions, ouvrir, ouvrirVille }: { propositions
 }
 
 /** Résultats groupés par jour (F4.4), ou ce qu'on propose quand il n'y en a pas (F4.5). */
-function ListeResultats({ etat, relancer, libelleGenre }: { etat: Extract<Etat, { mode: 'resultats' }>; relancer: (c: Criteres) => void; libelleGenre: (id: number) => string }) {
+function ListeResultats(props: { etat: Extract<Etat, { mode: 'resultats' }>; relancer: (c: Criteres) => void; libelleGenre: (id: number) => string; ouvrirFiltres: () => void }) {
+  const { etat, relancer, libelleGenre, ouvrirFiltres } = props;
   const { criteres, resultats, erreur } = etat;
+  const actifs = puces(criteres, libelleGenre);
+  const [villeChoisie, setVilleChoisie] = useState<number | null>(null);
+
+  /** Filtres actifs en puces retirables, avec le bouton du panneau et « Tout effacer » (F4.3, maquette). */
+  const barreFiltres = (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtresCadre} contentContainerStyle={styles.filtres}>
+      <Pressable style={styles.boutonFiltres} onPress={ouvrirFiltres} accessibilityRole="button">
+        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={Couleurs.encre} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" />
+          <Circle cx={15} cy={6} r={2} />
+          <Circle cx={9} cy={12} r={2} />
+          <Circle cx={17} cy={18} r={2} />
+        </Svg>
+        <Text style={styles.boutonFiltresTexte}>Filtres{actifs.length ? ` · ${actifs.length}` : ''}</Text>
+      </Pressable>
+      {actifs.map((p) => (
+        <View key={p.cle} style={styles.pastille}>
+          <Text style={styles.pastilleTexte}>{p.libelle}</Text>
+          <Pressable style={styles.pastilleCroix} onPress={() => relancer(retirer(criteres, p.cle))} accessibilityRole="button" accessibilityLabel={`Retirer le filtre ${p.libelle}`}>
+            <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round">
+              <Path d="M6 6l12 12M18 6L6 18" />
+            </Svg>
+          </Pressable>
+        </View>
+      ))}
+      {actifs.length ? (
+        <Pressable onPress={() => relancer(toutEffacer(criteres))} accessibilityRole="button">
+          <Text style={styles.toutEffacer}>Tout effacer</Text>
+        </Pressable>
+      ) : null}
+    </ScrollView>
+  );
+
+  /** Tri : par date (défaut), par distance (avec un lieu), par prix (F4.3). */
+  const changerTri = () => {
+    const tris = (Object.keys(LIBELLES_TRIS) as Tri[]).filter((t) => t !== 'distance' || criteres.ville || criteres.position);
+    const appliquerTri = (t: Tri) => relancer({ ...criteres, tri: t });
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions({ title: 'Trier', options: [...tris.map((t) => LIBELLES_TRIS[t]), 'Annuler'], cancelButtonIndex: tris.length }, (i) => i < tris.length && appliquerTri(tris[i]));
+    } else {
+      appliquerTri(tris[(tris.indexOf(criteres.tri ?? 'date') + 1) % tris.length]);
+    }
+  };
 
   if (erreur) {
     return (
       <View style={styles.bloc}>
+        {barreFiltres}
         <Text style={styles.texte}>Impossible de chercher pour le moment.</Text>
         <Pressable onPress={() => relancer(criteres)} accessibilityRole="button">
           <Text style={styles.lien}>Réessayer</Text>
@@ -301,7 +366,12 @@ function ListeResultats({ etat, relancer, libelleGenre }: { etat: Extract<Etat, 
     );
   }
   if (!resultats) {
-    return <ActivityIndicator color={Couleurs.rouge} style={styles.attente} />;
+    return (
+      <View>
+        {barreFiltres}
+        <ActivityIndicator color={Couleurs.rouge} style={styles.attente} />
+      </View>
+    );
   }
 
   if (resultats.total === 0) {
@@ -309,7 +379,8 @@ function ListeResultats({ etat, relancer, libelleGenre }: { etat: Extract<Etat, 
 
     return (
       <View style={styles.aucun}>
-        <Text style={styles.aucunTitre}>Aucun résultat pour « {criteres.libelle} »</Text>
+        {barreFiltres}
+        <Text style={styles.aucunTitre}>{criteres.q ? `Aucun résultat pour « ${criteres.q} »` : 'Aucun spectacle avec ces filtres'}</Text>
         {correction ? (
           <Pressable onPress={() => relancer({ ...criteres, q: correction, libelle: correction })} accessibilityRole="button">
             <Text style={styles.texte}>
@@ -345,10 +416,45 @@ function ListeResultats({ etat, relancer, libelleGenre }: { etat: Extract<Etat, 
 
   return (
     <View style={styles.resultats}>
-      <Text style={styles.compte}>
-        {resultats.total_plus ? 'Plus de ' : ''}
-        {resultats.total} spectacle{resultats.total > 1 ? 's' : ''} · {criteres.libelle}
-      </Text>
+      {barreFiltres}
+      {criteres.ville && !criteres.position ? (
+        villeChoisie === criteres.ville.id ? (
+          <View style={styles.villeFaite}>
+            <Text style={styles.villeFaiteTexte}>✓ {criteres.ville.nom} est maintenant votre ville de recherche à l’accueil.</Text>
+          </View>
+        ) : (
+          <Pressable
+            style={styles.villeBouton}
+            onPress={() => {
+              definirVilleRecherche({ id: criteres.ville!.id, nom: criteres.ville!.nom, lat: criteres.ville!.lat, lon: criteres.ville!.lon });
+              setVilleChoisie(criteres.ville!.id);
+            }}
+            accessibilityRole="button">
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={Couleurs.encre} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+              <Circle cx={12} cy={10} r={2.5} />
+            </Svg>
+            <Text style={styles.villeBoutonTexte}>Faire de {criteres.ville.nom} ma ville de recherche</Text>
+          </Pressable>
+        )
+      ) : null}
+      <View style={styles.compteLigne}>
+        <Text style={styles.compte}>
+          {resultats.total_plus ? 'Plus de ' : ''}
+          {resultats.total} spectacle{resultats.total > 1 ? 's' : ''}
+          {criteres.q ? ` pour « ${criteres.q} »` : ''}
+        </Text>
+        <Pressable style={styles.tri} onPress={changerTri} accessibilityRole="button">
+          <Text style={styles.triTexte}>{LIBELLES_TRIS[criteres.tri ?? 'date']} ⌄</Text>
+        </Pressable>
+      </View>
+      {resultats.sans_prix_masques > 0 ? (
+        <Text style={styles.compte}>
+          {resultats.sans_prix_masques} spectacle{resultats.sans_prix_masques > 1 ? 's' : ''} sans prix connu {resultats.sans_prix_masques > 1 ? 'ne sont pas affichés' : 'n’est pas affiché'} ·{' '}
+          <Text style={styles.lienCourt} onPress={() => relancer(retirer(criteres, 'prix'))}>Les voir</Text>
+        </Text>
+      ) : null}
+
       {resultats.jours.map((jour) => (
         <View key={jour.date} style={styles.jour}>
           <Text style={styles.jourTitre}>{jourLong(jour.date)}</Text>
@@ -425,7 +531,26 @@ const styles = StyleSheet.create({
   manqueBouton: { height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Couleurs.rouge },
   manqueBoutonTexte: { fontFamily: Polices.texteTresGras, fontSize: 14, color: '#FFFFFF' },
   resultats: { gap: 10 },
-  compte: { fontFamily: Polices.texte, fontSize: 13, color: Couleurs.gris },
+  compte: { flexShrink: 1, fontFamily: Polices.texte, fontSize: 13, lineHeight: 18, color: Couleurs.gris },
+  compteLigne: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  tri: { minHeight: 36, justifyContent: 'center' },
+  triTexte: { fontFamily: Polices.texteTresGras, fontSize: 13, color: Couleurs.encre },
+  lienCourt: { fontFamily: Polices.texteTresGras, fontSize: 13, color: Couleurs.encre, textDecorationLine: 'underline' },
+  filtresCadre: { flexGrow: 0, marginHorizontal: -Espaces.bord, marginBottom: 2 },
+  filtres: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Espaces.bord },
+  boutonFiltres: { height: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: Couleurs.encre, backgroundColor: Couleurs.carte, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  boutonFiltresTexte: { fontFamily: Polices.texteTresGras, fontSize: 13, color: Couleurs.encre },
+  pastille: { height: 36, paddingLeft: 12, paddingRight: 4, borderRadius: 18, backgroundColor: Couleurs.encre, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  pastilleTexte: { fontFamily: Polices.texteGras, fontSize: 13, color: '#FFFFFF' },
+  pastilleCroix: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.16)' },
+  villeBouton: {
+    alignSelf: 'flex-start', height: 38, paddingHorizontal: 14, borderRadius: 19, borderWidth: 1, borderColor: Couleurs.encre, backgroundColor: Couleurs.carte,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  villeBoutonTexte: { fontFamily: Polices.texteTresGras, fontSize: 13, color: Couleurs.encre },
+  villeFaite: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: Espaces.rayonCarte, backgroundColor: '#DDF0E7' },
+  villeFaiteTexte: { fontFamily: Polices.texteGras, fontSize: 13, color: '#0F5A43' },
+  toutEffacer: { fontFamily: Polices.texteGras, fontSize: 13, color: '#4A4A55', textDecorationLine: 'underline', paddingHorizontal: 6 },
   jour: { gap: 10 },
   jourTitre: { marginTop: 4, fontFamily: Polices.texteTresGras, fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase', color: Couleurs.gris },
 });
