@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { dateDuJour, jourDe, libelleJour, type Onglet, type Quand } from '@/autour/autour';
@@ -22,8 +22,17 @@ export function PucesQuand({ quand, choisir }: { quand: Quand; choisir: (q: Quan
   const aujourdhui = new Date();
   const limite = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth() + MOIS_MAX, aujourdhui.getDate());
 
+  const defilement = useRef<ScrollView>(null);
+
+  // La ligne défile : un jour choisi (« Sam. 17 oct. ») élargit la dernière puce au-delà de l'écran.
   return (
-    <View style={styles.puces}>
+    <ScrollView
+      ref={defilement}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.pucesCadre}
+      contentContainerStyle={styles.puces}
+      onContentSizeChange={() => jourChoisi && defilement.current?.scrollToEnd({ animated: true })}>
       {PUCES.map((p) => (
         <Puce key={p.quand} libelle={p.libelle} active={quand === p.quand} onPress={() => choisir(p.quand)} />
       ))}
@@ -63,7 +72,7 @@ export function PucesQuand({ quand, choisir }: { quand: Quand; choisir: (q: Quan
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -94,7 +103,9 @@ export function OngletsGenres({ onglets, actif, choisir }: { onglets: { onglet: 
 
 // Valeurs de la maquette « Accueil autour de moi ».
 const styles = StyleSheet.create({
-  puces: { flexDirection: 'row', gap: 8 },
+  // Déborde jusqu'aux bords de l'écran pour que le défilement ne coupe pas les puces à la marge.
+  pucesCadre: { flexGrow: 0, marginHorizontal: -Espaces.bord },
+  puces: { flexDirection: 'row', gap: 8, paddingHorizontal: Espaces.bord },
   puce: {
     height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: Couleurs.trait,
     backgroundColor: Couleurs.carte, alignItems: 'center', justifyContent: 'center',
