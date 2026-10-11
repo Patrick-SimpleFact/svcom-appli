@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import * as Network from 'expo-network';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, FlatList, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -118,9 +119,6 @@ function ChoisirUneVille({ titre, texte, choisir, lien }: { titre: string; texte
     </ScrollView>
   );
 }
-
-/** Les pistes (F8) arrivent en M14 : les boutons « Proposer une salle » et « Il manque un spectacle ? » y mèneront. */
-const proposerUnePiste = () => {};
 
 function ListeAutour(props: {
   point: Point;
@@ -313,6 +311,10 @@ function ListeAutour(props: {
       pageEnCours.current = false;
     }
   };
+
+  /** Proposer une piste (F8.1), pré-remplie avec la ville de la liste. */
+  const proposerUnePiste = () =>
+    router.push({ pathname: '/piste', params: { ville: libelle, ...('ville_id' in point ? { ville_id: String(point.ville_id) } : {}) } });
 
   const genres = configuration?.genres ?? [];
   const onglets: { onglet: Onglet; libelle: string }[] = [

@@ -75,6 +75,8 @@ function Contenu() {
         <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
         <Stack.Screen name="gouts" options={{ presentation: 'modal' }} />
         <Stack.Screen name="sources" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="piste" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="propositions" options={{ presentation: 'modal' }} />
       </Stack>
       <SuggestionOuverture />
     </>
