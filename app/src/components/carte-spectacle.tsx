@@ -1,17 +1,30 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { type Badge, type Carte, type CarteJournee, distance, estComplete, mentionJournee, talon } from '@/autour/autour';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 
+/** Ouvre la fiche (F5.1) sur la séance de la carte touchée ; la position sert seulement à la distance. */
+export function ouvrirFiche(spectacleId: number, representationId: number | undefined, position: { lat: number; lon: number } | null, origine = 'liste_ce_soir') {
+  router.push({
+    pathname: '/spectacle/[id]',
+    params: { id: String(spectacleId), origine, ...(representationId ? { representation: String(representationId) } : {}), ...(position ? { lat: String(position.lat), lon: String(position.lon) } : {}) },
+  });
+}
+
 const LIBELLES_BADGES: Partial<Record<Badge, string>> = { gratuit: 'Gratuit', derniere_places: 'Dernières places', horaire_a_confirmer: 'Horaire à confirmer' };
 
 /** Carte d'un spectacle à horaire (maquette « Accueil autour de moi ») : talon horaire à gauche, détails à droite. */
-export function CarteSpectacle({ carte, genre }: { carte: Carte; genre: string }) {
+export function CarteSpectacle({ carte, genre, onPress }: { carte: Carte; genre: string; onPress?: () => void }) {
   const { heure, suite } = talon(carte);
   const complete = estComplete(carte);
 
   return (
-    <View style={[styles.carte, complete && styles.complete]} accessible accessibilityLabel={`${heure}, ${carte.spectacle.titre}, ${carte.lieu.nom}${complete ? ', complet' : ''}`}>
+    <Pressable
+      style={({ pressed }) => [styles.carte, complete && styles.complete, pressed && styles.appuyee]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${heure}, ${carte.spectacle.titre}, ${carte.lieu.nom}${complete ? ', complet' : ''}`}>
       <View style={styles.talon}>
         <Text style={styles.heure}>{heure}</Text>
         {suite ? <Text style={styles.suite}>{suite}</Text> : null}
@@ -19,14 +32,18 @@ export function CarteSpectacle({ carte, genre }: { carte: Carte; genre: string }
       <Details spectacle={carte.spectacle} genre={genre} lieu={carte.lieu} distanceM={carte.distance_m} badges={carte.badges} complete={complete} />
       <Pointilles />
       <Encoches />
-    </View>
+    </Pressable>
   );
 }
 
 /** Carte du bloc « Toute la journée » : la mention (« Horaire à confirmer auprès du lieu »…) est toujours affichée (F2.2). */
-export function CarteSansHoraire({ carte, genre }: { carte: CarteJournee; genre: string }) {
+export function CarteSansHoraire({ carte, genre, onPress }: { carte: CarteJournee; genre: string; onPress?: () => void }) {
   return (
-    <View style={styles.carte} accessible accessibilityLabel={`${carte.spectacle.titre}, ${carte.lieu.nom}, ${mentionJournee(carte)}`}>
+    <Pressable
+      style={({ pressed }) => [styles.carte, pressed && styles.appuyee]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${carte.spectacle.titre}, ${carte.lieu.nom}, ${mentionJournee(carte)}`}>
       <Details
         spectacle={carte.spectacle}
         genre={genre}
@@ -35,7 +52,7 @@ export function CarteSansHoraire({ carte, genre }: { carte: CarteJournee; genre:
         badges={carte.badges.filter((b) => b !== 'horaire_a_confirmer')}
         mention={mentionJournee(carte)}
       />
-    </View>
+    </Pressable>
   );
 }
 
@@ -100,6 +117,7 @@ const styles = StyleSheet.create({
     borderRadius: Espaces.rayonCarte, overflow: 'hidden',
   },
   complete: { opacity: 0.55 },
+  appuyee: { opacity: 0.8 },
   talon: { width: LARGEUR_TALON, alignItems: 'center', justifyContent: 'center', gap: 2 },
   pointilles: { position: 'absolute', left: LARGEUR_TALON - 0.75, top: 0, bottom: 0, width: 1.5, overflow: 'hidden' },
   cadrePointille: { position: 'absolute', left: 0, top: -2, bottom: -2, width: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#DDD8D1' },

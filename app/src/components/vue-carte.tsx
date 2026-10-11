@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import MapView, { Marker } from 'react-native-maps';
 
 import { chargerAutour, chargerReperes, type Carte, type CarteJournee, type Recherche, type Region, type Repere, zoneDeplacee } from '@/autour/autour';
-import { CarteSansHoraire, CarteSpectacle } from '@/components/carte-spectacle';
+import { CarteSansHoraire, CarteSpectacle, ouvrirFiche } from '@/components/carte-spectacle';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 
 /** Cartes d'un lieu : recherche à 1 km autour de lui, puis seulement ses propres cartes. */
@@ -132,10 +132,20 @@ export function VueCarte({ region, filtres, libelleGenre }: { region: Region; fi
           ) : (
             <ScrollView contentContainerStyle={styles.panneauListe}>
               {panneau.cartes.map((c) => (
-                <CarteSpectacle key={`${c.spectacle.id}-${c.date_locale}`} carte={c} genre={libelleGenre(c.spectacle.genre_id)} />
+                <CarteSpectacle
+                  key={`${c.spectacle.id}-${c.date_locale}`}
+                  carte={c}
+                  genre={libelleGenre(c.spectacle.genre_id)}
+                  onPress={() => ouvrirFiche(c.spectacle.id, c.seances[0]?.representation_id, { lat: region.latitude, lon: region.longitude })}
+                />
               ))}
               {panneau.journee.map((c) => (
-                <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} />
+                <CarteSansHoraire
+                  key={c.representation_id}
+                  carte={c}
+                  genre={libelleGenre(c.spectacle.genre_id)}
+                  onPress={() => ouvrirFiche(c.spectacle.id, c.representation_id, { lat: region.latitude, lon: region.longitude })}
+                />
               ))}
             </ScrollView>
           )}
