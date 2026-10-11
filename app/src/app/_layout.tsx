@@ -8,8 +8,10 @@ import { useEffect } from 'react';
 
 import AppTabs from '@/components/app-tabs';
 import { EcranMiseAJour } from '@/components/mise-a-jour';
+import { PremierLancement } from '@/components/premier-lancement';
 import { Couleurs } from '@/constants/theme';
 import { Demarrage, useDemarrage } from '@/demarrage/demarrage';
+import { GoutsProvider, useGouts } from '@/gouts/gouts';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,15 +41,25 @@ export default function Racine() {
     <ThemeProvider value={theme}>
       <StatusBar style="dark" />
       <Demarrage>
-        <Contenu />
+        <GoutsProvider>
+          <Contenu />
+        </GoutsProvider>
       </Demarrage>
     </ThemeProvider>
   );
 }
 
-/** Toute l'app, sauf si le BO exige une version plus récente (F2.8). */
+/** Toute l'app, sauf si le BO exige une version plus récente (F2.8) ; bienvenue et goûts au premier lancement (F1.1). */
 function Contenu() {
   const { versionObsolete } = useDemarrage();
+  const { charge, premierLancementFait } = useGouts();
 
-  return versionObsolete ? <EcranMiseAJour /> : <AppTabs />;
+  if (versionObsolete) {
+    return <EcranMiseAJour />;
+  }
+  if (!charge) {
+    return null;
+  }
+
+  return premierLancementFait ? <AppTabs /> : <PremierLancement />;
 }
