@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -72,6 +72,11 @@ export default function PageLieu() {
           suite={!!page.suivant}
           vide="Les spectacles de ce lieu apparaîtront ici dès qu’ils seront annoncés dans nos sources."
         />
+        <Pressable
+          onPress={() => router.push({ pathname: '/piste', params: { type: 'spectacle', ...(page.ville ? { ville: page.ville } : {}), nom: page.nom } })}
+          accessibilityRole="button">
+          <Text style={styles.manque}>Il manque un spectacle de ce lieu ?</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -104,4 +109,5 @@ const styles = StyleSheet.create({
   actionTexte: { fontFamily: Polices.texteGras, fontSize: 12, color: Couleurs.encre },
   dates: { gap: 12, paddingTop: 22, paddingHorizontal: Espaces.bord },
   rubrique: { fontFamily: Polices.titre, fontSize: 22, color: Couleurs.encre },
+  manque: { alignSelf: 'center', paddingVertical: 16, fontFamily: Polices.texteGras, fontSize: 14, color: Couleurs.gris, textDecorationLine: 'underline' },
 });

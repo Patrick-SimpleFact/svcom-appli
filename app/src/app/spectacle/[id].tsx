@@ -8,6 +8,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useCompte } from '@/compte/compte';
 import { BoutonSuivre } from '@/components/bouton-suivre';
+import { SignalerErreur } from '@/components/signaler-erreur';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import {
   aDistance, type Billetterie, chargerFiche, duree, type Fiche, heureSeance, jourLong, libellePrix, lienSortie, miseAJour, type Origine, prixBilletterie,
@@ -218,6 +219,7 @@ function ContenuFiche({ fiche, representation, origine, position }: { fiche: Fic
               Source : {fiche.sources.join(', ')}
               {miseAJour(fiche.mis_a_jour_le) ? ` · ${miseAJour(fiche.mis_a_jour_le)}` : ''}
             </Text>
+            <SignalerErreur representationId={choisie} />
           </View>
         </View>
       </ScrollView>

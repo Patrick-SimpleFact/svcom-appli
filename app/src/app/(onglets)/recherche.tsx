@@ -405,8 +405,15 @@ function ListeResultats(props: { etat: Extract<Etat, { mode: 'resultats' }>; rel
         <View style={styles.manque}>
           <Text style={styles.manqueTitre}>Il manque ce spectacle ?</Text>
           <Text style={styles.manqueTexte}>Signalez-le-nous : votre recherche et la ville seront déjà remplies.</Text>
-          {/* Le formulaire de piste (F8), pré-rempli avec la recherche, arrive en M14. */}
-          <Pressable style={styles.manqueBouton} onPress={() => {}} accessibilityRole="button">
+          <Pressable
+            style={styles.manqueBouton}
+            onPress={() =>
+              router.push({
+                pathname: '/piste',
+                params: { type: 'spectacle', ...(criteres.q ? { nom: criteres.q } : {}), ...(criteres.ville ? { ville: criteres.ville.nom, ville_id: String(criteres.ville.id) } : {}) },
+              })
+            }
+            accessibilityRole="button">
             <Text style={styles.manqueBoutonTexte}>Signaler un spectacle manquant</Text>
           </Pressable>
         </View>

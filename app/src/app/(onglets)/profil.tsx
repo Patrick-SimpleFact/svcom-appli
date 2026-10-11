@@ -17,9 +17,6 @@ import { useDemarrage } from '@/demarrage/demarrage';
 import { libelleRayon, useGouts } from '@/gouts/gouts';
 import { choisir, useChoixSuggestion } from '@/suggestion/suggestion';
 
-/** Les pistes (F8) et « Mes propositions » arrivent en M14. */
-const bientot = () => {};
-
 /** Onglet « Profil » (F1.6, maquette « Profil ») : sans compte ou connecté. */
 export default function Profil() {
   const { configuration } = useDemarrage();
@@ -130,8 +127,8 @@ export default function Profil() {
         </Section>
 
         <Section titre="Aidez-nous">
-          <Lien libelle="Il manque un spectacle ou une salle ?" onPress={bientot} />
-          {utilisateur ? <Lien libelle="Mes propositions" onPress={bientot} separe /> : null}
+          <Lien libelle="Il manque un spectacle ou une salle ?" onPress={() => router.push('/piste')} />
+          {utilisateur ? <Lien libelle="Mes propositions" onPress={() => router.push('/propositions')} separe /> : null}
         </Section>
 
         <Section titre="Vous êtes un théâtre ?">
