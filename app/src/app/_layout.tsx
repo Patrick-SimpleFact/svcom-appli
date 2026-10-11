@@ -10,6 +10,7 @@ import { EcranMiseAJour } from '@/components/mise-a-jour';
 import { PremierLancement } from '@/components/premier-lancement';
 import { Couleurs } from '@/constants/theme';
 import { CompteProvider } from '@/compte/compte';
+import { FavorisProvider } from '@/favoris/favoris';
 import { Demarrage, useDemarrage } from '@/demarrage/demarrage';
 import { GoutsProvider, useGouts } from '@/gouts/gouts';
 
@@ -43,7 +44,9 @@ export default function Racine() {
       <Demarrage>
         <GoutsProvider>
           <CompteProvider>
-            <Contenu />
+            <FavorisProvider>
+              <Contenu />
+            </FavorisProvider>
           </CompteProvider>
         </GoutsProvider>
       </Demarrage>

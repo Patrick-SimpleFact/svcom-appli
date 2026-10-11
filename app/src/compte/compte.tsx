@@ -40,30 +40,6 @@ export function modifierMoi(champs: Partial<Pick<Utilisateur, 'prenom' | 'naissa
   return appelApi('/v1/moi', { methode: 'PATCH', corps: champs });
 }
 
-/** Spectacles mis en favori pendant la session : le cœur de la fiche se remplit (la liste complète des favoris arrive en M12). */
-const favorisAjoutes = new Set<number>();
-const abonnesFavoris = new Set<() => void>();
-
-export async function ajouterFavori(spectacleId: number, representationId?: number): Promise<void> {
-  await appelApi('/v1/moi/favoris', { methode: 'POST', corps: { spectacle_id: spectacleId, representation_id: representationId } });
-  favorisAjoutes.add(spectacleId);
-  abonnesFavoris.forEach((f) => f());
-}
-
-export function useEstFavori(spectacleId: number): boolean {
-  const [, setVersion] = useState(0);
-  useEffect(() => {
-    const prevenir = () => setVersion((v) => v + 1);
-    abonnesFavoris.add(prevenir);
-
-    return () => {
-      abonnesFavoris.delete(prevenir);
-    };
-  }, []);
-
-  return favorisAjoutes.has(spectacleId);
-}
-
 /** Messages lisibles pour les codes d'erreur du compte (API §7) ; jamais le message technique (F2.8). */
 export function messageErreur(erreur: unknown): string {
   const code = erreur instanceof ErreurApi ? erreur.code : 'reseau';
@@ -110,7 +86,6 @@ export function CompteProvider({ children }: { children: ReactNode }) {
 
   const oublier = useCallback(async () => {
     definirJeton(null);
-    favorisAjoutes.clear();
     setUtilisateur(null);
     await SecureStore.deleteItemAsync(CLE_JETON).catch(() => {});
   }, []);

@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BoutonSuivre } from '@/components/bouton-suivre';
 import { ListeDates } from '@/components/liste-dates';
 import { Attente, BoutonRetour } from '@/components/page-attente';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
@@ -36,6 +37,10 @@ export default function PageArtiste() {
         </View>
       </View>
 
+      <View style={styles.suivre}>
+        <BoutonSuivre type="artiste" id={page.id} nom={page.nom} avecAide />
+      </View>
+
       <View style={styles.dates}>
         <View style={styles.datesEntete}>
           <Text style={styles.rubrique}>Dates à venir</Text>
@@ -64,6 +69,7 @@ const styles = StyleSheet.create({
     fontFamily: Polices.texteTresGras, fontSize: 11, letterSpacing: 0.9, textTransform: 'uppercase', color: '#1E3A8A',
   },
   titre: { fontFamily: Polices.titreFort, fontSize: 40, lineHeight: 40, letterSpacing: -1.2, color: '#FFFFFF' },
+  suivre: { paddingTop: 18, paddingHorizontal: Espaces.bord },
   dates: { gap: 10, paddingTop: 22, paddingHorizontal: Espaces.bord },
   datesEntete: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   rubrique: { fontFamily: Polices.titre, fontSize: 22, color: Couleurs.encre },

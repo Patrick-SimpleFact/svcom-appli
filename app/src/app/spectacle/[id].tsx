@@ -6,12 +6,14 @@ import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Sty
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { ajouterFavori, useCompte, useEstFavori } from '@/compte/compte';
+import { useCompte } from '@/compte/compte';
+import { BoutonSuivre } from '@/components/bouton-suivre';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import {
   aDistance, type Billetterie, chargerFiche, duree, type Fiche, heureSeance, jourLong, libellePrix, lienSortie, miseAJour, type Origine, prixBilletterie,
   reservation, type Seance, texteBouton, trajet,
 } from '@/fiche/fiche';
+import { useFavoris } from '@/favoris/favoris';
 import { itineraire } from '@/fiche/itineraire';
 import { type AutresDates, chargerAutresDates, libelleDate } from '@/fiche/pages';
 
@@ -146,9 +148,12 @@ function ContenuFiche({ fiche, representation, origine, position }: { fiche: Fic
                   <Text style={styles.lieuNom}>{lieu.nom}</Text>
                   {aDistance(lieu.distance_m) ? ` · ${lieu.position_approximative ? '≈ ' : ''}${aDistance(lieu.distance_m)}` : ''}
                 </Text>
-                <Pressable onPress={() => ouvrirLieu(lieu.id, position)} accessibilityRole="link">
-                  <Text style={styles.lienPetit}>Autres spectacles du lieu</Text>
-                </Pressable>
+                <View style={styles.lieuActions}>
+                  <Pressable onPress={() => ouvrirLieu(lieu.id, position)} accessibilityRole="link">
+                    <Text style={styles.lienPetit}>Autres spectacles du lieu</Text>
+                  </Pressable>
+                  <BoutonSuivre type="lieu" id={lieu.id} petit />
+                </View>
               </View>
             </View>
           ) : null}
@@ -374,11 +379,13 @@ function EnTete({ fiche, genre, hautSur, representation }: { fiche: Fiche; genre
  */
 function Coeur({ spectacleId, representation }: { spectacleId: number; representation?: number }) {
   const { utilisateur } = useCompte();
-  const favori = useEstFavori(spectacleId);
+  const { favoriDe, ajouter, retirer } = useFavoris();
+  const favoriId = favoriDe(spectacleId);
+  const favori = favoriId !== null;
   const [envoi, setEnvoi] = useState(false);
 
   const toucher = async () => {
-    if (favori || envoi) {
+    if (envoi) {
       return;
     }
     if (!utilisateur) {
@@ -386,12 +393,12 @@ function Coeur({ spectacleId, representation }: { spectacleId: number; represent
       return;
     }
     setEnvoi(true);
-    await ajouterFavori(spectacleId, representation).catch(() => {});
+    await (favoriId !== null ? retirer(favoriId) : ajouter(spectacleId, representation)).catch(() => {});
     setEnvoi(false);
   };
 
   return (
-    <Pressable onPress={toucher} style={[styles.rond, styles.rondSombre]} accessibilityRole="button" accessibilityLabel={favori ? 'Dans vos favoris' : 'Ajouter aux favoris'} accessibilityState={{ selected: favori }} hitSlop={6}>
+    <Pressable onPress={toucher} style={[styles.rond, styles.rondSombre]} accessibilityRole="button" accessibilityLabel={favori ? 'Retirer des favoris' : 'Ajouter aux favoris'} accessibilityState={{ selected: favori }} hitSlop={6}>
       <Svg width={20} height={20} viewBox="0 0 24 24" fill={favori ? Couleurs.rouge : 'none'} stroke={favori ? Couleurs.rouge : '#FFFFFF'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
         <Path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
       </Svg>
@@ -567,6 +574,7 @@ const styles = StyleSheet.create({
   mentionTexteOrange: { color: '#7A3E00' },
   ligneLieu: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   lieuTextes: { flex: 1, gap: 2 },
+  lieuActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   lieuTexte: { fontFamily: Polices.texte, fontSize: 14, color: Couleurs.gris },
   lienPetit: { fontFamily: Polices.texteGras, fontSize: 13, color: Couleurs.encre, textDecorationLine: 'underline', paddingVertical: 6 },
   autresDates: { height: 52, justifyContent: 'center', paddingHorizontal: 10 },

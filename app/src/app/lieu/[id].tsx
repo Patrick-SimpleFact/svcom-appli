@@ -4,6 +4,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { BoutonSuivre } from '@/components/bouton-suivre';
 import { ListeDates } from '@/components/liste-dates';
 import { Attente, BoutonRetour } from '@/components/page-attente';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
@@ -40,6 +41,7 @@ export default function PageLieu() {
             </Text>
           ) : null}
         </View>
+        <BoutonSuivre type="lieu" id={page.id} avecAide />
       </View>
 
       <View style={styles.actions}>

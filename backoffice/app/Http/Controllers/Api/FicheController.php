@@ -30,14 +30,15 @@ class FicheController extends Controller
     {
         $d = $request->validate([...self::REGLES_POSITION, 'suivant' => ['nullable', 'string', 'max:200']]);
 
-        return $this->json($fiches->lieu($id, self::position($d), AutourDeMoi::pageDuCurseur($d['suivant'] ?? null)));
+        // Route publique : le compte est lu dans le jeton s'il y en a un (bouton « Suivre ce lieu »).
+        return $this->json($fiches->lieu($id, self::position($d), AutourDeMoi::pageDuCurseur($d['suivant'] ?? null), $request->user('sanctum')));
     }
 
     public function artiste(Request $request, Fiches $fiches, int $id): JsonResponse
     {
         $d = $request->validate([...self::REGLES_POSITION, 'suivant' => ['nullable', 'string', 'max:200']]);
 
-        return $this->json($fiches->artiste($id, self::position($d), AutourDeMoi::pageDuCurseur($d['suivant'] ?? null)));
+        return $this->json($fiches->artiste($id, self::position($d), AutourDeMoi::pageDuCurseur($d['suivant'] ?? null), $request->user('sanctum')));
     }
 
     private const REGLES_POSITION = [
