@@ -1,23 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
+import * as Network from 'expo-network';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, FlatList, Linking, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { type Carte, chargerAutour, compteur, ecartMetres, enFrance, type Onglet, type Point, type Quand, type Recherche, type ReponseAutour, titreAccueil } from '@/autour/autour';
+import {
+  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, type ReponseAutour, titreAccueil,
+} from '@/autour/autour';
 import { coordonnees, usePosition } from '@/autour/position';
 import { type Ville, useVilleChoisie } from '@/autour/ville';
 import { CarteSansHoraire, CarteSpectacle } from '@/components/carte-spectacle';
 import { ChoixVille } from '@/components/choix-ville';
+import { Bandeau, BandeauCouverture, IlManqueUnSpectacle, MessageVide, Squelettes } from '@/components/etats-liste';
 import { OngletsGenres, PucesQuand } from '@/components/filtres-autour';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
+import { ErreurApi } from '@/api/client';
 import { useGouts } from '@/gouts/gouts';
 
 type Liste = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'prete'; reponse: ReponseAutour; cartes: Carte[] };
 
 /** Au-delà de cette distance depuis le chargement de la liste, on propose d'actualiser (F2.1). */
 const DEPLACEMENT_M = 1000;
+
+/** Hors ligne : on retente la liste à ce rythme ; la première réponse du BO prouve que le réseau est revenu (F2.8). */
+const ESSAI_HORS_LIGNE_MS = 5000;
 
 /** Onglet « Autour de moi » (F2, maquette « Accueil autour de moi »). */
 export default function AutourDeMoi() {
@@ -38,7 +46,9 @@ export default function AutourDeMoi() {
     contenu = <ListeAutour point={{ ville_id: ville.id }} libelle={ville.nom} changerLieu={ouvrirSelecteur} />;
   } else if (position.etat === 'trouvee' && enFrance(position.position.pays)) {
     const { lat, lon, libelle } = position.position;
-    contenu = <ListeAutour point={{ lat, lon }} libelle={libelle ?? 'Ma position'} changerLieu={ouvrirSelecteur} actualiser={position.actualiser} />;
+    contenu = (
+      <ListeAutour point={{ lat, lon }} libelle={libelle ?? 'Ma position'} changerLieu={ouvrirSelecteur} actualiser={position.actualiser} approximative={position.position.approximative} />
+    );
   } else if (position.etat === 'trouvee') {
     contenu = <ChoisirUneVille titre={'Choisissez\nune ville'} texte="Spettacoli couvre la France pour l’instant. Choisissez une ville française :" choisir={choisirVille} />;
   } else if (position.etat === 'refusee') {
@@ -99,31 +109,135 @@ function ChoisirUneVille({ titre, texte, choisir, lien }: { titre: string; texte
   );
 }
 
-function ListeAutour({ point, libelle, changerLieu, actualiser }: { point: Point; libelle: string; changerLieu: () => void; actualiser?: () => void }) {
+/** Les pistes (F8) arrivent en M14 : les boutons « Proposer une salle » et « Il manque un spectacle ? » y mèneront. */
+const proposerUnePiste = () => {};
+
+function ListeAutour(props: { point: Point; libelle: string; changerLieu: () => void; actualiser?: () => void; approximative?: boolean }) {
+  const { point, libelle, changerLieu, actualiser, approximative } = props;
   const { configuration } = useDemarrage();
   const { gouts } = useGouts();
   const [quand, setQuand] = useState<Quand>('ce_soir');
   // « Pour vous » en tête et par défaut quand des goûts sont enregistrés (F2.3, F1.10 point 3).
   const [onglet, setOnglet] = useState<Onglet>(gouts.genres.length ? 'pour_vous' : 'tout');
   const [liste, setListe] = useState<Liste>({ etat: 'chargement' });
+  const [attente, setAttente] = useState<Attente>('squelettes');
   const [rafraichissement, setRafraichissement] = useState(false);
   const [bouge, setBouge] = useState(false);
+  const [horsLigne, setHorsLigne] = useState(false);
+  // Texte du bandeau hors ligne, calculé au moment où le réseau tombe (« liste mise à jour il y a 2 h »).
+  const [miseAJour, setMiseAJour] = useState<string | null>(null);
   const pageEnCours = useRef(false);
+  // Chaque chargement a un numéro : une réponse arrivée trop tard (après l'échec à 20 s, ou d'une ancienne recherche) est ignorée.
+  const demande = useRef(0);
+  const debut = useRef(0);
+  const chargeeLe = useRef<number | null>(null);
+  const delais = configuration?.parametres.delais_messages_s;
 
   const recherche: Recherche = { point, quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres };
   const cle = JSON.stringify(recherche);
 
+  /**
+   * L'appel n'a pas atteint le BO (pas de réseau, serveur injoignable) : c'est ce qui compte pour l'utilisateur,
+   * que le téléphone ait signalé la coupure ou non. Une erreur renvoyée par le BO n'est pas une coupure.
+   */
+  const signalerSiCoupure = useCallback((erreur: unknown) => {
+    if (!(erreur instanceof ErreurApi)) {
+      setHorsLigne(true);
+      setMiseAJour(chargeeLe.current ? ilYA(chargeeLe.current, Date.now()) : null);
+    }
+  }, []);
+
+  const recevoir = useCallback((numero: number, envoi: Promise<ReponseAutour>) => {
+    envoi
+      .then((reponse) => {
+        if (numero === demande.current) {
+          chargeeLe.current = Date.now();
+          setListe({ etat: 'prete', reponse, cartes: reponse.cartes });
+          setHorsLigne(false);
+        }
+      })
+      .catch((erreur) => {
+        if (numero === demande.current) {
+          signalerSiCoupure(erreur);
+          setListe({ etat: 'erreur' });
+        }
+      });
+  }, [signalerSiCoupure]);
+
   // Nouvelle recherche à chaque changement de lieu, de date, d'onglet ou de goûts.
   useEffect(() => {
-    let actif = true;
-    chargerAutour(JSON.parse(cle) as Recherche)
-      .then((reponse) => actif && setListe({ etat: 'prete', reponse, cartes: reponse.cartes }))
-      .catch(() => actif && setListe({ etat: 'erreur' }));
+    debut.current = Date.now();
+    recevoir(++demande.current, chargerAutour(JSON.parse(cle) as Recherche));
+  }, [cle, recevoir]);
 
-    return () => {
-      actif = false;
+  /** « Réessayer », retour du réseau : on repart des squelettes. */
+  const recharger = useCallback(() => {
+    debut.current = Date.now();
+    setAttente('squelettes');
+    setListe({ etat: 'chargement' });
+    recevoir(++demande.current, chargerAutour(JSON.parse(cle) as Recherche));
+  }, [cle, recevoir]);
+
+  // Attente (F2.8) : squelettes, puis « Chargement en cours… » (3 s), « … plus de temps que d'habitude » (8 s), échec (20 s).
+  useEffect(() => {
+    if (liste.etat !== 'chargement') {
+      return;
+    }
+    const minuteur = setInterval(() => {
+      const etape = etapeAttente((Date.now() - debut.current) / 1000, delais);
+      setAttente(etape);
+      if (etape === 'echec') {
+        demande.current++;
+        setListe({ etat: 'erreur' });
+      }
+    }, 500);
+
+    return () => clearInterval(minuteur);
+  }, [liste.etat, delais]);
+
+  // Réseau (F2.8) : hors ligne, la liste reste affichée avec un bandeau ; au retour du réseau, elle se met à jour toute seule.
+  const rechargerRef = useRef(recharger);
+  useEffect(() => {
+    rechargerRef.current = recharger;
+  }, [recharger]);
+  useEffect(() => {
+    let precedent: boolean | null = null;
+    const appliquer = (etat: Network.NetworkState) => {
+      const coupe = etat.isConnected === false || etat.isInternetReachable === false;
+      setHorsLigne(coupe);
+      setMiseAJour(coupe && chargeeLe.current ? ilYA(chargeeLe.current, Date.now()) : null);
+      if (precedent === true && !coupe) {
+        rechargerRef.current();
+      }
+      precedent = coupe;
     };
-  }, [cle]);
+    Network.getNetworkStateAsync().then(appliquer).catch(() => {});
+    const abonnement = Network.addNetworkStateListener(appliquer);
+
+    return () => abonnement.remove();
+  }, []);
+
+  // Le téléphone (et surtout le simulateur) ne signale pas toujours le retour du réseau : tant qu'on se croit
+  // hors ligne, on retente la liste ; dès que le BO répond, la liste est à jour et le bandeau disparaît.
+  useEffect(() => {
+    if (!horsLigne) {
+      return;
+    }
+    const minuteur = setInterval(() => {
+      const numero = ++demande.current;
+      chargerAutour(JSON.parse(cle) as Recherche)
+        .then((reponse) => {
+          if (numero === demande.current) {
+            chargeeLe.current = Date.now();
+            setListe({ etat: 'prete', reponse, cartes: reponse.cartes });
+            setHorsLigne(false);
+          }
+        })
+        .catch(() => {});
+    }, ESSAI_HORS_LIGNE_MS);
+
+    return () => clearInterval(minuteur);
+  }, [horsLigne, cle]);
 
   // Retour dans l'app après un déplacement de plus de 1 km : on propose d'actualiser, sans recharger tout seul (F2.1).
   const depart = 'lat' in point ? `${point.lat},${point.lon}` : null;
@@ -143,17 +257,24 @@ function ListeAutour({ point, libelle, changerLieu, actualiser }: { point: Point
 
   const rafraichir = async () => {
     setRafraichissement(true);
+    const numero = ++demande.current;
     try {
       const reponse = await chargerAutour(recherche);
-      setListe({ etat: 'prete', reponse, cartes: reponse.cartes });
-    } catch {
-      setListe({ etat: 'erreur' });
+      if (numero === demande.current) {
+        chargeeLe.current = Date.now();
+        setListe({ etat: 'prete', reponse, cartes: reponse.cartes });
+        setHorsLigne(false);
+      }
+    } catch (erreur) {
+      // La liste affichée reste en place ; le bandeau « Hors ligne » dit pourquoi.
+      signalerSiCoupure(erreur);
     }
     setRafraichissement(false);
   };
 
-  /** Changer de puce ou d'onglet vide la liste le temps du chargement. */
+  /** Changer de puce ou d'onglet repart des squelettes. */
   const changer = <T,>(maj: (v: T) => void) => (v: T) => {
+    setAttente('squelettes');
     setListe({ etat: 'chargement' });
     maj(v);
   };
@@ -183,6 +304,36 @@ function ListeAutour({ point, libelle, changerLieu, actualiser }: { point: Point
   ];
   const libelleGenre = (id: number) => genres.find((g) => g.id === id)?.libelle ?? '';
   const reponse = liste.etat === 'prete' ? liste.reponse : null;
+  const ancien = reponse ? programmeAncien(reponse.programme_mis_a_jour_le, new Date()) : null;
+  const vide = reponse ? messageVide(reponse, quand, typeof onglet === 'number' ? libelleGenre(onglet) : null) : null;
+
+  let etatVide;
+  if (liste.etat === 'chargement') {
+    etatVide = (
+      <View style={styles.attente}>
+        <Squelettes />
+        {attente === 'lent' ? <Text style={styles.compteur}>Chargement en cours…</Text> : null}
+        {attente === 'tres_lent' ? (
+          <Bandeau texte="Le chargement prend plus de temps que d’habitude. Votre connexion est peut-être faible." action="Réessayer" onPress={recharger} />
+        ) : null}
+      </View>
+    );
+  } else if (liste.etat === 'erreur') {
+    etatVide = horsLigne ? (
+      <MessageVide texte="Pas de connexion internet." action="Réessayer" onPress={recharger} />
+    ) : (
+      <MessageVide texte="Impossible de charger les spectacles pour le moment." action="Réessayer" onPress={recharger} />
+    );
+  } else if (vide && !reponse?.toute_la_journee.length) {
+    etatVide =
+      vide.cas === 'genre' ? (
+        <MessageVide texte={vide.texte} action={vide.action} onPress={changer(setOnglet).bind(null, 'tout')} />
+      ) : vide.cas === 'date' ? (
+        <MessageVide texte={vide.texte} action={vide.action} onPress={changer(setQuand).bind(null, vide.quand)} />
+      ) : (
+        <MessageVide texte={vide.texte} action="Choisir une autre ville" onPress={changerLieu} />
+      );
+  }
 
   return (
     <FlatList
@@ -199,44 +350,42 @@ function ListeAutour({ point, libelle, changerLieu, actualiser }: { point: Point
           <EnTeteLieu libelle={libelle} onPress={changerLieu} />
           <Text style={styles.titre} accessibilityRole="header">{titreAccueil(new Date(), quand)}</Text>
           <MessagesService />
+          {horsLigne && liste.etat === 'prete' && miseAJour ? <Bandeau texte={`Hors ligne · liste mise à jour ${miseAJour}`} /> : null}
+          {approximative && actualiser ? <Bandeau texte="Position approximative" action="Actualiser" onPress={actualiser} /> : null}
           {bouge && actualiser ? (
-            <Pressable
-              style={styles.bouge}
+            <Bandeau
+              texte="Vous avez bougé"
+              action="Actualiser"
               onPress={() => {
                 setBouge(false);
                 actualiser();
               }}
-              accessibilityRole="button">
-              <Text style={styles.bougeTexte}>
-                Vous avez bougé · <Text style={styles.bougeAction}>Actualiser</Text>
-              </Text>
-            </Pressable>
+            />
           ) : null}
+          {ancien ? <Bandeau texte={ancien} /> : null}
           <PucesQuand quand={quand} choisir={changer(setQuand)} />
           <OngletsGenres onglets={onglets} actif={onglet} choisir={changer(setOnglet)} />
-          {reponse ? <Text style={styles.compteur}>{compteur(reponse.total, reponse.rayon_retenu_m)}</Text> : null}
+          {reponse?.couverture_faible ? <BandeauCouverture proposer={proposerUnePiste} /> : null}
+          {reponse && reponse.total > 0 ? <Text style={styles.compteur}>{compteur(reponse.total, reponse.rayon_retenu_m)}</Text> : null}
         </View>
       }
-      ListEmptyComponent={
-        liste.etat === 'chargement' ? (
-          <Chargement texte="Chargement des spectacles…" />
-        ) : liste.etat === 'erreur' ? (
-          <Explication texte="Impossible de charger les spectacles pour le moment." action="Réessayer" onPress={rafraichir} />
-        ) : reponse?.toute_la_journee.length ? null : (
-          <Text style={styles.texte}>Aucun spectacle trouvé autour de vous.</Text>
-        )
-      }
+      ListEmptyComponent={etatVide}
       ListFooterComponent={
         reponse?.suivant ? (
           <ActivityIndicator color={Couleurs.rouge} style={styles.pied} />
-        ) : reponse?.toute_la_journee.length ? (
-          <View style={styles.journee}>
-            <Text style={styles.rubrique}>Toute la journée</Text>
-            {reponse.toute_la_journee.map((c) => (
-              <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} />
-            ))}
-          </View>
-        ) : null
+        ) : (
+          <>
+            {reponse?.toute_la_journee.length ? (
+              <View style={styles.journee}>
+                <Text style={styles.rubrique}>Toute la journée</Text>
+                {reponse.toute_la_journee.map((c) => (
+                  <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} />
+                ))}
+              </View>
+            ) : null}
+            {reponse ? <IlManqueUnSpectacle onPress={proposerUnePiste} /> : null}
+          </>
+        )
       }
     />
   );
@@ -297,9 +446,7 @@ const styles = StyleSheet.create({
   journee: { marginTop: 24, gap: 10 },
   rubrique: { fontFamily: Polices.titre, fontSize: 20, color: Couleurs.encre },
   chargement: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
-  bouge: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: Espaces.rayonCarte, backgroundColor: Couleurs.encre },
-  bougeTexte: { fontFamily: Polices.texteMoyen, fontSize: 14, color: '#FFFFFF' },
-  bougeAction: { fontFamily: Polices.texteTresGras, textDecorationLine: 'underline' },
+  attente: { gap: 12 },
   explication: { gap: 14, padding: 16, borderRadius: Espaces.rayonCarte, backgroundColor: Couleurs.carte, borderWidth: 1, borderColor: Couleurs.traitCarte },
   explicationTexte: { fontFamily: Polices.texte, fontSize: 15, lineHeight: 22, color: Couleurs.encre },
   bouton: { height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: Couleurs.encre },

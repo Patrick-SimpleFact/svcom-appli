@@ -36,6 +36,12 @@ export type CarteJournee = {
 export type ReponseAutour = {
   rayon_retenu_m: number;
   couverture_faible: boolean;
+  /** Rempli quand la fenêtre est vide : « 4 spectacles ce week-end » (F2.7). */
+  suggestion_date: { quand: Quand; nombre: number } | null;
+  /** Rempli quand un filtre de genre ne donne rien : « Voir tous les genres (12) » (F2.7). */
+  total_tous_genres: number | null;
+  /** Fin de la dernière collecte réussie : au-delà de 36 h, on prévient (F2.8). */
+  programme_mis_a_jour_le: string | null;
   total: number;
   cartes: Carte[];
   toute_la_journee: CarteJournee[];
@@ -180,4 +186,91 @@ export function mentionJournee(carte: CarteJournee): string {
 /** Une carte est complète quand toutes ses séances le sont : grisée, en fin de liste, « Complet » écrit en clair (F2.5). */
 export function estComplete(carte: Carte): boolean {
   return carte.badges.includes('complet') || (carte.seances.length > 0 && carte.seances.every((s) => s.complet));
+}
+
+// ─── Couverture faible, résultats vides et fraîcheur (F2.7, F2.8) ─────────────
+
+/** « ce soir », « demain », « ce week-end », « le 17 octobre » : la fenêtre dans une phrase. */
+export function moment(quand: Quand): string {
+  switch (quand) {
+    case 'ce_soir':
+      return 'ce soir';
+    case 'demain':
+      return 'demain';
+    case 'week_end':
+      return 'ce week-end';
+    default: {
+      const date = dateDuJour(quand);
+
+      return `le ${date.getDate() === 1 ? '1er' : date.getDate()} ${MOIS_LONGS[date.getMonth()]}`;
+    }
+  }
+}
+
+/** Ce qu'on dit quand la liste est vide (F2.7) ; jamais d'écran vide sans explication. */
+export type Vide =
+  | { cas: 'genre'; texte: string; action: string }
+  | { cas: 'date'; texte: string; action: string; quand: Quand }
+  | { cas: 'rien'; texte: string };
+
+export function messageVide(reponse: ReponseAutour, quand: Quand, genre: string | null): Vide | null {
+  if (reponse.total > 0) {
+    return null;
+  }
+  if (genre && reponse.total_tous_genres) {
+    return { cas: 'genre', texte: `Pas de ${genre.toLowerCase()} ${moment(quand)} près d’ici.`, action: `Voir tous les genres (${reponse.total_tous_genres})` };
+  }
+  if (reponse.suggestion_date && reponse.suggestion_date.nombre > 0) {
+    const { nombre, quand: autre } = reponse.suggestion_date;
+
+    return { cas: 'date', texte: `Rien ${moment(quand)} près d’ici.`, action: `${nombre} spectacle${nombre > 1 ? 's' : ''} ${moment(autre)} → Voir`, quand: autre };
+  }
+
+  return { cas: 'rien', texte: `Aucun spectacle ${moment(quand)} à moins de 50 km.` };
+}
+
+/** Données du BO de plus de 36 h : « Programme mis à jour il y a 2 jours. » (F2.8) ; `null` si elles sont fraîches ou inconnues. */
+export function programmeAncien(misAJourLe: string | null, maintenant: Date): string | null {
+  if (!misAJourLe) {
+    return null;
+  }
+  const heures = (maintenant.getTime() - new Date(misAJourLe).getTime()) / 3_600_000;
+  if (heures <= 36) {
+    return null;
+  }
+  const jours = Math.max(1, Math.round(heures / 24));
+
+  return `Programme mis à jour il y a ${jours} jour${jours > 1 ? 's' : ''}. Pensez à vérifier auprès de la salle.`;
+}
+
+/** « il y a 5 min », « il y a 2 h », « il y a 3 jours » (bandeau hors ligne, F2.8). */
+export function ilYA(depuis: number, maintenant: number): string {
+  const minutes = Math.max(0, Math.round((maintenant - depuis) / 60_000));
+  if (minutes < 1) {
+    return 'à l’instant';
+  }
+  if (minutes < 60) {
+    return `il y a ${minutes} min`;
+  }
+  const heures = Math.round(minutes / 60);
+  if (heures < 24) {
+    return `il y a ${heures} h`;
+  }
+  const jours = Math.round(heures / 24);
+
+  return `il y a ${jours} jour${jours > 1 ? 's' : ''}`;
+}
+
+/** Étape de l'attente d'un chargement (F2.8) selon les délais du BO (par défaut 3, 8 et 20 s). */
+export type Attente = 'squelettes' | 'lent' | 'tres_lent' | 'echec';
+
+export function etapeAttente(ecouleS: number, [lent, tresLent, echec]: number[] = [3, 8, 20]): Attente {
+  if (ecouleS >= echec) {
+    return 'echec';
+  }
+  if (ecouleS >= tresLent) {
+    return 'tres_lent';
+  }
+
+  return ecouleS >= lent ? 'lent' : 'squelettes';
 }
