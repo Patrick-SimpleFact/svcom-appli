@@ -20,9 +20,11 @@ type Etat = {
   /** Bienvenue et goûts déjà vus (remplis ou passés) : on ne les remontre plus. */
   premierLancementFait: boolean;
   terminerPremierLancement: (gouts: Gouts | null) => void;
+  /** Profil › Mes goûts, ou goûts du compte retrouvés à la connexion (F1.2). */
+  modifierGouts: (gouts: Gouts) => void;
 };
 
-const Contexte = createContext<Etat>({ charge: false, gouts: GOUTS_PAR_DEFAUT, premierLancementFait: false, terminerPremierLancement: () => {} });
+const Contexte = createContext<Etat>({ charge: false, gouts: GOUTS_PAR_DEFAUT, premierLancementFait: false, terminerPremierLancement: () => {}, modifierGouts: () => {} });
 
 export const useGouts = () => useContext(Contexte);
 
@@ -70,9 +72,14 @@ export function GoutsProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(CLE_ACCUEIL, '1').catch(() => {});
   }, []);
 
+  const modifierGouts = useCallback((choix: Gouts) => {
+    setGouts(choix);
+    AsyncStorage.setItem(CLE_GOUTS, JSON.stringify(choix)).catch(() => {});
+  }, []);
+
   const valeur = useMemo(
-    () => ({ charge, gouts, premierLancementFait, terminerPremierLancement }),
-    [charge, gouts, premierLancementFait, terminerPremierLancement],
+    () => ({ charge, gouts, premierLancementFait, terminerPremierLancement, modifierGouts }),
+    [charge, gouts, premierLancementFait, terminerPremierLancement, modifierGouts],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;

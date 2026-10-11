@@ -9,7 +9,7 @@ import { ErreurApi } from '@/api/client';
 import { ajouterFavori, demanderCode, messageErreur, modifierMoi, tropJeune, useCompte, verifierCode } from '@/compte/compte';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
-import { useGouts } from '@/gouts/gouts';
+import { lireGouts, useGouts } from '@/gouts/gouts';
 
 type Etape = 'email' | 'code' | 'profil' | 'trop_jeune';
 
@@ -28,7 +28,7 @@ export default function Connexion() {
   const params = useLocalSearchParams<{ raison?: string; spectacle?: string; representation?: string }>();
   const marges = useSafeAreaInsets();
   const { configuration } = useDemarrage();
-  const { gouts } = useGouts();
+  const { gouts, modifierGouts } = useGouts();
   const { connecter, mettreAJour, deconnecter } = useCompte();
   const [etape, setEtape] = useState<Etape>('email');
   const [email, setEmail] = useState('');
@@ -72,6 +72,11 @@ export default function Connexion() {
     agir(async () => {
       const connexion = await verifierCode(email.trim(), code, gouts);
       await connecter(connexion);
+      // Goûts du compte retrouvés sur ce téléphone (F1.2) ; ceux du mode invité ont été repris si le compte n'en avait pas.
+      const prefs = connexion.utilisateur.preferences;
+      if (prefs && (prefs.genres.length || prefs.rayon_m !== null)) {
+        modifierGouts(lireGouts(JSON.stringify(prefs)));
+      }
       if (connexion.utilisateur.profil_complet) {
         await terminer();
       } else {

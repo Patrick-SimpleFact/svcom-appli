@@ -68,6 +68,8 @@ function Contenu() {
     <Stack screenOptions={{ headerShown: false }}>
       {/* Connexion (F1.3) : une feuille par-dessus l'écran en cours, qu'on referme pour y revenir. */}
       <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="gouts" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="sources" options={{ presentation: 'modal' }} />
     </Stack>
   ) : (
     <PremierLancement />
