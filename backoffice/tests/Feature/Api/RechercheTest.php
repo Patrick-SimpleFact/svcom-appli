@@ -40,6 +40,7 @@ it('propose pendant la frappe, par type, malgré une faute, sans les spectacles 
     expect(array_column($laur['lieux'], 'nom'))->toBe(['Laurette Théâtre'])
         ->and($laur['lieux'][0]['sous_titre'])->toBe('Avignon')
         ->and(array_column($laur['villes'], 'nom'))->toBe(['Lauris'])
+        ->and($laur['villes'][0]['lat'])->toBeFloat()->and($laur['villes'][0]['lon'])->toBeFloat()
         ->and($laur['spectacles'])->toBe([]);
 
     expect($this->getJson('/v1/recherche/propositions?q=obsevance', $this->entetes)->json('lieux.0.nom'))->toBe("Théâtre de l'Observance")

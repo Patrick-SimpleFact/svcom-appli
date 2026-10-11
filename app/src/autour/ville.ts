@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { appelApi } from '@/api/client';
 
-export type Ville = { id: number; nom: string; sous_titre?: string | null };
+/** `lat`/`lon` : centre de la commune (absents pour une ville choisie avant M06). */
+export type Ville = { id: number; nom: string; sous_titre?: string | null; lat?: number; lon?: number };
 
 const CLE = 'spettacoli.ville_choisie';
 

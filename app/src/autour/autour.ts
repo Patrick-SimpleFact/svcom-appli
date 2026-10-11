@@ -274,3 +274,45 @@ export function etapeAttente(ecouleS: number, [lent, tresLent, echec]: number[] 
 
   return ecouleS >= lent ? 'lent' : 'squelettes';
 }
+
+// ─── Vue carte (F2.6) ──────────────────────────────────────────────────────────
+
+/** Un repère par lieu, avec le nombre de spectacles (`GET /v1/lieux/carte`, API §3). */
+export type Repere = { lieu_id: number; nom: string; lat: number; lon: number; nombre: number };
+
+export type Region = { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number };
+
+/** Région affichée autour d'un centre, assez large pour le rayon retenu par la liste. */
+export function regionAutour(centre: { lat: number; lon: number }, rayonM: number): Region {
+  const delta = Math.max(0.01, ((rayonM * 2.2) / 111_000));
+
+  return { latitude: centre.lat, longitude: centre.lon, latitudeDelta: delta, longitudeDelta: delta / Math.cos((centre.lat * Math.PI) / 180) };
+}
+
+/** Bornes d'une région, au format de l'API (degrés). */
+export function bornes(region: Region) {
+  return {
+    sud: +(region.latitude - region.latitudeDelta / 2).toFixed(5),
+    nord: +(region.latitude + region.latitudeDelta / 2).toFixed(5),
+    ouest: +(region.longitude - region.longitudeDelta / 2).toFixed(5),
+    est: +(region.longitude + region.longitudeDelta / 2).toFixed(5),
+  };
+}
+
+/** Mêmes filtres que la liste ; « Pour vous » sans compte = les genres des goûts. */
+export function chargerReperes(region: Region, { quand, onglet, gouts }: Pick<Recherche, 'quand' | 'onglet' | 'gouts'>): Promise<Repere[]> {
+  const genres = typeof onglet === 'number' ? [onglet] : onglet === 'pour_vous' ? gouts : undefined;
+
+  return appelApi<{ reperes: Repere[] }>('/v1/lieux/carte', {
+    parametres: { ...bornes(region), quand, genres, jeune_public: onglet === 'jeune_public' ? 1 : undefined },
+  }).then((r) => r.reperes);
+}
+
+/** La carte a-t-elle assez bougé pour proposer « Rechercher dans cette zone » ? (un quart de la largeur, ou un zoom marqué) */
+export function zoneDeplacee(avant: Region, apres: Region): boolean {
+  return (
+    Math.abs(apres.latitude - avant.latitude) > avant.latitudeDelta / 4 ||
+    Math.abs(apres.longitude - avant.longitude) > avant.longitudeDelta / 4 ||
+    Math.abs(Math.log(apres.latitudeDelta / avant.latitudeDelta)) > Math.log(1.5)
+  );
+}

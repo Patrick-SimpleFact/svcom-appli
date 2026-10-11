@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import {
-  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, type ReponseAutour, titreAccueil,
+  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, regionAutour, type ReponseAutour, titreAccueil,
 } from '@/autour/autour';
 import { coordonnees, usePosition } from '@/autour/position';
 import { type Ville, useVilleChoisie } from '@/autour/ville';
@@ -13,6 +13,7 @@ import { CarteSansHoraire, CarteSpectacle } from '@/components/carte-spectacle';
 import { ChoixVille } from '@/components/choix-ville';
 import { Bandeau, BandeauCouverture, IlManqueUnSpectacle, MessageVide, Squelettes } from '@/components/etats-liste';
 import { OngletsGenres, PucesQuand } from '@/components/filtres-autour';
+import { VueCarte } from '@/components/vue-carte';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
@@ -43,11 +44,19 @@ export default function AutourDeMoi() {
   if (!lue) {
     contenu = null;
   } else if (ville) {
-    contenu = <ListeAutour point={{ ville_id: ville.id }} libelle={ville.nom} changerLieu={ouvrirSelecteur} />;
+    const centre = ville.lat !== undefined && ville.lon !== undefined ? { lat: ville.lat, lon: ville.lon } : null;
+    contenu = <ListeAutour point={{ ville_id: ville.id }} centre={centre} libelle={ville.nom} changerLieu={ouvrirSelecteur} />;
   } else if (position.etat === 'trouvee' && enFrance(position.position.pays)) {
     const { lat, lon, libelle } = position.position;
     contenu = (
-      <ListeAutour point={{ lat, lon }} libelle={libelle ?? 'Ma position'} changerLieu={ouvrirSelecteur} actualiser={position.actualiser} approximative={position.position.approximative} />
+      <ListeAutour
+        point={{ lat, lon }}
+        centre={{ lat, lon }}
+        libelle={libelle ?? 'Ma position'}
+        changerLieu={ouvrirSelecteur}
+        actualiser={position.actualiser}
+        approximative={position.position.approximative}
+      />
     );
   } else if (position.etat === 'trouvee') {
     contenu = <ChoisirUneVille titre={'Choisissez\nune ville'} texte="Spettacoli couvre la France pour l’instant. Choisissez une ville française :" choisir={choisirVille} />;
@@ -112,8 +121,17 @@ function ChoisirUneVille({ titre, texte, choisir, lien }: { titre: string; texte
 /** Les pistes (F8) arrivent en M14 : les boutons « Proposer une salle » et « Il manque un spectacle ? » y mèneront. */
 const proposerUnePiste = () => {};
 
-function ListeAutour(props: { point: Point; libelle: string; changerLieu: () => void; actualiser?: () => void; approximative?: boolean }) {
-  const { point, libelle, changerLieu, actualiser, approximative } = props;
+function ListeAutour(props: {
+  point: Point;
+  /** Centre de la carte (F2.6) ; inconnu pour une ville choisie avant M06 : pas de vue carte. */
+  centre: { lat: number; lon: number } | null;
+  libelle: string;
+  changerLieu: () => void;
+  actualiser?: () => void;
+  approximative?: boolean;
+}) {
+  const { point, centre, libelle, changerLieu, actualiser, approximative } = props;
+  const [vue, setVue] = useState<'liste' | 'carte'>('liste');
   const { configuration } = useDemarrage();
   const { gouts } = useGouts();
   const [quand, setQuand] = useState<Quand>('ce_soir');
@@ -335,6 +353,52 @@ function ListeAutour(props: { point: Point; libelle: string; changerLieu: () => 
       );
   }
 
+  const entete = (
+    <View style={styles.entete}>
+      <EnTeteLieu libelle={libelle} onPress={changerLieu} />
+      <Text style={styles.titre} accessibilityRole="header">{titreAccueil(new Date(), quand)}</Text>
+      <MessagesService />
+      {horsLigne && liste.etat === 'prete' && miseAJour ? <Bandeau texte={`Hors ligne · liste mise à jour ${miseAJour}`} /> : null}
+      {approximative && actualiser ? <Bandeau texte="Position approximative" action="Actualiser" onPress={actualiser} /> : null}
+      {bouge && actualiser ? (
+        <Bandeau
+          texte="Vous avez bougé"
+          action="Actualiser"
+          onPress={() => {
+            setBouge(false);
+            actualiser();
+          }}
+        />
+      ) : null}
+      {ancien ? <Bandeau texte={ancien} /> : null}
+      <PucesQuand quand={quand} choisir={changer(setQuand)} />
+      <OngletsGenres onglets={onglets} actif={onglet} choisir={changer(setOnglet)} />
+      {reponse?.couverture_faible ? <BandeauCouverture proposer={proposerUnePiste} /> : null}
+      <View style={styles.ligneCompteur}>
+        <Text style={styles.compteur}>{reponse && reponse.total > 0 ? compteur(reponse.total, reponse.rayon_retenu_m) : ''}</Text>
+        {centre ? (
+          <Pressable style={styles.bascule} onPress={() => setVue(vue === 'liste' ? 'carte' : 'liste')} accessibilityRole="button" hitSlop={8}>
+            <IconeVue vue={vue} />
+            <Text style={styles.basculeTexte}>{vue === 'liste' ? 'Carte' : 'Liste'}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+
+  if (vue === 'carte' && centre) {
+    return (
+      <View style={styles.carteVue}>
+        {entete}
+        <VueCarte
+          region={regionAutour(centre, reponse?.rayon_retenu_m ?? 5000)}
+          filtres={{ quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres }}
+          libelleGenre={libelleGenre}
+        />
+      </View>
+    );
+  }
+
   return (
     <FlatList
       data={liste.etat === 'prete' ? liste.cartes : []}
@@ -345,30 +409,7 @@ function ListeAutour(props: { point: Point; libelle: string; changerLieu: () => 
       onEndReached={pageSuivante}
       onEndReachedThreshold={0.5}
       refreshControl={<RefreshControl refreshing={rafraichissement} onRefresh={rafraichir} tintColor={Couleurs.rouge} />}
-      ListHeaderComponent={
-        <View style={styles.entete}>
-          <EnTeteLieu libelle={libelle} onPress={changerLieu} />
-          <Text style={styles.titre} accessibilityRole="header">{titreAccueil(new Date(), quand)}</Text>
-          <MessagesService />
-          {horsLigne && liste.etat === 'prete' && miseAJour ? <Bandeau texte={`Hors ligne · liste mise à jour ${miseAJour}`} /> : null}
-          {approximative && actualiser ? <Bandeau texte="Position approximative" action="Actualiser" onPress={actualiser} /> : null}
-          {bouge && actualiser ? (
-            <Bandeau
-              texte="Vous avez bougé"
-              action="Actualiser"
-              onPress={() => {
-                setBouge(false);
-                actualiser();
-              }}
-            />
-          ) : null}
-          {ancien ? <Bandeau texte={ancien} /> : null}
-          <PucesQuand quand={quand} choisir={changer(setQuand)} />
-          <OngletsGenres onglets={onglets} actif={onglet} choisir={changer(setOnglet)} />
-          {reponse?.couverture_faible ? <BandeauCouverture proposer={proposerUnePiste} /> : null}
-          {reponse && reponse.total > 0 ? <Text style={styles.compteur}>{compteur(reponse.total, reponse.rayon_retenu_m)}</Text> : null}
-        </View>
-      }
+      ListHeaderComponent={entete}
       ListEmptyComponent={etatVide}
       ListFooterComponent={
         reponse?.suivant ? (
@@ -388,6 +429,15 @@ function ListeAutour(props: { point: Point; libelle: string; changerLieu: () => 
         )
       }
     />
+  );
+}
+
+/** Icône du bouton de bascule (maquette : « Carte » avec une carte pliée). */
+function IconeVue({ vue }: { vue: 'liste' | 'carte' }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={Couleurs.encre} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d={vue === 'liste' ? 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14' : 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'} />
+    </Svg>
   );
 }
 
@@ -439,6 +489,10 @@ const styles = StyleSheet.create({
   lieuTexte: { fontFamily: Polices.texteGras, fontSize: 14, color: Couleurs.encre },
   titre: { fontFamily: Polices.titreFort, fontSize: 34, lineHeight: 35, letterSpacing: -0.7, color: Couleurs.encre },
   compteur: { fontFamily: Polices.texte, fontSize: 13, color: Couleurs.gris },
+  ligneCompteur: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 20 },
+  bascule: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  basculeTexte: { fontFamily: Polices.texteGras, fontSize: 13, color: Couleurs.encre },
+  carteVue: { flex: 1, paddingHorizontal: Espaces.bord },
   texte: { fontFamily: Polices.texte, fontSize: 15, lineHeight: 22, color: Couleurs.gris },
   lien: { fontFamily: Polices.texteGras, fontSize: 14, color: Couleurs.gris, textDecorationLine: 'underline', paddingVertical: 8 },
   espace: { height: 10 },
