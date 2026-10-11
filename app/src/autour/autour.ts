@@ -10,8 +10,10 @@ type LieuCarte = { id: number; nom: string; position_approximative: boolean };
 /** Une carte = un spectacle × un lieu × un jour, séances du jour regroupées (F2.5). */
 export type Carte = {
   spectacle: SpectacleCarte;
-  lieu: LieuCarte;
-  distance_m: number;
+  /** `ville` : donnée par la recherche, affichée à la place de la distance quand elle est inconnue. */
+  lieu: LieuCarte & { ville?: string | null };
+  /** `null` sans position (recherche dans toute la France, page d'un lieu ouverte sans position). */
+  distance_m: number | null;
   date_locale: string;
   type: 'seance';
   seances: { representation_id: number; debut: string; complet: boolean }[];
@@ -22,8 +24,8 @@ export type Carte = {
 /** Spectacle sans horaire précis : bloc « Toute la journée » (F2.2). */
 export type CarteJournee = {
   spectacle: SpectacleCarte;
-  lieu: LieuCarte;
-  distance_m: number;
+  lieu: LieuCarte & { ville?: string | null };
+  distance_m: number | null;
   representation_id: number;
   type: 'jour' | 'periode' | 'continu';
   date_locale: string;
