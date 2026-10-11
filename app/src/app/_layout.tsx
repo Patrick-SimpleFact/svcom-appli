@@ -7,7 +7,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import AppTabs from '@/components/app-tabs';
+import { EcranMiseAJour } from '@/components/mise-a-jour';
 import { Couleurs } from '@/constants/theme';
+import { Demarrage, useDemarrage } from '@/demarrage/demarrage';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,7 +38,16 @@ export default function Racine() {
   return (
     <ThemeProvider value={theme}>
       <StatusBar style="dark" />
-      <AppTabs />
+      <Demarrage>
+        <Contenu />
+      </Demarrage>
     </ThemeProvider>
   );
+}
+
+/** Toute l'app, sauf si le BO exige une version plus récente (F2.8). */
+function Contenu() {
+  const { versionObsolete } = useDemarrage();
+
+  return versionObsolete ? <EcranMiseAJour /> : <AppTabs />;
 }

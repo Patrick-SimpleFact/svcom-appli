@@ -2,15 +2,19 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 
-/** Cadre commun d'un onglet : fond crème, grand titre façon maquettes, contenu qui défile. */
+/** Cadre commun d'un onglet : fond crème, grand titre façon maquettes, messages de service (F2.8), contenu qui défile. */
 export function Ecran({ titre, children }: { titre: string; children?: ReactNode }) {
   return (
     <SafeAreaView style={styles.fond} edges={['top']}>
       <ScrollView contentContainerStyle={styles.contenu} contentInsetAdjustmentBehavior="automatic">
         <Text style={styles.titre} accessibilityRole="header">{titre}</Text>
-        <View style={styles.corps}>{children}</View>
+        <View style={styles.corps}>
+          <MessagesService />
+          {children}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

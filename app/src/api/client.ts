@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
 
+import { identifiantAppareil } from '@/api/appareil';
+
 /**
  * Adresse de l'API (docs/API.md). En développement : l'API locale servie par Herd sur le Mac
  * (https://spettacoli.test, joignable depuis le simulateur). Réglable dans app/.env (EXPO_PUBLIC_API_URL).
@@ -8,6 +10,52 @@ export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://spettacoli.t
 
 /** Version de l'app envoyée à chaque appel (X-App-Version) : l'API refuse une version trop ancienne (426, F2.8). */
 export const VERSION_APP = Constants.expoConfig?.version ?? '1.0.0';
+
+/** Erreur renvoyée par l'API (API §1) : seul le `code` sert à l'app, le message technique n'est jamais affiché (F2.8). */
+export class ErreurApi extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly statut: number,
+  ) {
+    super(`API : ${code} (${statut})`);
+  }
+}
+
+/** Prévenu quand l'API répond 426 : l'app affiche alors l'écran « mettez à jour » (F2.8). */
+let surVersionObsolete: (() => void) | null = null;
+
+export function quandVersionObsolete(rappel: (() => void) | null) {
+  surVersionObsolete = rappel;
+}
+
+/** Appel de l'API avec les en-têtes communs (X-Appareil, X-App-Version) ; renvoie le JSON ou lève une ErreurApi. */
+export async function appelApi<T>(chemin: string, options: { methode?: string; corps?: unknown } = {}): Promise<T> {
+  const reponse = await fetch(`${API_URL}${chemin}`, {
+    method: options.methode ?? 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Appareil': await identifiantAppareil(),
+      'X-App-Version': VERSION_APP,
+    },
+    body: options.corps === undefined ? undefined : JSON.stringify(options.corps),
+  });
+
+  if (reponse.ok) {
+    return (await reponse.json()) as T;
+  }
+
+  const code = await reponse
+    .json()
+    .then((json: { erreur?: { code?: string } }) => json.erreur?.code)
+    .catch(() => undefined);
+
+  if (reponse.status === 426) {
+    surVersionObsolete?.();
+  }
+
+  throw new ErreurApi(code ?? 'erreur_interne', reponse.status);
+}
 
 /** Le back-office répond-il ? (route de santé de Laravel, sans en-têtes particuliers) */
 export async function apiJoignable(): Promise<boolean> {
@@ -18,4 +66,19 @@ export async function apiJoignable(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** Compare deux versions « 1.2.3 » : négatif si a < b, 0 si égales, positif si a > b. */
+export function comparerVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const ecart = (pa[i] || 0) - (pb[i] || 0);
+    if (ecart !== 0) {
+      return ecart;
+    }
+  }
+
+  return 0;
 }
