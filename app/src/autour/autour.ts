@@ -42,16 +42,39 @@ export type ReponseAutour = {
   suivant: string | null;
 };
 
-export type Recherche = { lat: number; lon: number; rayon_m: RayonM; suivant?: string | null };
+/** Quand ? (F2.2) : puces Ce soir / Demain / Week-end, ou un jour choisi (AAAA-MM-JJ, jusqu'à 3 mois). */
+export type Quand = 'ce_soir' | 'demain' | 'week_end' | string;
 
-/** Spectacles de ce soir autour d'une position ; la position n'est jamais enregistrée par le BO (F2.11). */
-export function chargerAutour({ lat, lon, rayon_m, suivant }: Recherche): Promise<ReponseAutour> {
-  return appelApi<ReponseAutour>('/v1/representations/autour', {
-    parametres: { lat, lon, quand: 'ce_soir', rayon: rayon_m ?? 'auto', tri: 'heure', suivant },
-  });
+/** Quoi ? (F2.3) : Tout, Pour vous (goûts), un genre, ou Jeune public (un public, pas un genre). */
+export type Onglet = 'tout' | 'pour_vous' | 'jeune_public' | number;
+
+/** Où ? (F2.1) : la position du téléphone ou une ville choisie. */
+export type Point = { lat: number; lon: number } | { ville_id: number };
+
+export type Recherche = { point: Point; quand: Quand; onglet: Onglet; rayon_m: RayonM; gouts: number[]; suivant?: string | null };
+
+/** Paramètres de `GET /v1/representations/autour` (API §3) ; la position n'est jamais enregistrée par le BO (F2.11). */
+export function parametresAutour({ point, quand, onglet, rayon_m, gouts, suivant }: Recherche) {
+  return {
+    ...point,
+    quand,
+    rayon: rayon_m ?? 'auto',
+    tri: 'heure',
+    genres: typeof onglet === 'number' ? [onglet] : undefined,
+    pour_vous: onglet === 'pour_vous' ? 1 : undefined,
+    gouts: onglet === 'pour_vous' ? gouts : undefined,
+    jeune_public: onglet === 'jeune_public' ? 1 : undefined,
+    suivant,
+  };
+}
+
+export function chargerAutour(recherche: Recherche): Promise<ReponseAutour> {
+  return appelApi<ReponseAutour>('/v1/representations/autour', { parametres: parametresAutour(recherche) });
 }
 
 // ─── Mise en forme (heure du lieu, distances, mentions) ───────────────────────
+
+const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
 /** « 19:30 » : l'heure est lue telle que le BO l'envoie, déjà à l'heure du lieu (et non du téléphone). */
 export function heure(iso: string): string {
@@ -82,12 +105,59 @@ export function compteur(total: number, rayonM: number): string {
   return `${total} spectacle${total > 1 ? 's' : ''} à moins de ${distance(rayonM)}`;
 }
 
-/** Titre de l'accueil : « Ce soir » ou, avant 16 h, « Aujourd'hui » (F2.2). */
-export function titreAccueil(maintenant: Date): string {
-  return maintenant.getHours() < 16 ? 'Aujourd’hui,\nprès de vous' : 'Ce soir,\nprès de vous';
+const JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+const MOIS_LONGS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+/** « 2026-10-17 » → date locale (sans décalage de fuseau). */
+export function dateDuJour(jour: string): Date {
+  const [a, m, j] = jour.split('-').map(Number);
+
+  return new Date(a, m - 1, j);
 }
 
-const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+/** Date → « 2026-10-17 ». */
+export function jourDe(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/** Titre de l'accueil selon la puce (F2.2) : « Ce soir » (avant 16 h : « Aujourd'hui »), « Demain », « Ce week-end », « Samedi 17 octobre ». */
+export function titreAccueil(maintenant: Date, quand: Quand = 'ce_soir'): string {
+  switch (quand) {
+    case 'ce_soir':
+      return maintenant.getHours() < 16 ? 'Aujourd’hui,\nprès de vous' : 'Ce soir,\nprès de vous';
+    case 'demain':
+      return 'Demain,\nprès de vous';
+    case 'week_end':
+      return 'Ce week-end,\nprès de vous';
+    default: {
+      const date = dateDuJour(quand);
+
+      return `${JOURS[date.getDay()]} ${date.getDate() === 1 ? '1er' : date.getDate()} ${MOIS_LONGS[date.getMonth()]},\nprès de vous`;
+    }
+  }
+}
+
+/** Libellé court de la puce d'un jour choisi : « Sam. 17 oct. ». */
+export function libelleJour(jour: string): string {
+  const date = dateDuJour(jour);
+
+  return `${JOURS[date.getDay()].slice(0, 3)}. ${date.getDate()} ${MOIS[date.getMonth()]}`;
+}
+
+/** Codes pays couverts : la métropole et l'outre-mer (F2.1). */
+const PAYS_COUVERTS = ['FR', 'GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'BL', 'MF', 'NC', 'PF', 'WF'];
+
+export function enFrance(codePays: string | null | undefined): boolean {
+  return !codePays || PAYS_COUVERTS.includes(codePays.toUpperCase());
+}
+
+/** Distance à vol d'oiseau en mètres (bandeau « Vous avez bougé » au-delà de 1 km, F2.1). */
+export function ecartMetres(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lon - a.lon) / 2) ** 2;
+
+  return 2 * 6371000 * Math.asin(Math.sqrt(h));
+}
 
 function jourMois(date: string): string {
   const [, mois, jour] = date.split('-').map(Number);
