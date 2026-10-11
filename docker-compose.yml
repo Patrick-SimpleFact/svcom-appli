@@ -3,7 +3,7 @@
 # Démarrer : docker compose up -d · Arrêter : docker compose stop
 services:
   postgres:
-    image: postgis/postgis:17-3.5
+    image: imresamu/postgis:17-3.5
     container_name: spettacoli-postgres
     restart: unless-stopped
     ports:
