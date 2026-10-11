@@ -1,11 +1,16 @@
 <?php
 
 use App\Enums\PrecisionPosition;
+use App\Enums\StatutCollecte;
 use App\Enums\StatutRepresentation;
+use App\Enums\TypeAccesSource;
+use App\Enums\TypeLienSource;
 use App\Enums\TypeRepresentation;
+use App\Models\Collecte;
 use App\Models\Genre;
 use App\Models\Lieu;
 use App\Models\Representation;
+use App\Models\Source;
 use App\Models\Spectacle;
 use App\Models\Ville;
 use App\Support\Point;
@@ -167,4 +172,14 @@ it('donne un repère par lieu pour la carte, sans les lieux à position approxim
         ->assertJsonCount(1, 'reperes')
         ->assertJsonPath('reperes.0.lieu_id', $this->lieu->id)
         ->assertJsonPath('reperes.0.nombre', 2);
+});
+
+it('dit quand le programme a été mis à jour pour la dernière fois (F2.8)', function () {
+    expect(($this->autour)()->json('programme_mis_a_jour_le'))->toBeNull();
+
+    $source = Source::create(['code' => 'demo', 'nom' => 'Démo', 'type_acces' => TypeAccesSource::Api, 'licence' => '—', 'type_lien' => TypeLienSource::Direct, 'actif' => true]);
+    Collecte::create(['source_id' => $source->id, 'debut' => now()->subHours(40), 'fin' => now()->subHours(39), 'statut' => StatutCollecte::Reussie]);
+    Collecte::create(['source_id' => $source->id, 'debut' => now()->subHours(2), 'fin' => now()->subHour(), 'statut' => StatutCollecte::Echouee]);
+
+    expect(($this->autour)()->json('programme_mis_a_jour_le'))->toBe(now()->subHours(39)->toIso8601String());
 });

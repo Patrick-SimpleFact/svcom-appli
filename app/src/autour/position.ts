@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 
-export type Position = { lat: number; lon: number; libelle: string | null; pays: string | null };
+/** `approximative` : le GPS n'a pas répondu à temps, on part de la dernière position connue (F2.8). */
+export type Position = { lat: number; lon: number; libelle: string | null; pays: string | null; approximative: boolean };
 
 /**
  * Où cherche-t-on ? (F2.1) — `a_expliquer` : la phrase d'explication s'affiche avant la demande système ;
@@ -23,14 +24,14 @@ export function libelleLieu(adresse: Pick<Location.LocationGeocodedAddress, 'cit
 }
 
 /** Coordonnées seules (sans le nom de la commune) : GPS, ou la dernière position connue s'il tarde. */
-export async function coordonnees(): Promise<{ lat: number; lon: number } | null> {
+export async function coordonnees(): Promise<{ lat: number; lon: number; approximative: boolean } | null> {
   const actuelle = await Promise.race([
     Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null),
     new Promise<null>((fin) => setTimeout(() => fin(null), DELAI_GPS_MS)),
   ]);
   const coords = (actuelle ?? (await Location.getLastKnownPositionAsync().catch(() => null)))?.coords;
 
-  return coords ? { lat: coords.latitude, lon: coords.longitude } : null;
+  return coords ? { lat: coords.latitude, lon: coords.longitude, approximative: !actuelle } : null;
 }
 
 async function localiser(): Promise<Position | null> {

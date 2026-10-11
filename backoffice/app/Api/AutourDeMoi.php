@@ -3,7 +3,9 @@
 namespace App\Api;
 
 use App\Enums\PrecisionPosition;
+use App\Enums\StatutCollecte;
 use App\Enums\TypeRepresentation;
+use App\Models\Collecte;
 use App\Models\Parametre;
 use App\Models\Representation;
 use App\Models\Ville;
@@ -64,7 +66,17 @@ class AutourDeMoi
             'cartes' => $cartes->forPage($page, self::CARTES_PAR_PAGE)->values(),
             'toute_la_journee' => $page === 1 ? $sansHoraire->sortBy('distance_m')->map(fn ($l) => $this->sansHoraire($l))->values() : [],
             'suivant' => $cartes->count() > $page * self::CARTES_PAR_PAGE ? self::curseur($page + 1) : null,
+            // F2.8 : l'app prévient « Programme mis à jour il y a 2 jours » au-delà de 36 h (collecte en panne).
+            'programme_mis_a_jour_le' => self::derniereCollecteReussie(),
         ];
+    }
+
+    /** Fin de la dernière collecte réussie, toutes sources confondues (ISO 8601), ou `null` si aucune. */
+    private static function derniereCollecteReussie(): ?string
+    {
+        $fin = Collecte::where('statut', StatutCollecte::Reussie)->max('fin');
+
+        return $fin ? CarbonImmutable::parse($fin)->toIso8601String() : null;
     }
 
     /** Représentations visibles de la fenêtre dans le rayon, avec les filtres. */
