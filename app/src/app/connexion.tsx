@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { ErreurApi } from '@/api/client';
-import { ajouterFavori, demanderCode, messageErreur, modifierMoi, tropJeune, useCompte, verifierCode } from '@/compte/compte';
+import { demanderCode, messageErreur, modifierMoi, tropJeune, useCompte, verifierCode } from '@/compte/compte';
+import { useFavoris } from '@/favoris/favoris';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { lireGouts, useGouts } from '@/gouts/gouts';
@@ -25,7 +26,8 @@ const RAISONS: Record<string, string> = {
  * Puis, une seule fois : prénom, mois et année de naissance, conditions. L'action en cours (le favori) est ensuite terminée.
  */
 export default function Connexion() {
-  const params = useLocalSearchParams<{ raison?: string; spectacle?: string; representation?: string }>();
+  const params = useLocalSearchParams<{ raison?: string; spectacle?: string; representation?: string; lieu?: string; artiste?: string }>();
+  const { ajouter, suivre } = useFavoris();
   const marges = useSafeAreaInsets();
   const { configuration } = useDemarrage();
   const { gouts, modifierGouts } = useGouts();
@@ -44,7 +46,9 @@ export default function Connexion() {
   /** Après la connexion : on termine ce que l'utilisateur voulait faire, sans repasser par la fiche (F1.3). */
   const terminer = async () => {
     if (params.raison === 'favori' && params.spectacle) {
-      await ajouterFavori(Number(params.spectacle), params.representation ? Number(params.representation) : undefined).catch(() => {});
+      await ajouter(Number(params.spectacle), params.representation ? Number(params.representation) : undefined).catch(() => {});
+    } else if (params.raison === 'suivre' && (params.lieu || params.artiste)) {
+      await suivre(params.lieu ? 'lieu' : 'artiste', Number(params.lieu ?? params.artiste)).catch(() => {});
     }
     router.back();
   };

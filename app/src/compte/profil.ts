@@ -5,15 +5,20 @@ import type { Gouts } from '@/gouts/gouts';
 export type Preferences = {
   genres: number[];
   rayon_m: number | null;
+  /** Zone des alertes (F3.1) : une ville (ou la position habituelle) et un rayon de 10 à 100 km. */
+  zone_alertes: { ville: { id: number; nom: string } | null; rayon_km: number };
   alertes_actives: boolean;
   rappel_jour_j: boolean;
 };
+
+/** En écriture, la zone se donne par l'identifiant de la ville (API §8). */
+type ModificationPreferences = Partial<Omit<Preferences, 'zone_alertes'>> & { zone_alertes?: { ville_id: number | null; rayon_km: number } };
 
 export function lirePreferences(): Promise<Preferences> {
   return appelApi<Preferences>('/v1/moi/preferences');
 }
 
-export function modifierPreferences(champs: Partial<Preferences>): Promise<Preferences> {
+export function modifierPreferences(champs: ModificationPreferences): Promise<Preferences> {
   return appelApi<Preferences>('/v1/moi/preferences', { methode: 'PUT', corps: champs });
 }
 

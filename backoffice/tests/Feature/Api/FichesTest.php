@@ -1,12 +1,15 @@
 <?php
 
 use App\Api\Fiches;
+use App\Enums\TypeArtiste;
 use App\Models\Artiste;
 use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Representation;
 use App\Models\Source;
 use App\Models\Spectacle;
+use App\Models\Suivi;
+use App\Models\Utilisateur;
 use App\Models\Ville;
 use App\Support\Point;
 use Carbon\CarbonImmutable;
@@ -129,4 +132,18 @@ it('complète la date des mentions obligatoires (DATAtourisme)', function () {
 
     expect(($this->get)("/v1/spectacles/{$this->spectacle->id}")->json('mentions'))
         ->toEqualCanonicalizing(['Source : DATAtourisme, mise à jour du 12/10/2026', 'Source : OpenAgenda']);
+});
+
+it('dit si le lieu ou l’artiste est suivi par le compte connecté (F3.2)', function () {
+    $artiste = Artiste::create(['nom' => 'Laura Cox', 'type' => TypeArtiste::Personne]);
+    $u = Utilisateur::create(['email' => 'fan@exemple.fr']);
+    $suivi = Suivi::create(['utilisateur_id' => $u->id, 'type' => 'lieu', 'cible_id' => $this->observance->id]);
+
+    expect(($this->get)("/v1/lieux/{$this->observance->id}")->json('suivi'))->toBeNull();
+
+    $jeton = $u->createToken('app')->plainTextToken;
+    $entetes = ['X-Appareil' => 'appareil-de-test-0001', 'X-App-Version' => '1.0.0', 'Authorization' => "Bearer {$jeton}"];
+    expect($this->getJson("/v1/lieux/{$this->observance->id}", $entetes)->json())->toMatchArray(['suivi' => true, 'suivi_id' => $suivi->id])
+        ->and($this->getJson("/v1/lieux/{$this->marseille->id}", $entetes)->json())->toMatchArray(['suivi' => false, 'suivi_id' => null])
+        ->and($this->getJson("/v1/artistes/{$artiste->id}", $entetes)->json('suivi'))->toBeFalse();
 });

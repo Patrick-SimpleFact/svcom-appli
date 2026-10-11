@@ -12,6 +12,8 @@ use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Representation;
 use App\Models\Spectacle;
+use App\Models\Suivi;
+use App\Models\Utilisateur;
 use App\Support\Point;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -118,8 +120,19 @@ class Fiches
         return ['lieux' => $lieux->values()];
     }
 
+    /**
+     * Bouton « Suivre » des pages lieu et artiste (F3.2) : `suivi` vaut null sans compte, sinon vrai ou faux ;
+     * `suivi_id` sert à arrêter de suivre (`DELETE /v1/moi/suivis/{id}`).
+     */
+    private static function suivi(?Utilisateur $u, string $type, int $cibleId): array
+    {
+        $id = $u ? Suivi::where(['utilisateur_id' => $u->id, 'type' => $type, 'cible_id' => $cibleId])->value('id') : null;
+
+        return ['suivi' => $u ? $id !== null : null, 'suivi_id' => $id];
+    }
+
     /** F4.2 : la page d'un lieu, et ses spectacles à venir groupés par jour. */
-    public function lieu(int $id, ?Point $position = null, int $page = 1): array
+    public function lieu(int $id, ?Point $position = null, int $page = 1, ?Utilisateur $utilisateur = null): array
     {
         $lieu = Lieu::with('ville')->find($id) ?? throw new ErreurApi('introuvable', 'Lieu introuvable.', 404);
         $lieu = $lieu->fusionne_dans_id ? Lieu::with('ville')->findOrFail($lieu->fusionne_dans_id) : $lieu; // doublon fusionné : le lieu conservé
@@ -130,11 +143,11 @@ class Fiches
 
         $dates = $this->recherche->handle(['lieu_id' => $lieu->id, 'centre' => $position, 'page' => $page, 'journaliser' => false]);
 
-        return [...self::decrireLieu($lieu, $position), 'suivi' => null, ...collect($dates)->only(['total', 'total_plus', 'jours', 'suivant'])->all()];
+        return [...self::decrireLieu($lieu, $position), ...self::suivi($utilisateur, 'lieu', $lieu->id), ...collect($dates)->only(['total', 'total_plus', 'jours', 'suivant'])->all()];
     }
 
     /** F4.2 : la page d'un artiste, et ses dates à venir (les plus proches d'abord si on a une position). */
-    public function artiste(int $id, ?Point $position = null, int $page = 1): array
+    public function artiste(int $id, ?Point $position = null, int $page = 1, ?Utilisateur $utilisateur = null): array
     {
         $artiste = Artiste::find($id) ?? throw new ErreurApi('introuvable', 'Artiste introuvable.', 404);
         $artiste = $artiste->fusionne_dans_id ? Artiste::findOrFail($artiste->fusionne_dans_id) : $artiste;
@@ -145,7 +158,7 @@ class Fiches
         ]);
 
         return [
-            'id' => $artiste->id, 'nom' => $artiste->nom, 'type' => $artiste->type->value, 'image_url' => $artiste->image_url, 'suivi' => null,
+            'id' => $artiste->id, 'nom' => $artiste->nom, 'type' => $artiste->type->value, 'image_url' => $artiste->image_url, ...self::suivi($utilisateur, 'artiste', $artiste->id),
             ...collect($dates)->only(['total', 'total_plus', 'jours', 'suivant'])->all(),
         ];
     }
