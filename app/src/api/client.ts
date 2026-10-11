@@ -21,6 +21,20 @@ export class ErreurApi extends Error {
   }
 }
 
+/** Jeton du compte connecté (API §7, Laravel Sanctum) ; `null` en mode invité. */
+let jeton: string | null = null;
+
+export function definirJeton(valeur: string | null) {
+  jeton = valeur;
+}
+
+/** Prévenu quand l'API refuse le jeton (401) : l'app repasse en mode invité. */
+let surJetonRefuse: (() => void) | null = null;
+
+export function quandJetonRefuse(rappel: (() => void) | null) {
+  surJetonRefuse = rappel;
+}
+
 /** Prévenu quand l'API répond 426 : l'app affiche alors l'écran « mettez à jour » (F2.8). */
 let surVersionObsolete: (() => void) | null = null;
 
@@ -53,10 +67,14 @@ export async function appelApi<T>(chemin: string, options: { methode?: string; c
       'Content-Type': 'application/json',
       'X-Appareil': await identifiantAppareil(),
       'X-App-Version': VERSION_APP,
+      ...(jeton ? { Authorization: `Bearer ${jeton}` } : {}),
     },
     body: options.corps === undefined ? undefined : JSON.stringify(options.corps),
   });
 
+  if (reponse.status === 204) {
+    return undefined as T;
+  }
   if (reponse.ok) {
     return (await reponse.json()) as T;
   }
@@ -68,6 +86,9 @@ export async function appelApi<T>(chemin: string, options: { methode?: string; c
 
   if (reponse.status === 426) {
     surVersionObsolete?.();
+  }
+  if (reponse.status === 401 && jeton) {
+    surJetonRefuse?.();
   }
 
   throw new ErreurApi(code ?? 'erreur_interne', reponse.status);

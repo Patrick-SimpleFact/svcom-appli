@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { EcranMiseAJour } from '@/components/mise-a-jour';
 import { PremierLancement } from '@/components/premier-lancement';
 import { Couleurs } from '@/constants/theme';
+import { CompteProvider } from '@/compte/compte';
 import { Demarrage, useDemarrage } from '@/demarrage/demarrage';
 import { GoutsProvider, useGouts } from '@/gouts/gouts';
 
@@ -41,7 +42,9 @@ export default function Racine() {
       <StatusBar style="dark" />
       <Demarrage>
         <GoutsProvider>
-          <Contenu />
+          <CompteProvider>
+            <Contenu />
+          </CompteProvider>
         </GoutsProvider>
       </Demarrage>
     </ThemeProvider>
@@ -61,5 +64,12 @@ function Contenu() {
   }
 
   // Onglets, et par-dessus les écrans ouverts depuis une carte (fiche spectacle, F5).
-  return premierLancementFait ? <Stack screenOptions={{ headerShown: false }} /> : <PremierLancement />;
+  return premierLancementFait ? (
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* Connexion (F1.3) : une feuille par-dessus l'écran en cours, qu'on referme pour y revenir. */}
+      <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
+    </Stack>
+  ) : (
+    <PremierLancement />
+  );
 }

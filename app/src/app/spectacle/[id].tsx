@@ -6,6 +6,7 @@ import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StyleSheet, T
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { ajouterFavori, useCompte, useEstFavori } from '@/compte/compte';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import {
   aDistance, type Billetterie, chargerFiche, duree, type Fiche, heureSeance, jourLong, libellePrix, lienSortie, miseAJour, type Origine, prixBilletterie,
@@ -97,7 +98,7 @@ function ContenuFiche({ fiche, representation, origine, position }: { fiche: Fic
   return (
     <View style={styles.fond}>
       <ScrollView contentContainerStyle={{ paddingBottom: 130 + marges.bottom }}>
-        <EnTete fiche={fiche} genre={genre} hautSur={marges.top} />
+        <EnTete fiche={fiche} genre={genre} hautSur={marges.top} representation={choisie} />
 
         <View style={styles.corps}>
           {mentions.length ? (
@@ -308,12 +309,13 @@ function AutresDatesFeuille({ visible, fermer, fiche, position }: { visible: boo
 }
 
 /** En-tête visuel : image de la source, ou affiche typographique (jamais de photo générique, F5.2). */
-function EnTete({ fiche, genre, hautSur }: { fiche: Fiche; genre: string; hautSur: number }) {
+function EnTete({ fiche, genre, hautSur, representation }: { fiche: Fiche; genre: string; hautSur: number; representation?: number }) {
   const boutons = (
     <View style={styles.enteteBoutons}>
       <BoutonRond onPress={() => router.back()} label="Retour">
         <Path d="M15 5l-7 7 7 7" />
       </BoutonRond>
+      <Coeur spectacleId={fiche.id} representation={representation} />
     </View>
   );
 
@@ -339,6 +341,37 @@ function EnTete({ fiche, genre, hautSur }: { fiche: Fiche; genre: string; hautSu
         <Text style={styles.afficheTitre} numberOfLines={4} adjustsFontSizeToFit accessibilityRole="header">{fiche.titre}</Text>
       </View>
     </View>
+  );
+}
+
+/**
+ * Favori (F5.5) : compte requis (D2). En mode invité, le cœur propose le compte avec sa raison,
+ * puis le favori est enregistré sans repasser par la fiche (F1.3).
+ */
+function Coeur({ spectacleId, representation }: { spectacleId: number; representation?: number }) {
+  const { utilisateur } = useCompte();
+  const favori = useEstFavori(spectacleId);
+  const [envoi, setEnvoi] = useState(false);
+
+  const toucher = async () => {
+    if (favori || envoi) {
+      return;
+    }
+    if (!utilisateur) {
+      router.push({ pathname: '/connexion', params: { raison: 'favori', spectacle: String(spectacleId), ...(representation ? { representation: String(representation) } : {}) } });
+      return;
+    }
+    setEnvoi(true);
+    await ajouterFavori(spectacleId, representation).catch(() => {});
+    setEnvoi(false);
+  };
+
+  return (
+    <Pressable onPress={toucher} style={[styles.rond, styles.rondSombre]} accessibilityRole="button" accessibilityLabel={favori ? 'Dans vos favoris' : 'Ajouter aux favoris'} accessibilityState={{ selected: favori }} hitSlop={6}>
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill={favori ? Couleurs.rouge : 'none'} stroke={favori ? Couleurs.rouge : '#FFFFFF'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+      </Svg>
+    </Pressable>
   );
 }
 
