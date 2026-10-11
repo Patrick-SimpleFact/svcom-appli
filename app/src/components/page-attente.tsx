@@ -1,14 +1,14 @@
-import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
+import { revenir } from '@/navigation';
 
 /** Bouton rond « Retour » des écrans ouverts par-dessus les onglets ; `clair` sur fond clair, sinon sur un visuel sombre. */
 export function BoutonRetour({ clair = false }: { clair?: boolean }) {
   return (
-    <Pressable onPress={() => router.back()} style={[styles.retour, clair ? styles.retourClair : styles.retourSombre]} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={6}>
+    <Pressable onPress={revenir} style={[styles.retour, clair ? styles.retourClair : styles.retourSombre]} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={6}>
       <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={clair ? Couleurs.encre : '#FFFFFF'} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
         <Path d="M15 5l-7 7 7 7" />
       </Svg>

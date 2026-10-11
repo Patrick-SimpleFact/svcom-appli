@@ -11,6 +11,7 @@ import { useCompte } from '@/compte/compte';
 import { envoyerPiste, lieuConnu, normaliserLien, type ReponsePiste, TYPES_PISTE, type TypePiste } from '@/contributions/contributions';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
+import { revenir } from '@/navigation';
 
 /**
  * Proposer une piste (F8, maquette « Proposer une piste ») : une salle, un spectacle ou une billetterie qui manque.
@@ -118,7 +119,7 @@ export default function ProposerPiste() {
             <Text style={styles.secondaireTexte}>Demander un espace salle pour ce lieu ↗</Text>
           </Pressable>
         ) : null}
-        <Pressable style={styles.bouton} onPress={() => router.back()} accessibilityRole="button">
+        <Pressable style={styles.bouton} onPress={revenir} accessibilityRole="button">
           <Text style={styles.boutonTexte}>Fermer</Text>
         </Pressable>
       </View>
@@ -128,7 +129,7 @@ export default function ProposerPiste() {
   return (
     <KeyboardAvoidingView style={styles.fond} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.entete}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button">
+        <Pressable onPress={revenir} hitSlop={12} accessibilityRole="button">
           <Text style={styles.fermer}>Fermer</Text>
         </Pressable>
       </View>

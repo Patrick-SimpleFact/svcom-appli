@@ -17,6 +17,7 @@ import {
 import { useFavoris } from '@/favoris/favoris';
 import { itineraire } from '@/fiche/itineraire';
 import { type AutresDates, chargerAutresDates, libelleDate } from '@/fiche/pages';
+import { revenir } from '@/navigation';
 
 /** Fiche spectacle (F5, maquette « Fiche spectacle »), ouverte sur la séance touchée. */
 export default function FicheSpectacle() {
@@ -40,7 +41,7 @@ export default function FicheSpectacle() {
   if (!fiche) {
     return (
       <SafeAreaView style={[styles.fond, styles.centre]}>
-        <BoutonRond onPress={() => router.back()} label="Retour" style={styles.retourSeul} sombre={false}>
+        <BoutonRond onPress={revenir} label="Retour" style={styles.retourSeul} sombre={false}>
           <Path d="M15 5l-7 7 7 7" />
         </BoutonRond>
         {erreur ? (
@@ -343,7 +344,7 @@ function AutresDatesFeuille({ visible, fermer, fiche, position }: { visible: boo
 function EnTete({ fiche, genre, hautSur, representation }: { fiche: Fiche; genre: string; hautSur: number; representation?: number }) {
   const boutons = (
     <View style={styles.enteteBoutons}>
-      <BoutonRond onPress={() => router.back()} label="Retour">
+      <BoutonRond onPress={revenir} label="Retour">
         <Path d="M15 5l-7 7 7 7" />
       </BoutonRond>
       <Coeur spectacleId={fiche.id} representation={representation} />

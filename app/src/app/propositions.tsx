@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { jourLong } from '@/fiche/fiche';
 import { LIBELLES_STATUTS, mesPropositions, type Proposition, TYPES_PISTE } from '@/contributions/contributions';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
+import { revenir } from '@/navigation';
 
 /** Profil › Mes propositions (F8.6) : chaque piste avec son statut et la réponse de l'équipe. */
 export default function MesPropositions() {
@@ -21,7 +21,7 @@ export default function MesPropositions() {
     <View style={styles.fond}>
       <View style={styles.entete}>
         <Text style={styles.titre} accessibilityRole="header">Mes propositions</Text>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button">
+        <Pressable onPress={revenir} hitSlop={12} accessibilityRole="button">
           <Text style={styles.fermer}>Fermer</Text>
         </Pressable>
       </View>

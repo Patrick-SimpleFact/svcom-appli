@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
+import { revenir } from '@/navigation';
 
 /** Sources du catalogue et leurs licences (référentiel des sources du BO), avec les mentions obligatoires. */
 const SOURCES = [
@@ -19,7 +19,7 @@ export default function Sources() {
     <View style={styles.fond}>
       <View style={styles.entete}>
         <Text style={styles.titre} accessibilityRole="header">Sources des données</Text>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button">
+        <Pressable onPress={revenir} hitSlop={12} accessibilityRole="button">
           <Text style={styles.fermer}>Fermer</Text>
         </Pressable>
       </View>
