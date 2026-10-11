@@ -1,5 +1,6 @@
 /// <reference types="jest" />
-import { choisirSuggestion, ligneCompte, modifierPreferences, resumeGenres, supprimerMonCompte } from '@/compte/profil';
+import { ligneCompte, modifierPreferences, resumeGenres, supprimerMonCompte } from '@/compte/profil';
+import { choisir } from '@/suggestion/suggestion';
 
 jest.mock('@/api/appareil', () => ({ identifiantAppareil: () => Promise.resolve('appareil-de-test') }));
 
@@ -17,7 +18,7 @@ describe('profil (F1.6, F1.7)', () => {
   it('envoie les réglages et la suppression au BO', async () => {
     globalThis.fetch = jest.fn((_url: unknown, o?: RequestInit) => Promise.resolve({ ok: true, status: o?.method === 'DELETE' ? 204 : 200, json: () => Promise.resolve({}) } as Response));
     await modifierPreferences({ alertes_actives: false });
-    await choisirSuggestion('desactive');
+    await choisir('desactive');
     await supprimerMonCompte();
     const appels = (globalThis.fetch as jest.Mock).mock.calls.map(([url, o]) => [String(url).replace(/^.*\/v1/, '/v1'), o.method, o.body]);
 

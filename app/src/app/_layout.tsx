@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 
 import { EcranMiseAJour } from '@/components/mise-a-jour';
 import { PremierLancement } from '@/components/premier-lancement';
+import { SuggestionOuverture } from '@/components/suggestion-ouverture';
 import { Couleurs } from '@/constants/theme';
 import { CompteProvider } from '@/compte/compte';
 import { FavorisProvider } from '@/favoris/favoris';
@@ -68,12 +69,15 @@ function Contenu() {
 
   // Onglets, et par-dessus les écrans ouverts depuis une carte (fiche spectacle, F5).
   return premierLancementFait ? (
-    <Stack screenOptions={{ headerShown: false }}>
-      {/* Connexion (F1.3) : une feuille par-dessus l'écran en cours, qu'on referme pour y revenir. */}
-      <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="gouts" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="sources" options={{ presentation: 'modal' }} />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Connexion (F1.3) : une feuille par-dessus l'écran en cours, qu'on referme pour y revenir. */}
+        <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="gouts" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="sources" options={{ presentation: 'modal' }} />
+      </Stack>
+      <SuggestionOuverture />
+    </>
   ) : (
     <PremierLancement />
   );
