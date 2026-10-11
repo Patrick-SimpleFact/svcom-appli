@@ -1,11 +1,11 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 
-export type Position = { lat: number; lon: number; libelle: string | null };
+export type Position = { lat: number; lon: number; libelle: string | null; pays: string | null };
 
 /**
  * Où cherche-t-on ? (F2.1) — `a_expliquer` : la phrase d'explication s'affiche avant la demande système ;
- * `refusee` : localisation refusée ou indisponible (l'écran « Où êtes-vous ? » arrive en M04b).
+ * `refusee` : localisation refusée ou indisponible (écran « Où êtes-vous ? »).
  */
 export type EtatPosition = { etat: 'verification' | 'a_expliquer' | 'recherche' | 'refusee' } | { etat: 'trouvee'; position: Position };
 
@@ -22,19 +22,26 @@ export function libelleLieu(adresse: Pick<Location.LocationGeocodedAddress, 'cit
   return adresse?.district && adresse.district !== commune ? `${commune} · ${adresse.district}` : commune;
 }
 
-async function localiser(): Promise<Position | null> {
+/** Coordonnées seules (sans le nom de la commune) : GPS, ou la dernière position connue s'il tarde. */
+export async function coordonnees(): Promise<{ lat: number; lon: number } | null> {
   const actuelle = await Promise.race([
     Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null),
     new Promise<null>((fin) => setTimeout(() => fin(null), DELAI_GPS_MS)),
   ]);
   const coords = (actuelle ?? (await Location.getLastKnownPositionAsync().catch(() => null)))?.coords;
-  if (!coords) {
+
+  return coords ? { lat: coords.latitude, lon: coords.longitude } : null;
+}
+
+async function localiser(): Promise<Position | null> {
+  const point = await coordonnees();
+  if (!point) {
     return null;
   }
 
-  const [adresse] = await Location.reverseGeocodeAsync({ latitude: coords.latitude, longitude: coords.longitude }).catch(() => []);
+  const [adresse] = await Location.reverseGeocodeAsync({ latitude: point.lat, longitude: point.lon }).catch(() => []);
 
-  return { lat: coords.latitude, lon: coords.longitude, libelle: libelleLieu(adresse) };
+  return { ...point, libelle: libelleLieu(adresse), pays: adresse?.isoCountryCode ?? null };
 }
 
 export function usePosition() {
