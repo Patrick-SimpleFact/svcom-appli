@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -11,6 +11,8 @@ import {
   aDistance, type Billetterie, chargerFiche, duree, type Fiche, heureSeance, jourLong, libellePrix, lienSortie, miseAJour, type Origine, prixBilletterie,
   reservation, type Seance, texteBouton, trajet,
 } from '@/fiche/fiche';
+import { itineraire } from '@/fiche/itineraire';
+import { type AutresDates, chargerAutresDates, libelleDate } from '@/fiche/pages';
 
 /** Fiche spectacle (F5, maquette « Fiche spectacle »), ouverte sur la séance touchée. */
 export default function FicheSpectacle() {
@@ -56,14 +58,25 @@ export default function FicheSpectacle() {
     );
   }
 
-  return <ContenuFiche fiche={fiche} representation={params.representation ? Number(params.representation) : undefined} origine={params.origine ?? 'fiche'} />;
+  const position = params.lat && params.lon ? { lat: Number(params.lat), lon: Number(params.lon) } : null;
+
+  return (
+    <ContenuFiche
+      key={`${fiche.id}-${params.representation ?? ''}`}
+      fiche={fiche}
+      representation={params.representation ? Number(params.representation) : undefined}
+      origine={params.origine ?? 'fiche'}
+      position={position}
+    />
+  );
 }
 
-function ContenuFiche({ fiche, representation, origine }: { fiche: Fiche; representation?: number; origine: Origine }) {
+function ContenuFiche({ fiche, representation, origine, position }: { fiche: Fiche; representation?: number; origine: Origine; position: { lat: number; lon: number } | null }) {
   const marges = useSafeAreaInsets();
   const [choisie, setChoisie] = useState<number | undefined>(() => (fiche.seances.some((s) => s.representation_id === representation) ? representation : fiche.seances.find((s) => !s.complet)?.representation_id ?? fiche.seances[0]?.representation_id));
   const [suite, setSuite] = useState(false);
   const [feuille, setFeuille] = useState(false);
+  const [dates, setDates] = useState(false);
   const seance = fiche.seances.find((s) => s.representation_id === choisie);
   const resa = reservation(fiche, seance);
   const lieu = fiche.lieu;
@@ -103,10 +116,15 @@ function ContenuFiche({ fiche, representation, origine }: { fiche: Fiche; repres
                 <Path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
                 <Circle cx={12} cy={10} r={2.5} />
               </Svg>
-              <Text style={styles.lieuTexte}>
-                <Text style={styles.lieuNom}>{lieu.nom}</Text>
-                {aDistance(lieu.distance_m) ? ` · ${lieu.position_approximative ? '≈ ' : ''}${aDistance(lieu.distance_m)}` : ''}
-              </Text>
+              <View style={styles.lieuTextes}>
+                <Text style={styles.lieuTexte}>
+                  <Text style={styles.lieuNom}>{lieu.nom}</Text>
+                  {aDistance(lieu.distance_m) ? ` · ${lieu.position_approximative ? '≈ ' : ''}${aDistance(lieu.distance_m)}` : ''}
+                </Text>
+                <Pressable onPress={() => ouvrirLieu(lieu.id, position)} accessibilityRole="link">
+                  <Text style={styles.lienPetit}>Autres spectacles du lieu</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
@@ -118,9 +136,13 @@ function ContenuFiche({ fiche, representation, origine }: { fiche: Fiche; repres
                   {fiche.seances.map((s) => (
                     <PuceSeance key={s.representation_id} seance={s} choisie={s.representation_id === choisie} onPress={() => setChoisie(s.representation_id)} />
                   ))}
+                  {fiche.autres_dates > 0 ? <BoutonAutresDates onPress={() => setDates(true)} /> : null}
                 </View>
               ) : (
-                <SansHoraire lieu={lieu} />
+                <>
+                  <SansHoraire lieu={lieu} />
+                  {fiche.autres_dates > 0 ? <BoutonAutresDates onPress={() => setDates(true)} /> : null}
+                </>
               )}
             </View>
           ) : null}
@@ -170,6 +192,8 @@ function ContenuFiche({ fiche, representation, origine }: { fiche: Fiche; repres
         </View>
       </ScrollView>
 
+      <AutresDatesFeuille visible={dates} fermer={() => setDates(false)} fiche={fiche} position={position} />
+
       <BarreReservation resa={resa} seance={seance} ouvrir={ouvrir} comparer={() => setFeuille(true)} choisir={setChoisie} basSur={marges.bottom} />
 
       {resa.cas === 'reserver' ? (
@@ -198,6 +222,88 @@ function ContenuFiche({ fiche, representation, origine }: { fiche: Fiche; repres
         </Modal>
       ) : null}
     </View>
+  );
+}
+
+function BoutonAutresDates({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable style={styles.autresDates} onPress={onPress} accessibilityRole="button">
+      <Text style={styles.lien}>Autres dates</Text>
+    </Pressable>
+  );
+}
+
+/** Ouvre la page du lieu (F4.2), avec la position pour les distances. */
+function ouvrirLieu(id: number, position: { lat: number; lon: number } | null) {
+  router.push({ pathname: '/lieu/[id]', params: { id: String(id), ...(position ? { lat: String(position.lat), lon: String(position.lon) } : {}) } });
+}
+
+/**
+ * Autres dates (F5.3) : toutes les représentations à venir, par lieu, le plus proche d'abord.
+ * Choisir une date rouvre la fiche sur cette séance (le lieu peut changer).
+ */
+function AutresDatesFeuille({ visible, fermer, fiche, position }: { visible: boolean; fermer: () => void; fiche: Fiche; position: { lat: number; lon: number } | null }) {
+  const marges = useSafeAreaInsets();
+  const [reponse, setReponse] = useState<AutresDates | null>(null);
+  const [erreur, setErreur] = useState(false);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    let actif = true;
+    chargerAutresDates(fiche.id, position ?? undefined)
+      .then((r) => actif && setReponse(r))
+      .catch(() => actif && setErreur(true));
+
+    return () => {
+      actif = false;
+    };
+  }, [visible, fiche.id, position]);
+
+  const choisir = (representation: number) => {
+    fermer();
+    router.setParams({ representation: String(representation) });
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={fermer}>
+      <Pressable style={styles.voile} onPress={fermer} accessibilityLabel="Fermer">
+        <Pressable style={[styles.feuille, styles.feuilleHaute, { paddingBottom: 26 + marges.bottom }]} onPress={() => {}}>
+          <View style={styles.poignee} />
+          <View style={styles.feuilleEntete}>
+            <Text style={styles.feuilleTitre}>Autres dates</Text>
+            <BoutonRond onPress={fermer} label="Fermer" sombre={false}>
+              <Path d="M6 6l12 12M18 6L6 18" />
+            </BoutonRond>
+          </View>
+          {reponse ? (
+            <ScrollView contentContainerStyle={styles.datesListe}>
+              {reponse.lieux.map((groupe) => (
+                <View key={groupe.lieu.id} style={styles.datesGroupe}>
+                  <Text style={styles.datesLieu}>
+                    {[groupe.lieu.ville, groupe.lieu.nom].filter(Boolean).join(' · ')} — {groupe.dates} date{groupe.dates > 1 ? 's' : ''}
+                  </Text>
+                  {groupe.representations.map((r) => (
+                    <Pressable key={r.representation_id} style={styles.dateLigne} onPress={() => choisir(r.representation_id)} accessibilityRole="button">
+                      <Text style={[styles.dateTexte, r.complet && styles.dateComplete]}>
+                        {libelleDate(r)}
+                        {r.complet ? ' · Complet' : ''}
+                      </Text>
+                      <Text style={styles.dateFleche}>›</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
+          ) : erreur ? (
+            <Text style={styles.encadreTexte}>Impossible de charger les autres dates pour le moment.</Text>
+          ) : (
+            <ActivityIndicator color={Couleurs.rouge} />
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -269,33 +375,6 @@ function SansHoraire({ lieu }: { lieu: Fiche['lieu'] }) {
       </View>
     </View>
   );
-}
-
-/** Applications de cartes proposées pour l'itinéraire (F5.2) : Plans, Google Maps et Waze selon ce qui est installé. */
-async function itineraire(lieu: NonNullable<Fiche['lieu']>) {
-  const adresse = [lieu.adresse, lieu.code_postal, lieu.ville].filter(Boolean).join(' ');
-  // Position approximative : on envoie l'adresse texte, l'application de cartes la cherchera elle-même (F5.7).
-  const cible = !lieu.position_approximative && lieu.lat !== null && lieu.lon !== null ? `${lieu.lat},${lieu.lon}` : encodeURIComponent(adresse || lieu.nom);
-  const options = [
-    { nom: 'Plans', url: `http://maps.apple.com/?daddr=${cible}` },
-    { nom: 'Google Maps', url: `comgooglemaps://?daddr=${cible}`, test: 'comgooglemaps://' },
-    { nom: 'Waze', url: lieu.position_approximative ? `waze://?q=${cible}&navigate=yes` : `waze://?ll=${cible}&navigate=yes`, test: 'waze://' },
-  ];
-  const disponibles: { nom: string; url: string }[] = [];
-  for (const o of options) {
-    if (!o.test || (await Linking.canOpenURL(o.test).catch(() => false))) {
-      disponibles.push(o);
-    }
-  }
-  if (Platform.OS !== 'ios' || disponibles.length === 1) {
-    Linking.openURL(Platform.OS === 'ios' ? disponibles[0].url : `geo:0,0?q=${cible}`);
-    return;
-  }
-  ActionSheetIOS.showActionSheetWithOptions({ title: 'Itinéraire avec…', options: [...disponibles.map((o) => o.nom), 'Annuler'], cancelButtonIndex: disponibles.length }, (i) => {
-    if (i < disponibles.length) {
-      Linking.openURL(disponibles[i].url);
-    }
-  });
 }
 
 function Acces({ lieu }: { lieu: NonNullable<Fiche['lieu']> }) {
@@ -430,7 +509,18 @@ const styles = StyleSheet.create({
   mentionTexteBleu: { color: '#1E3A8A' },
   mentionTexteOrange: { color: '#7A3E00' },
   ligneLieu: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  lieuTexte: { flex: 1, fontFamily: Polices.texte, fontSize: 14, color: Couleurs.gris },
+  lieuTextes: { flex: 1, gap: 2 },
+  lieuTexte: { fontFamily: Polices.texte, fontSize: 14, color: Couleurs.gris },
+  lienPetit: { fontFamily: Polices.texteGras, fontSize: 13, color: Couleurs.encre, textDecorationLine: 'underline', paddingVertical: 6 },
+  autresDates: { height: 52, justifyContent: 'center', paddingHorizontal: 10 },
+  feuilleHaute: { maxHeight: '85%' },
+  datesListe: { gap: 18, paddingBottom: 12 },
+  datesGroupe: { gap: 4 },
+  datesLieu: { fontFamily: Polices.texteTresGras, fontSize: 15, color: Couleurs.encre, marginBottom: 4 },
+  dateLigne: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Couleurs.trait },
+  dateTexte: { fontFamily: Polices.texteMoyen, fontSize: 15, color: Couleurs.encre },
+  dateComplete: { color: Couleurs.gris },
+  dateFleche: { fontFamily: Polices.texte, fontSize: 20, color: Couleurs.gris },
   lieuNom: { fontFamily: Polices.texteGras, color: Couleurs.encre },
   section: { gap: 10 },
   rubrique: { fontFamily: Polices.texteTresGras, fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase', color: Couleurs.gris },
