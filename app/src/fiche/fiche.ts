@@ -57,6 +57,8 @@ export type Fiche = {
   sources: string[];
   mentions: string[];
   mis_a_jour_le: string | null;
+  /** Lien à partager (F5.8) : ouvre l'app si elle est installée, sinon une page web minimale. */
+  lien_partage: string;
 };
 
 /** Fiche ouverte sur la séance touchée ; la position sert seulement à la distance (F5.1, F2.11). */

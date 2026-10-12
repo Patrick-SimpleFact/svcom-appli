@@ -18,6 +18,7 @@ import { useFavoris } from '@/favoris/favoris';
 import { itineraire } from '@/fiche/itineraire';
 import { type AutresDates, chargerAutresDates, libelleDate } from '@/fiche/pages';
 import { mesurer } from '@/mesure/mesure';
+import { partagerFiche } from '@/partage/partage';
 import { revenir } from '@/navigation';
 
 /** Fiche spectacle (F5, maquette « Fiche spectacle »), ouverte sur la séance touchée. */
@@ -350,7 +351,12 @@ function EnTete({ fiche, genre, hautSur, representation }: { fiche: Fiche; genre
       <BoutonRond onPress={revenir} label="Retour">
         <Path d="M15 5l-7 7 7 7" />
       </BoutonRond>
-      <Coeur spectacleId={fiche.id} representation={representation} />
+      <View style={styles.enteteDroite}>
+        <BoutonRond onPress={() => partagerFiche(fiche, fiche.seances.find((s) => s.representation_id === representation) ?? fiche.seances[0])} label="Partager">
+          <Path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+        </BoutonRond>
+        <Coeur spectacleId={fiche.id} representation={representation} />
+      </View>
     </View>
   );
 
@@ -559,6 +565,7 @@ const styles = StyleSheet.create({
   voileImage: { backgroundColor: 'rgba(0,0,0,0.45)' },
   affiche: { backgroundColor: Couleurs.rouge },
   enteteBoutons: { flexDirection: 'row', justifyContent: 'space-between' },
+  enteteDroite: { flexDirection: 'row', gap: 10 },
   enteteTextes: { gap: 6 },
   etiquette: {
     alignSelf: 'flex-start', overflow: 'hidden', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12, backgroundColor: Couleurs.rouge,
