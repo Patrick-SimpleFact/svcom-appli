@@ -1,0 +1,22 @@
+# Exclus de l'image de production (deploy/Dockerfile).
+.env
+.env.*
+!.env.example
+.git
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+public/css/filament
+public/js/filament
+public/fonts/filament
+storage/app/*
+!storage/app/.gitignore
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+tests
+postman
+.phpunit.cache
