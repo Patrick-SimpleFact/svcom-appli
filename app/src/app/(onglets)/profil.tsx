@@ -127,7 +127,7 @@ export default function Profil() {
         </Section>
 
         <Section titre="Aidez-nous">
-          <Lien libelle="Il manque un spectacle ou une salle ?" onPress={() => router.push('/piste')} />
+          <Lien libelle="Il manque un spectacle ou une salle ?" onPress={() => router.push({ pathname: '/piste', params: { origine: 'profil' } })} />
           {utilisateur ? <Lien libelle="Mes propositions" onPress={() => router.push('/propositions')} separe /> : null}
         </Section>
 

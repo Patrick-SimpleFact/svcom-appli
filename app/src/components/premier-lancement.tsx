@@ -1,5 +1,5 @@
 import Slider from '@react-native-community/slider';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -7,6 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { GOUTS_PAR_DEFAUT, libelleRayon, RAYONS_M, type RayonM, useGouts } from '@/gouts/gouts';
+import { mesurer } from '@/mesure/mesure';
 
 /**
  * Premier lancement (F1.1, M03) : bienvenue (étape 1) → vos goûts (étape 2, maquette « Onboarding préférences ») → accueil.
@@ -33,6 +34,9 @@ export function PremierLancement() {
 }
 
 function Bienvenue({ commencer }: { commencer: () => void }) {
+  // Entonnoir F1.9 : bienvenue → goûts (remplis ou passés) → accueil.
+  useEffect(() => mesurer('bienvenue_vue'), []);
+
   return (
     <>
       <View style={styles.bienvenue}>
@@ -64,8 +68,14 @@ function VosGouts() {
         <ChoixGouts genres={genres} basculer={basculer} rayon={rayon} choisirRayon={setRayon} />
       </ScrollView>
       <View style={styles.pied}>
-        <Bouton texte="Continuer" onPress={() => terminerPremierLancement({ genres, rayon_m: rayon })} />
-        <Pressable style={styles.passer} onPress={() => terminerPremierLancement(null)} accessibilityRole="button">
+        <Bouton texte="Continuer" onPress={() => {
+          mesurer('gouts_choisis', { nb_genres: genres.length, rayon_m: rayon });
+          terminerPremierLancement({ genres, rayon_m: rayon });
+        }} />
+        <Pressable style={styles.passer} onPress={() => {
+          mesurer('gouts_passes');
+          terminerPremierLancement(null);
+        }} accessibilityRole="button">
           <Text style={styles.passerTexte}>Passer cette étape</Text>
         </Pressable>
       </View>

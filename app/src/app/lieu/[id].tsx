@@ -73,7 +73,7 @@ export default function PageLieu() {
           vide="Les spectacles de ce lieu apparaîtront ici dès qu’ils seront annoncés dans nos sources."
         />
         <Pressable
-          onPress={() => router.push({ pathname: '/piste', params: { type: 'spectacle', ...(page.ville ? { ville: page.ville } : {}), nom: page.nom } })}
+          onPress={() => router.push({ pathname: '/piste', params: { type: 'spectacle', origine: 'page_lieu', ...(page.ville ? { ville: page.ville } : {}), nom: page.nom } })}
           accessibilityRole="button">
           <Text style={styles.manque}>Il manque un spectacle de ce lieu ?</Text>
         </Pressable>

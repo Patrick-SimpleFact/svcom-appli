@@ -8,6 +8,7 @@ import { ErreurApi } from '@/api/client';
 import { chercherVilles } from '@/autour/ville';
 import { ChoixVille } from '@/components/choix-ville';
 import { useCompte } from '@/compte/compte';
+import { mesurer } from '@/mesure/mesure';
 import { envoyerPiste, lieuConnu, normaliserLien, type ReponsePiste, TYPES_PISTE, type TypePiste } from '@/contributions/contributions';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
@@ -18,7 +19,7 @@ import { revenir } from '@/navigation';
  * Ouvert depuis la couverture faible, le bas des listes, la recherche sans résultat, une page lieu ou le Profil, pré-rempli.
  */
 export default function ProposerPiste() {
-  const params = useLocalSearchParams<{ ville?: string; ville_id?: string; nom?: string; type?: TypePiste }>();
+  const params = useLocalSearchParams<{ ville?: string; ville_id?: string; nom?: string; type?: TypePiste; origine?: string }>();
   const marges = useSafeAreaInsets();
   const { utilisateur } = useCompte();
   const { configuration } = useDemarrage();
@@ -34,6 +35,9 @@ export default function ProposerPiste() {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoyee, setEnvoyee] = useState<ReponsePiste | null>(null);
+
+  // Clic F8 (F2.11) : d'où vient l'utilisateur qui propose une piste.
+  useEffect(() => mesurer('clic_piste', { origine: params.origine ?? 'autre' }), [params.origine]);
 
   // Ville connue seulement par son nom (accueil autour de la position) : retrouvée parmi les villes proposées.
   useEffect(() => {

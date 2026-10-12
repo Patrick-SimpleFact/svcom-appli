@@ -17,6 +17,7 @@ import {
 import { useFavoris } from '@/favoris/favoris';
 import { itineraire } from '@/fiche/itineraire';
 import { type AutresDates, chargerAutresDates, libelleDate } from '@/fiche/pages';
+import { mesurer } from '@/mesure/mesure';
 import { revenir } from '@/navigation';
 
 /** Fiche spectacle (F5, maquette « Fiche spectacle »), ouverte sur la séance touchée. */
@@ -25,6 +26,8 @@ export default function FicheSpectacle() {
   const [fiche, setFiche] = useState<Fiche | null>(null);
   const [erreur, setErreur] = useState(false);
   const [essai, setEssai] = useState(0);
+
+  useEffect(() => mesurer('fiche_vue', { spectacle_id: Number(params.id), origine: params.origine ?? 'fiche' }), [params.id, params.origine]);
 
   useEffect(() => {
     let actif = true;

@@ -14,6 +14,7 @@ import { CompteProvider } from '@/compte/compte';
 import { FavorisProvider } from '@/favoris/favoris';
 import { Demarrage, useDemarrage } from '@/demarrage/demarrage';
 import { GoutsProvider, useGouts } from '@/gouts/gouts';
+import { useMesure } from '@/mesure/mesure';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,6 +29,8 @@ export default function Racine() {
   const [chargees, erreur] = useFonts({
     BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold,
   });
+  // Statistiques d'usage (API §11) : ouvertures, puis envoi des événements par lots.
+  useMesure();
 
   useEffect(() => {
     if (chargees || erreur) {
