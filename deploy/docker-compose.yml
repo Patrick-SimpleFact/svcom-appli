@@ -40,7 +40,7 @@ services:
       - traefik.http.routers.spettacoli.tls.certresolver=letsencrypt
       - traefik.http.services.spettacoli.loadbalancer.server.port=8080
       # Site public aussi sur le domaine principal (page d'accueil, W05a) ; www redirigé vers le domaine nu.
-      # Back-office seulement sur le sous-domaine : /admin du domaine principal n'est routé nulle part (404, sans redirection).
+      # Back-office seulement sur le sous-domaine (voir spettacoli-site-admin plus bas).
       - traefik.http.routers.spettacoli-site.rule=(Host(`${DOMAINE_SITE}`) || Host(`www.${DOMAINE_SITE}`)) && !PathPrefix(`/admin`)
       - traefik.http.routers.spettacoli-site.entrypoints=websecure
       - traefik.http.routers.spettacoli-site.tls.certresolver=letsencrypt
@@ -49,6 +49,14 @@ services:
       - traefik.http.middlewares.spettacoli-sans-www.redirectregex.regex=^https://www\.(.+)
       - traefik.http.middlewares.spettacoli-sans-www.redirectregex.replacement=https://$${1}
       - traefik.http.middlewares.spettacoli-sans-www.redirectregex.permanent=true
+      # /admin du domaine principal : jamais le back-office, la page 404 du site (chemin interne /introuvable/…, sans redirection).
+      - traefik.http.routers.spettacoli-site-admin.rule=(Host(`${DOMAINE_SITE}`) || Host(`www.${DOMAINE_SITE}`)) && PathPrefix(`/admin`)
+      - traefik.http.routers.spettacoli-site-admin.entrypoints=websecure
+      - traefik.http.routers.spettacoli-site-admin.tls.certresolver=letsencrypt
+      - traefik.http.routers.spettacoli-site-admin.service=spettacoli
+      - traefik.http.routers.spettacoli-site-admin.middlewares=spettacoli-admin-introuvable
+      - traefik.http.middlewares.spettacoli-admin-introuvable.replacepathregex.regex=^/(.*)
+      - traefik.http.middlewares.spettacoli-admin-introuvable.replacepathregex.replacement=/introuvable/$$1
 
   # Un seul worker : les collectes ne doivent jamais tourner en parallèle (verrou commun, N05).
   worker:
