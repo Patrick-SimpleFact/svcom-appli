@@ -1,12 +1,16 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 import { identifiantAppareil } from '@/api/appareil';
 
 /**
  * Adresse de l'API (docs/API.md). En développement : l'API locale servie par Herd sur le Mac
  * (https://spettacoli.test, joignable depuis le simulateur). Réglable dans app/.env (EXPO_PUBLIC_API_URL).
+ * L'émulateur Android ne connaît ni spettacoli.test ni le certificat de Herd : il a sa propre adresse
+ * (EXPO_PUBLIC_API_URL_ANDROID, voir README).
  */
-export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://spettacoli.test').replace(/\/$/, '');
+const URL_ANDROID = Platform.OS === 'android' ? process.env.EXPO_PUBLIC_API_URL_ANDROID : undefined;
+export const API_URL = (URL_ANDROID ?? process.env.EXPO_PUBLIC_API_URL ?? 'https://spettacoli.test').replace(/\/$/, '');
 
 /** Version de l'app envoyée à chaque appel (X-App-Version) : l'API refuse une version trop ancienne (426, F2.8). */
 export const VERSION_APP = Constants.expoConfig?.version ?? '1.0.0';

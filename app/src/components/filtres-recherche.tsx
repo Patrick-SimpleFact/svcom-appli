@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dateDuJour, jourDe } from '@/autour/autour';
 import { coordonnees } from '@/autour/position';
 import { ChoixVille } from '@/components/choix-ville';
+import { useHautFeuille } from '@/components/feuille';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { RAYONS_M } from '@/gouts/gouts';
@@ -25,6 +26,7 @@ const QUANDS: { quand: Quand | null; libelle: string }[] = [
 /** Panneau des filtres de la recherche (F4.3) : on règle un brouillon, appliqué par « Voir les résultats ». */
 export function FiltresRecherche({ visible, criteres, appliquer, fermer }: { visible: boolean; criteres: Criteres; appliquer: (c: Criteres) => void; fermer: () => void }) {
   const marges = useSafeAreaInsets();
+  const hautFeuille = useHautFeuille();
   const { configuration } = useDemarrage();
   const [brouillon, setBrouillon] = useState(criteres);
   const [choixVille, setChoixVille] = useState(false);
@@ -76,7 +78,7 @@ export function FiltresRecherche({ visible, criteres, appliquer, fermer }: { vis
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={fermer}>
-      <View style={styles.fond}>
+      <View style={[styles.fond, { paddingTop: hautFeuille }]}>
         <View style={styles.entete}>
           <Text style={styles.titre}>Filtres</Text>
           <Pressable onPress={fermer} hitSlop={12} accessibilityRole="button">
@@ -162,7 +164,7 @@ export function FiltresRecherche({ visible, criteres, appliquer, fermer }: { vis
           <Section titre="Disponibilité">
             <View style={styles.ligne}>
               <Text style={styles.ligneTexte}>Masquer les séances complètes</Text>
-              <Switch value={!!brouillon.masquer_complets} onValueChange={(v) => maj({ masquer_complets: v })} trackColor={{ true: Couleurs.rouge }} />
+              <Switch value={!!brouillon.masquer_complets} onValueChange={(v) => maj({ masquer_complets: v })} trackColor={{ false: Couleurs.trait, true: Couleurs.rouge }} thumbColor={Couleurs.carte} />
             </View>
           </Section>
 

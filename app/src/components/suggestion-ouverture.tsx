@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +7,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { heure, distance } from '@/autour/autour';
 import { ouvrirFiche } from '@/components/carte-spectacle';
+import { useHautFeuille } from '@/components/feuille';
 import { Couleurs, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { useGouts } from '@/gouts/gouts';
@@ -19,6 +21,7 @@ export function SuggestionOuverture() {
   const { configurationTerminee } = useDemarrage();
   const { gouts } = useGouts();
   const marges = useSafeAreaInsets();
+  const hautFeuille = useHautFeuille();
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [visible, setVisible] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
@@ -100,8 +103,9 @@ export function SuggestionOuverture() {
           ouvrir(s);
         }
       }}>
-      <View style={[styles.fond, { paddingBottom: 22 + marges.bottom }]}>
-        <View style={styles.poignee} />
+      <View style={[styles.fond, { paddingTop: 14 + hautFeuille, paddingBottom: 22 + marges.bottom }]}>
+        {/* Android : la feuille ne se tire pas vers le bas (bouton Passer ou retour), pas de poignée. Fond sombre : barre d'état claire. */}
+        {Platform.OS === 'ios' ? <View style={styles.poignee} /> : <StatusBar style="light" />}
         <View style={styles.entete}>
           {suggestion.type === 'sponsorise' ? (
             // Mention légale : une publicité doit être identifiable comme telle (F6.1).

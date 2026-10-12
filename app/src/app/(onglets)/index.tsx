@@ -11,6 +11,7 @@ import {
 import { coordonnees, usePosition } from '@/autour/position';
 import { type Ville, useVilleChoisie } from '@/autour/ville';
 import { CarteSansHoraire, CarteSpectacle, ouvrirFiche } from '@/components/carte-spectacle';
+import { useHautFeuille } from '@/components/feuille';
 import { ChoixVille } from '@/components/choix-ville';
 import { Bandeau, BandeauCouverture, IlManqueUnSpectacle, MessageVide, Squelettes } from '@/components/etats-liste';
 import { OngletsGenres, PucesQuand } from '@/components/filtres-autour';
@@ -36,6 +37,7 @@ export default function AutourDeMoi() {
   const position = usePosition();
   const { ville, lue, choisir } = useVilleChoisie();
   const [selecteur, setSelecteur] = useState(false);
+  const hautFeuille = useHautFeuille();
 
   const choisirVille = (v: Ville | null) => {
     choisir(v);
@@ -90,7 +92,7 @@ export default function AutourDeMoi() {
     <SafeAreaView style={styles.fond} edges={['top']}>
       {contenu}
       <Modal visible={selecteur} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSelecteur(false)}>
-        <View style={styles.feuille}>
+        <View style={[styles.feuille, { paddingTop: Espaces.bord + hautFeuille }]}>
           <View style={styles.feuilleEntete}>
             <Text style={styles.feuilleTitre}>Où cherchez-vous ?</Text>
             <Pressable onPress={() => setSelecteur(false)} hitSlop={12} accessibilityRole="button">
