@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
  * sur un catalogue à l'échelle de la France (≈ 150 000 représentations à venir).
  */
 it('répond à « autour d’Avignon ce soir » en moins de 500 ms sur 150 000 représentations', function () {
+    // Midi : les séances sont à 20 h 30 ; lancé plus tard dans la soirée, « ce soir » n'en contiendrait plus aucune.
+    $this->travelTo(today()->setTime(12, 0));
+
     // Les identifiants 1… sont utilisés en dur ci-dessous : les séquences repartent de 1 (d'autres tests ont pu les avancer).
     DB::statement("SELECT setval('genres_id_seq', 1, false), setval('spectacles_id_seq', 1, false)");
     DB::statement("INSERT INTO genres (slug, libelle, ordre) VALUES ('theatre', 'Théâtre', 1)");
