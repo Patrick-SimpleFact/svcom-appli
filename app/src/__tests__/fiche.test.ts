@@ -12,6 +12,7 @@ const fiche = (seances: Seance[], prix: Partial<Fiche['prix']> = {}, termine = f
   id: 1, titre: 'La mort c’est mieux à deux', image_url: null, genre: null, classification: 'Comédie', jeune_public: false, age_min: null, duree_minutes: null,
   festival: null, description: null, artistes: [], termine, lieu: null, jour: '2026-10-17', seances, prix: { min: 15, max: 24, gratuit: false, ...prix },
   autres_dates: 0, sources: [], mentions: [], mis_a_jour_le: null,
+  lien_partage: 'https://spettacoli.test/s/spectacle-1',
 });
 
 describe('fiche spectacle (F5.2)', () => {
