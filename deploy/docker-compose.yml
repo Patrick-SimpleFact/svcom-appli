@@ -1,0 +1,107 @@
+# Spettacoli en production (L01) : VPS Hostinger de Patrick, derrière son Traefik (réseau « proxy »).
+# Secrets et réglages dans deploy/.env (jamais commité, modèle : deploy/.env.example).
+# Déployer : ./deploy.sh · Journaux : docker compose logs -f worker
+name: spettacoli
+
+x-backoffice: &backoffice
+  image: spettacoli-backoffice:latest
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    # Fichiers bruts des collectes (30 jours), visuels des campagnes, base geoip.
+    - fichiers:/var/www/html/storage/app
+  networks:
+    - interne
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *backoffice
+    build:
+      context: ../backoffice
+      dockerfile: ../deploy/Dockerfile
+    environment:
+      # Au démarrage : lien public/storage, migrations, caches de configuration, routes, vues, événements.
+      AUTORUN_ENABLED: "true"
+      PHP_OPCACHE_ENABLE: "1"
+      PHP_MEMORY_LIMIT: 512M
+      PHP_UPLOAD_MAX_FILE_SIZE: 20M
+      PHP_POST_MAX_SIZE: 20M
+    networks:
+      - interne
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.spettacoli.rule=Host(`${DOMAINE}`)
+      - traefik.http.routers.spettacoli.entrypoints=websecure
+      - traefik.http.routers.spettacoli.tls.certresolver=letsencrypt
+      - traefik.http.services.spettacoli.loadbalancer.server.port=8080
+
+  # Un seul worker : les collectes ne doivent jamais tourner en parallèle (verrou commun, N05).
+  worker:
+    <<: *backoffice
+    pull_policy: never
+    command: ["php", "/var/www/html/artisan", "queue:work", "--sleep=3", "--memory=1536"]
+    depends_on:
+      # Démarre après app, qui joue les migrations au démarrage.
+      app:
+        condition: service_healthy
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+    environment:
+      PHP_OPCACHE_ENABLE: "1"
+      PHP_MEMORY_LIMIT: 1536M
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s
+
+  scheduler:
+    <<: *backoffice
+    pull_policy: never
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    depends_on:
+      # Démarre après app, qui joue les migrations au démarrage.
+      app:
+        condition: service_healthy
+    stop_signal: SIGTERM
+    environment:
+      PHP_OPCACHE_ENABLE: "1"
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      start_period: 10s
+
+  db:
+    image: imresamu/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    command: >-
+      postgres -c shared_buffers=512MB -c effective_cache_size=1536MB
+      -c work_mem=16MB -c maintenance_work_mem=256MB
+    shm_size: 256mb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - interne
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  fichiers:
+
+networks:
+  # Réseau privé : la base n'est jamais exposée, ni sur Internet ni au réseau de Traefik.
+  interne:
+  proxy:
+    external: true

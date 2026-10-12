@@ -13,3 +13,6 @@ poc/out/
 .DS_Store
 Icon?
 *.gdoc
+
+# Secrets du serveur de production (L01)
+deploy/.env
