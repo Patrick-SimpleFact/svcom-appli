@@ -36,6 +36,28 @@ docker compose exec app php artisan geoip:telecharger
 docker compose exec -it app php artisan admin:creer <email> "<nom>"
 ```
 
+## Sauvegardes (L01d)
+
+Par le système existant de Patrick (`/root/appli-backup/twenty-backup/backup_multi.py` : archive chiffrée AES-256 vers OVH S3, alertes Telegram), avec une configuration à part (`sauvegarde/config.json`) : **une par jour à 2 h 30, 30 jours de rétention**, préfixe `spettacoli-backups/`. Contenu : la base et les visuels des campagnes (`storage/app/public`).
+
+```bash
+# Une seule fois : venv propre à Spettacoli (paquet python3-venv requis)
+cd /opt/docker/spettacoli/deploy/sauvegarde
+python3 -m venv venv && venv/bin/pip install -r /root/appli-backup/twenty-backup/requirements.txt
+# Cron de root
+30 2 * * * /opt/docker/spettacoli/deploy/sauvegarde/sauvegarde.sh
+```
+
+Sauvegarde immédiate : `./sauvegarde/sauvegarde.sh` (journal détaillé dans `/root/appli-backup/twenty-backup/backup_multi.log`). Restauration vérifiée le 12/10/2026 dans un conteneur PostGIS jetable. Ne pas utiliser `restore_multi.py` à l'aveugle : il remplace la base de production.
+
+## Surveillance (L01e)
+
+`surveillance.sh` (cron toutes les 10 min) envoie une alerte Telegram, par le bot du moniteur de sauvegardes de Patrick, si `app`, `worker`, `scheduler` ou `db` ne sont plus en bonne santé ou si le disque dépasse 80 %, puis un message quand tout revient à la normale. Les collectes en échec et les sources muettes sont signalées par e-mail par le back-office (A03).
+
+```bash
+*/10 * * * * /opt/docker/spettacoli/deploy/surveillance.sh
+```
+
 ## Déployer une nouvelle version
 
 ```bash
