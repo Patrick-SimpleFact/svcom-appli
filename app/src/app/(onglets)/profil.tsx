@@ -251,7 +251,7 @@ function Interrupteur(props: { libelle: string; sous: string; valeur: boolean; c
         <Text style={styles.ligneLibelle}>{props.libelle}</Text>
         <Text style={styles.ligneSous}>{props.sous}</Text>
       </View>
-      <Switch value={props.valeur} onValueChange={props.changer} trackColor={{ true: Couleurs.encre }} accessibilityLabel={props.libelle} />
+      <Switch value={props.valeur} onValueChange={props.changer} trackColor={{ false: Couleurs.trait, true: Couleurs.encre }} thumbColor={Couleurs.carte} accessibilityLabel={props.libelle} />
     </View>
   );
 }

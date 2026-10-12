@@ -13,7 +13,11 @@ export default function AppTabs() {
       backgroundColor={Couleurs.carte}
       tintColor={Couleurs.rouge}
       iconColor={{ default: Couleurs.gris, selected: Couleurs.rouge }}
-      labelStyle={{ color: Couleurs.gris }}>
+      labelStyle={{ color: Couleurs.gris }}
+      // Android (Material) : pastille et effet de toucher lavande par défaut, libellé sous l'onglet actif seulement.
+      indicatorColor={Couleurs.fond}
+      rippleColor={Couleurs.trait}
+      labelVisibilityMode="labeled">
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Autour de moi</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'safari', selected: 'safari.fill' }} md="explore" />

@@ -9,6 +9,7 @@ import { useCompte } from '@/compte/compte';
 import { lirePreferences, modifierPreferences } from '@/compte/profil';
 import { ouvrirFiche } from '@/components/carte-spectacle';
 import { ChoixVille } from '@/components/choix-ville';
+import { useHautFeuille } from '@/components/feuille';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { type Favori, type Nouveaute, type Suivi, useFavoris } from '@/favoris/favoris';
@@ -254,6 +255,7 @@ function Suivis({ suivis }: { suivis: Suivi[] }) {
  */
 function ZoneAlertes() {
   const marges = useSafeAreaInsets();
+  const hautFeuille = useHautFeuille();
   const [zone, setZone] = useState<{ ville: { id: number; nom: string } | null; rayon_km: number } | null>(null);
   const [ouverte, setOuverte] = useState(false);
   const [envoi, setEnvoi] = useState(false);
@@ -287,7 +289,7 @@ function ZoneAlertes() {
         </Svg>
       </Pressable>
       <Modal visible={ouverte} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOuverte(false)}>
-        <ScrollView style={styles.fondFeuille} contentContainerStyle={[styles.feuille, { paddingBottom: 24 + marges.bottom }]} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.fondFeuille} contentContainerStyle={[styles.feuille, { paddingTop: Espaces.bord + hautFeuille, paddingBottom: 24 + marges.bottom }]} keyboardShouldPersistTaps="handled">
           <View style={styles.feuilleEntete}>
             <Text style={styles.feuilleTitre}>Zone des alertes</Text>
             <Pressable onPress={() => setOuverte(false)} hitSlop={12} accessibilityRole="button">

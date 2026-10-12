@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -41,6 +42,18 @@ export default function FicheSpectacle() {
       actif = false;
     };
   }, [params.id, params.representation, params.lat, params.lon, essai]);
+
+  // Sur le visuel sombre, l'heure et la batterie passent en clair le temps que la fiche est affichée.
+  const visuel = Boolean(fiche?.image_url);
+  useFocusEffect(
+    useCallback(() => {
+      if (!visuel) {
+        return;
+      }
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, [visuel]),
+  );
 
   if (!fiche) {
     return (

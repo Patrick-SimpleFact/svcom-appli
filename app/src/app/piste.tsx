@@ -201,7 +201,7 @@ export default function ProposerPiste() {
         {type === 'salle' ? (
           <View style={styles.ligne}>
             <Text style={styles.ligneTexte}>Je travaille pour ce lieu</Text>
-            <Switch value={travaille} onValueChange={setTravaille} trackColor={{ true: Couleurs.encre }} accessibilityLabel="Je travaille pour ce lieu" />
+            <Switch value={travaille} onValueChange={setTravaille} trackColor={{ false: Couleurs.trait, true: Couleurs.encre }} thumbColor={Couleurs.carte} accessibilityLabel="Je travaille pour ce lieu" />
           </View>
         ) : null}
 
