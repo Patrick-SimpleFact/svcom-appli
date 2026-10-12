@@ -1,13 +1,17 @@
 <?php
 
+use App\Filament\Resources\EvenementsApp\Pages\ListEvenementsApp;
 use App\Mesure\Evenements;
 use App\Mesure\ResumesQuotidiens;
+use App\Models\Admin;
 use App\Models\ClicSortant;
+use App\Models\EvenementApp;
 use App\Models\Ville;
 use App\Support\Point;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ParametresSeeder;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 /** P10 : événements par lots, résumés quotidiens, purge à 13 mois (API §11, SCHEMA §9). « Maintenant » : 14/10/2026 à 21 h. */
 beforeEach(function () {
@@ -81,4 +85,21 @@ it('supprime les mois de plus de 13 mois, chiffres résumés gardés', function 
     $partitions = collect(DB::select("select inhrelid::regclass::text as nom from pg_inherits where inhparent = 'evenements_app'::regclass"))->pluck('nom');
     expect($partitions)->not->toContain('evenements_app_2025_08')->toContain('evenements_app_2025_09')->toContain('evenements_app_2026_11')
         ->and(DB::table('stats_quotidiennes')->where('jour', '2025-08-15')->exists())->toBeTrue();
+});
+
+it('montre les événements reçus dans le back-office, sans position (M15)', function () {
+    ($this->lot)(['lat' => 43.95, 'lon' => 4.81, 'evenements' => [
+        ($this->evt)('fiche_vue', autres: ['donnees' => ['spectacle_id' => 812, 'origine' => 'liste_ce_soir']]),
+        ($this->evt)('premier_clic_carte', autres: ['donnees' => ['secondes' => 12.3]]),
+    ]])->assertStatus(202);
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+
+    Livewire::test(ListEvenementsApp::class)
+        ->assertCanSeeTableRecords(EvenementApp::all())
+        ->assertSee('origine : liste_ce_soir · spectacle_id : 812')
+        ->assertSee('secondes : 12.3')
+        ->assertSee('Avignon')
+        ->filterTable('type', 'fiche_vue')
+        ->assertCanSeeTableRecords(EvenementApp::where('type', 'fiche_vue')->get())
+        ->assertCanNotSeeTableRecords(EvenementApp::where('type', 'premier_clic_carte')->get());
 });

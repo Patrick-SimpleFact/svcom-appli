@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -11,6 +11,7 @@ import { useFavoris } from '@/favoris/favoris';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { lireGouts, useGouts } from '@/gouts/gouts';
+import { mesurer } from '@/mesure/mesure';
 import { revenir } from '@/navigation';
 
 type Etape = 'email' | 'code' | 'profil' | 'trop_jeune';
@@ -43,6 +44,9 @@ export default function Connexion() {
   const [lettre, setLettre] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  // Entonnoir F1.9 : propositions de compte vues, puis acceptées (méthode de connexion choisie).
+  useEffect(() => mesurer('proposition_compte_vue', { raison: params.raison ?? 'autre' }), [params.raison]);
 
   /** Après la connexion : on termine ce que l'utilisateur voulait faire, sans repasser par la fiche (F1.3). */
   const terminer = async () => {
@@ -77,6 +81,7 @@ export default function Connexion() {
     agir(async () => {
       const connexion = await verifierCode(email.trim(), code, gouts);
       await connecter(connexion);
+      mesurer('connexion', { methode: 'email', raison: params.raison ?? 'autre' });
       // Goûts du compte retrouvés sur ce téléphone (F1.2) ; ceux du mode invité ont été repris si le compte n'en avait pas.
       const prefs = connexion.utilisateur.preferences;
       if (prefs && (prefs.genres.length || prefs.rayon_m !== null)) {

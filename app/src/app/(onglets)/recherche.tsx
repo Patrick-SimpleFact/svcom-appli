@@ -7,6 +7,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { definirVilleRecherche } from '@/autour/ville';
 import { CarteSansHoraire, CarteSpectacle, ouvrirFiche } from '@/components/carte-spectacle';
 import { FiltresRecherche } from '@/components/filtres-recherche';
+import { filtresModifies, mesurer } from '@/mesure/mesure';
 import { MessagesService } from '@/components/messages-service';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
@@ -255,6 +256,7 @@ export default function Recherche() {
           criteres={etat.criteres}
           fermer={() => setFiltres(false)}
           appliquer={(c) => {
+            filtresModifies(etat.criteres, c, FILTRES).forEach((filtre) => mesurer('filtre_utilise', { ecran: 'recherche', filtre }));
             setFiltres(false);
             lancer(c);
           }}
@@ -263,6 +265,9 @@ export default function Recherche() {
     </SafeAreaView>
   );
 }
+
+/** Filtres du panneau (F4.3) suivis par la mesure. */
+const FILTRES = ['ville', 'position', 'rayon', 'genres', 'jeune_public', 'quand', 'du', 'au', 'moment', 'prix_max', 'masquer_complets'] as const;
 
 const TYPES: Record<Recente['type'], string> = { texte: 'Recherche', ville: 'Ville', lieu: 'Lieu', artiste: 'Artiste', spectacle: 'Spectacle' };
 
@@ -346,7 +351,10 @@ function ListeResultats(props: { etat: Extract<Etat, { mode: 'resultats' }>; rel
   /** Tri : par date (défaut), par distance (avec un lieu), par prix (F4.3). */
   const changerTri = () => {
     const tris = (Object.keys(LIBELLES_TRIS) as Tri[]).filter((t) => t !== 'distance' || criteres.ville || criteres.position);
-    const appliquerTri = (t: Tri) => relancer({ ...criteres, tri: t });
+    const appliquerTri = (t: Tri) => {
+      mesurer('filtre_utilise', { ecran: 'recherche', filtre: 'tri', valeur: t });
+      relancer({ ...criteres, tri: t });
+    };
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions({ title: 'Trier', options: [...tris.map((t) => LIBELLES_TRIS[t]), 'Annuler'], cancelButtonIndex: tris.length }, (i) => i < tris.length && appliquerTri(tris[i]));
     } else {
@@ -410,7 +418,7 @@ function ListeResultats(props: { etat: Extract<Etat, { mode: 'resultats' }>; rel
             onPress={() =>
               router.push({
                 pathname: '/piste',
-                params: { type: 'spectacle', ...(criteres.q ? { nom: criteres.q } : {}), ...(criteres.ville ? { ville: criteres.ville.nom, ville_id: String(criteres.ville.id) } : {}) },
+                params: { type: 'spectacle', origine: 'recherche_sans_resultat', ...(criteres.q ? { nom: criteres.q } : {}), ...(criteres.ville ? { ville: criteres.ville.nom, ville_id: String(criteres.ville.id) } : {}) },
               })
             }
             accessibilityRole="button">

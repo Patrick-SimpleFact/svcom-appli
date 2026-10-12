@@ -21,6 +21,7 @@ import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { ErreurApi } from '@/api/client';
 import { useGouts } from '@/gouts/gouts';
+import { accueilAffiche, carteCliquee, definirLieuMesure, mesurer } from '@/mesure/mesure';
 
 type Liste = { etat: 'chargement' } | { etat: 'erreur' } | { etat: 'prete'; reponse: ReponseAutour; cartes: Carte[] };
 
@@ -152,6 +153,24 @@ function ListeAutour(props: {
 
   const recherche: Recherche = { point, quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres };
   const cle = JSON.stringify(recherche);
+
+  // Statistiques par ville (F2.11) : la ville choisie, ou la position arrondie (jamais enregistrée par le BO).
+  const lieuMesure = JSON.stringify(point);
+  useEffect(() => definirLieuMesure(JSON.parse(lieuMesure)), [lieuMesure]);
+
+  // Accueil affiché (chronomètre du premier clic) ; bandeau de couverture faible vu.
+  const prete = liste.etat === 'prete';
+  const couvertureFaible = liste.etat === 'prete' && liste.reponse.couverture_faible;
+  useEffect(() => {
+    if (prete) {
+      accueilAffiche();
+    }
+  }, [prete]);
+  useEffect(() => {
+    if (couvertureFaible) {
+      mesurer('bandeau_couverture');
+    }
+  }, [couvertureFaible, lieuMesure]);
 
   /**
    * L'appel n'a pas atteint le BO (pas de réseau, serveur injoignable) : c'est ce qui compte pour l'utilisateur,
@@ -314,7 +333,7 @@ function ListeAutour(props: {
 
   /** Proposer une piste (F8.1), pré-remplie avec la ville de la liste. */
   const proposerUnePiste = () =>
-    router.push({ pathname: '/piste', params: { ville: libelle, ...('ville_id' in point ? { ville_id: String(point.ville_id) } : {}) } });
+    router.push({ pathname: '/piste', params: { origine: 'accueil', ville: libelle, ...('ville_id' in point ? { ville_id: String(point.ville_id) } : {}) } });
 
   const genres = configuration?.genres ?? [];
   const onglets: { onglet: Onglet; libelle: string }[] = [
@@ -375,13 +394,31 @@ function ListeAutour(props: {
       ) : null}
       {ancien ? <Bandeau texte={ancien} /> : null}
       <QuestionSuggestion />
-      <PucesQuand quand={quand} choisir={changer(setQuand)} />
-      <OngletsGenres onglets={onglets} actif={onglet} choisir={changer(setOnglet)} />
+      <PucesQuand
+        quand={quand}
+        choisir={(q) => {
+          mesurer('filtre_utilise', { ecran: 'accueil', filtre: 'quand', valeur: /^\d/.test(q) ? 'date' : q });
+          changer(setQuand)(q);
+        }}
+      />
+      <OngletsGenres
+        onglets={onglets}
+        actif={onglet}
+        choisir={(o) => {
+          mesurer('filtre_utilise', { ecran: 'accueil', filtre: 'onglet', valeur: typeof o === 'number' ? 'genre' : o });
+          changer(setOnglet)(o);
+        }}
+      />
       {reponse?.couverture_faible ? <BandeauCouverture proposer={proposerUnePiste} /> : null}
       <View style={styles.ligneCompteur}>
         <Text style={styles.compteur}>{reponse && reponse.total > 0 ? compteur(reponse.total, reponse.rayon_retenu_m) : ''}</Text>
         {centre ? (
-          <Pressable style={styles.bascule} onPress={() => setVue(vue === 'liste' ? 'carte' : 'liste')} accessibilityRole="button" hitSlop={8}>
+          <Pressable style={styles.bascule} onPress={() => {
+              if (vue === 'liste') {
+                mesurer('vue_carte', { ecran: 'accueil' });
+              }
+              setVue(vue === 'liste' ? 'carte' : 'liste');
+            }} accessibilityRole="button" hitSlop={8}>
             <IconeVue vue={vue} />
             <Text style={styles.basculeTexte}>{vue === 'liste' ? 'Carte' : 'Liste'}</Text>
           </Pressable>
@@ -408,7 +445,10 @@ function ListeAutour(props: {
       data={liste.etat === 'prete' ? liste.cartes : []}
       keyExtractor={(c) => `${c.spectacle.id}-${c.lieu.id}-${c.date_locale}`}
       renderItem={({ item }) => (
-        <CarteSpectacle carte={item} genre={libelleGenre(item.spectacle.genre_id)} onPress={() => ouvrirFiche(item.spectacle.id, item.seances[0]?.representation_id, centre)} />
+        <CarteSpectacle carte={item} genre={libelleGenre(item.spectacle.genre_id)} onPress={() => {
+            carteCliquee();
+            ouvrirFiche(item.spectacle.id, item.seances[0]?.representation_id, centre);
+          }} />
       )}
       contentContainerStyle={styles.contenu}
       ItemSeparatorComponent={Espace}
@@ -426,7 +466,10 @@ function ListeAutour(props: {
               <View style={styles.journee}>
                 <Text style={styles.rubrique}>Toute la journée</Text>
                 {reponse.toute_la_journee.map((c) => (
-                  <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} onPress={() => ouvrirFiche(c.spectacle.id, c.representation_id, centre)} />
+                  <CarteSansHoraire key={c.representation_id} carte={c} genre={libelleGenre(c.spectacle.genre_id)} onPress={() => {
+                      carteCliquee();
+                      ouvrirFiche(c.spectacle.id, c.representation_id, centre);
+                    }} />
                 ))}
               </View>
             ) : null}
