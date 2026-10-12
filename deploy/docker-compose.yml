@@ -39,6 +39,23 @@ services:
       - traefik.http.routers.spettacoli.entrypoints=websecure
       - traefik.http.routers.spettacoli.tls.certresolver=letsencrypt
       - traefik.http.services.spettacoli.loadbalancer.server.port=8080
+      # Site public aussi sur le domaine principal (page d'accueil, W05a) ; www redirigé vers le domaine nu.
+      - traefik.http.routers.spettacoli-site.rule=Host(`${DOMAINE_SITE}`) || Host(`www.${DOMAINE_SITE}`)
+      - traefik.http.routers.spettacoli-site.entrypoints=websecure
+      - traefik.http.routers.spettacoli-site.tls.certresolver=letsencrypt
+      - traefik.http.routers.spettacoli-site.service=spettacoli
+      - traefik.http.routers.spettacoli-site.middlewares=spettacoli-sans-www
+      - traefik.http.middlewares.spettacoli-sans-www.redirectregex.regex=^https://www\.(.+)
+      - traefik.http.middlewares.spettacoli-sans-www.redirectregex.replacement=https://$${1}
+      - traefik.http.middlewares.spettacoli-sans-www.redirectregex.permanent=true
+      # Back-office uniquement sur le sous-domaine : /admin du domaine principal y est redirigé.
+      - traefik.http.routers.spettacoli-site-admin.rule=(Host(`${DOMAINE_SITE}`) || Host(`www.${DOMAINE_SITE}`)) && PathPrefix(`/admin`)
+      - traefik.http.routers.spettacoli-site-admin.entrypoints=websecure
+      - traefik.http.routers.spettacoli-site-admin.tls.certresolver=letsencrypt
+      - traefik.http.routers.spettacoli-site-admin.service=spettacoli
+      - traefik.http.routers.spettacoli-site-admin.middlewares=spettacoli-admin-sous-domaine
+      - traefik.http.middlewares.spettacoli-admin-sous-domaine.redirectregex.regex=^https://[^/]+/(.*)
+      - traefik.http.middlewares.spettacoli-admin-sous-domaine.redirectregex.replacement=https://${DOMAINE}/$${1}
 
   # Un seul worker : les collectes ne doivent jamais tourner en parallèle (verrou commun, N05).
   worker:
