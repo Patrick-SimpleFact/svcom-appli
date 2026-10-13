@@ -1,6 +1,6 @@
 ## Objet
 
-Spettacoli est une application gratuite qui présente les spectacles vivants (théâtre, concerts, danse, humour, cirque…) près de chez vous, à partir de programmes publiés par des billetteries, des organisateurs et des sources publiques. Les présentes conditions s’appliquent à l’application et au site spectaclesvivants.com.
+Spettacoli est une application gratuite qui présente les spectacles vivants (théâtre, concerts, danse, humour, cirque…) près de chez vous, à partir de programmes publiés par des billetteries, des organisateurs et des sources publiques. Les présentes conditions s’appliquent à l’application et au site spectacles-vivants.com.
 
 ## Utilisation sans compte et avec compte
 
@@ -36,4 +36,4 @@ Le service peut évoluer. En cas de modification importante des présentes condi
 
 ## Droit applicable
 
-Les présentes conditions sont soumises au droit français. En cas de litige, une solution amiable sera recherchée avant toute action ; à défaut, les tribunaux français sont compétents. Contact : contact@spectaclesvivants.com.
+Les présentes conditions sont soumises au droit français. En cas de litige, une solution amiable sera recherchée avant toute action ; à défaut, les tribunaux français sont compétents. Contact : spettacoli@spectacles-vivants.com.
