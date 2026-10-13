@@ -2,7 +2,9 @@
 
 namespace App\Actions;
 
+use App\Enums\FileATraiter;
 use App\Enums\StatutCollecte;
+use App\Enums\StatutElement;
 use App\Jobs\CollecterSource;
 use App\Models\Collecte;
 use App\Models\ElementATraiter;
@@ -20,7 +22,8 @@ use Illuminate\Support\Facades\DB;
  *   la représentation, le spectacle et le lieu sont gardés sans limite ;
  * - spectacles restés vides (ni offre ni représentation) : supprimés ;
  * - collectes restées « en cours » au-delà de leur durée maximale (worker arrêté en route) : marquées interrompues ;
- * - séances au-delà de l'horizon (réglage « horizon_mois », réduit par exemple) : supprimées, sauf corrections manuelles.
+ * - séances au-delà de l'horizon (réglage « horizon_mois », réduit par exemple) : supprimées, sauf corrections manuelles ;
+ * - doublons probables et fusions à contrôler dont une séance a disparu : sortis de la boîte de travail (« sans objet »).
  */
 class EntretenirCatalogue
 {
@@ -33,7 +36,7 @@ class EntretenirCatalogue
 
     public function __construct(private PublierSource $publier) {}
 
-    /** @return array{sources_muettes: list<string>, nb_retires: int, offres_supprimees: int, spectacles_supprimes: int, collectes_interrompues: int, hors_horizon_supprimees: int} */
+    /** @return array{sources_muettes: list<string>, nb_retires: int, offres_supprimees: int, spectacles_supprimes: int, collectes_interrompues: int, hors_horizon_supprimees: int, doublons_sans_objet: int} */
     public function handle(): array
     {
         $resultat = ['sources_muettes' => [], 'nb_retires' => 0, 'offres_supprimees' => 0, 'spectacles_supprimes' => 0];
@@ -85,6 +88,14 @@ class EntretenirCatalogue
 
         // 3. Spectacles vides (hors données de démonstration).
         $resultat['spectacles_supprimes'] = Spectacle::where('demo', false)->doesntHave('offres')->doesntHave('representations')->delete();
+
+        // 4. Paires de séances à examiner dont l'une a disparu du flux de sa source : plus rien à décider.
+        $resultat['doublons_sans_objet'] = DB::update(<<<'SQL'
+            update elements_a_traiter e set statut = :traite, decision = '{"sans_objet":"séance disparue"}', traite_le = now(), updated_at = now()
+            where e.statut = :attente and e.file in (:f1, :f2)
+              and exists (select 1 from offres o where o.id in ((e.donnees->>'offre_a_id')::bigint, (e.donnees->>'offre_b_id')::bigint) and o.disparue_le is not null)
+            SQL, ['traite' => StatutElement::Traite->value, 'attente' => StatutElement::EnAttente->value,
+            'f1' => FileATraiter::DoublonProbable->value, 'f2' => FileATraiter::FusionAControler->value]);
 
         return $resultat;
     }
