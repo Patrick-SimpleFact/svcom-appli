@@ -8,12 +8,15 @@ use Database\Seeders\ParametresSeeder;
 use Livewire\Livewire;
 
 /** W03 : pages légales (F1.6, F7.15), modifiables dans le back-office. */
-it('publie les trois pages, avec les passages à compléter surlignés et sans HTML injecté', function () {
+it('publie les trois pages complétées, surligne un passage à compléter et n’injecte pas de HTML', function () {
     $this->get('/confidentialite')->assertOk()->assertSee('Politique de confidentialité')->assertSee('jamais votre position', false)
-        ->assertSee('<mark>[À COMPLÉTER', false)->assertSee('Mentions légales');
+        ->assertSee('E.I. CARLONI Patrick')->assertDontSee('<mark>', false)->assertSee('Mentions légales');
     $this->get('/conditions')->assertOk()->assertSee('15 ans et plus');
-    $this->get('/mentions-legales')->assertOk()->assertSee('OVH SAS')->assertSee('liens d’affiliation', false);
+    $this->get('/mentions-legales')->assertOk()->assertSee('Hostinger International Ltd')->assertSee('liens d’affiliation', false);
     $this->get('/autre-page')->assertNotFound();
+
+    PageLegale::firstWhere('slug', 'mentions-legales')->update(['contenu' => 'Éditeur : [À COMPLÉTER : nom].']);
+    $this->get('/mentions-legales')->assertSee('<mark>[À COMPLÉTER : nom]</mark>', false);
 
     PageLegale::firstWhere('slug', 'conditions')->update(['contenu' => 'Texte <script>alert(1)</script> [lien](javascript:alert(1))']);
     $this->get('/conditions')->assertDontSee('<script>', false)->assertDontSee('javascript:', false);
