@@ -4,10 +4,13 @@ use App\Actions\EntretenirCatalogue;
 use App\Actions\ExecuterCollecte;
 use App\Collecte\Connecteurs\ConnecteurFactice;
 use App\Collecte\RegistreConnecteurs;
+use App\Enums\FileATraiter;
 use App\Enums\StatutCollecte;
+use App\Enums\StatutElement;
 use App\Enums\StatutRepresentation;
 use App\Models\Admin;
 use App\Models\Collecte;
+use App\Models\ElementATraiter;
 use App\Models\Offre;
 use App\Models\Parametre;
 use App\Models\Representation;
@@ -221,4 +224,21 @@ it('supprime les séances au-delà d’un horizon réduit, sauf une représentat
         ->and(Offre::find($lointaine->id))->toBeNull()
         ->and(Representation::find($lointaine->representation_id))->toBeNull()
         ->and(Representation::find($corrigee->id))->not->toBeNull(); // corrigée à la main : gardée
+});
+
+it('sort de la boîte de travail une paire de séances dont l’une a disparu du flux', function () {
+    $a = ($this->offre)('F-1');
+    $b = ($this->offre)('F-6');
+    $paire = fn (FileATraiter $file) => ElementATraiter::create(['file' => $file, 'cible_type' => $b->getMorphClass(), 'cible_id' => $b->id, 'donnees' => ['offre_a_id' => $a->id, 'offre_b_id' => $b->id, 'ecart_minutes' => 60, 'ressemblance' => 1.0]]);
+    $probable = $paire(FileATraiter::DoublonProbable);
+    $fusion = $paire(FileATraiter::FusionAControler);
+
+    app(EntretenirCatalogue::class)->handle();
+    expect($probable->fresh()->statut)->toBe(StatutElement::EnAttente);
+
+    $a->update(['disparue_le' => now()]);
+    expect(app(EntretenirCatalogue::class)->handle()['doublons_sans_objet'])->toBe(2)
+        ->and($probable->fresh()->statut)->toBe(StatutElement::Traite)
+        ->and($probable->fresh()->decision)->toBe(['sans_objet' => 'séance disparue'])
+        ->and($fusion->fresh()->statut)->toBe(StatutElement::Traite);
 });

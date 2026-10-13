@@ -94,7 +94,7 @@ class ConnecteurParisQfap implements Connecteur, DetecteVersion
 
         foreach ($horaires as $horaire) {
             [$debut] = explode('_', $horaire, 2);
-            $debut = CarbonImmutable::parse($debut)->setTimezone(self::FUSEAU);
+            $debut = $this->heureDeParis($debut);
 
             if ($debut->gte($aujourdhui)) {
                 yield new AnnonceNormalisee(...[...$commun, 'identifiantExterne' => $id.'@'.$debut->format('Y-m-d\TH:i'), 'debut' => $debut, 'heureConnue' => $debut->format('H:i') !== '00:00']);
@@ -106,8 +106,8 @@ class ConnecteurParisQfap implements Connecteur, DetecteVersion
         }
 
         // 2. Sans horaire : un jour → « horaire à confirmer » ; plusieurs jours → une période.
-        $debut = CarbonImmutable::parse($e['date_start'])->setTimezone(self::FUSEAU)->startOfDay();
-        $fin = CarbonImmutable::parse($e['date_end'] ?? $e['date_start'])->setTimezone(self::FUSEAU)->startOfDay();
+        $debut = $this->heureDeParis($e['date_start'])->startOfDay();
+        $fin = $this->heureDeParis($e['date_end'] ?? $e['date_start'])->startOfDay();
 
         if ($fin->lt($aujourdhui)) {
             return;
@@ -115,6 +115,15 @@ class ConnecteurParisQfap implements Connecteur, DetecteVersion
 
         $cle = $debut->format('Y-m-d').($fin->gt($debut) ? '..'.$fin->format('Y-m-d') : '');
         yield new AnnonceNormalisee(...[...$commun, 'identifiantExterne' => "{$id}@{$cle}", 'debut' => $debut, 'heureConnue' => false, 'fin' => $fin->gt($debut) ? $fin : null]);
+    }
+
+    /**
+     * La source écrit l'heure de Paris avec un décalage toujours « +02:00 », même l'hiver (« 2026-10-29T21:00:00+02:00 »
+     * pour une séance à 21 h, vu le 13/10/2026) : on garde l'heure écrite, sans son décalage.
+     */
+    private function heureDeParis(string $date): CarbonImmutable
+    {
+        return CarbonImmutable::parse(substr($date, 0, 19), self::FUSEAU);
     }
 
     /** @return array{prixMin: ?float, prixMax: ?float, gratuit: bool} */

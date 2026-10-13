@@ -39,6 +39,14 @@ it('lit chaque horaire comme une séance, avec son prix et son lien de réservat
         ->and($lac->first()->categoriesSource)->toContain('Théâtre');
 });
 
+it('garde l’heure écrite par la source, même l’hiver où elle annonce « +02:00 » à tort (vu le 13/10/2026)', function () {
+    // « 2026-11-25T21:00:00+02:00 » : une séance à 21 h, pas à 20 h.
+    $hiver = ($this->annonces)()->first(fn (AnnonceNormalisee $a) => $a->debut->format('Y-m-d') === '2026-11-25');
+
+    expect($hiver->debut->format('Y-m-d H:i e'))->toBe('2026-11-25 21:00 Europe/Paris')
+        ->and($hiver->identifiantExterne)->toEndWith('@2026-11-25T21:00');
+});
+
 it('lit les prix écrits « 22€ » et la gratuité', function () {
     $memoire = ($this->annonces)()->first(fn (AnnonceNormalisee $a) => str_contains($a->titre, 'Mémoire de fille'));
     $juno = ($this->annonces)()->first(fn (AnnonceNormalisee $a) => str_contains($a->titre, 'Juno'));
