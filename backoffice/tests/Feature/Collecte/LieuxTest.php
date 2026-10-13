@@ -5,6 +5,7 @@ use App\Actions\RattacherLieu;
 use App\Collecte\AnnonceNormalisee;
 use App\Enums\FileATraiter;
 use App\Enums\PrecisionPosition;
+use App\Enums\StatutElement;
 use App\Enums\TypeLieu;
 use App\Filament\Resources\Lieux\Pages\EditLieu;
 use App\Filament\Resources\LieuxAVerifier\Pages\ListLieuxAVerifier;
@@ -117,7 +118,7 @@ it('considère les coordonnées 0,0 de la Fnac comme inconnues et géocode l’a
         ->and($lieu->position->latitude)->toEqualWithDelta(43.943678, 0.000001)
         ->and($lieu->ville_id)->toBe($this->avignon->id)
         ->and($lieu->type)->toBe(TypeLieu::Autre)
-        ->and(lieuxAVerifier()->sole()->donnees['motif'])->toBe('Nouveau lieu, absent du référentiel');
+        ->and(lieuxAVerifier()->count())->toBe(0); // bien nommé, bien placé : plus vérifié à la main (L01f)
 
     Http::assertSent(fn ($requete) => $requete['q'] === '10 rue de l’Observance' && $requete['postcode'] === '84000');
 });
@@ -156,8 +157,7 @@ it('réutilise le lieu déjà vu chez la source, sans nouveau géocodage', funct
     $second = app(RattacherLieu::class)->handle(annonceLieu($observance, 'A-2'), $this->fnac); // nouvelle collecte
 
     expect($second->is($premier))->toBeTrue()
-        ->and(LieuSource::count())->toBe(1)
-        ->and(lieuxAVerifier()->count())->toBe(1);
+        ->and(LieuSource::count())->toBe(1);
     Http::assertSentCount(1);
 });
 
@@ -316,4 +316,65 @@ it('ne remplace jamais un nom corrigé à la main ; la commande de réparation r
 
     expect($aReparer->fresh()->nom)->toBe('Salle '.$aReparer->id)
         ->and($corrige->fresh()->nom)->toBe('3 rue des Lices');
+});
+
+it('ne demande de vérifier un nouveau lieu bien placé que s’il est mal nommé dans une ville pilote (L01f)', function () {
+    $nantes = Ville::create([
+        'nom' => 'Nantes', 'nom_normalise' => 'nantes', 'code_insee' => '44109', 'departement' => '44', 'codes_postaux' => ['44000'],
+        'population' => 320000, 'position' => new Point(47.2184, -1.5536), 'fuseau_horaire' => 'Europe/Paris',
+    ]);
+    $this->avignon->update(['est_pilote' => true]);
+    $place = fn (string $nom, string $ville, float $lat, float $lon, string $id) => ($this->rattacher)(annonceLieu(['lieuNom' => $nom, 'lieuVille' => $ville, 'lieuLatitude' => $lat, 'lieuLongitude' => $lon], $id));
+
+    $place('Théâtre des Carmes', 'Avignon', 43.9510, 4.8100, 'A');   // ville pilote, bien nommé
+    $place('Salle polyvalente', 'Nantes', 47.2100, -1.5500, 'B');    // nom vague, hors ville pilote
+    $vague = $place('Salle des fêtes', 'Avignon', 43.9400, 4.8000, 'C'); // nom vague, ville pilote
+
+    expect(lieuxAVerifier()->sole()->cible_id)->toBe($vague->id)
+        ->and(lieuxAVerifier()->sole()->donnees['motif'])->toBe(RattacherLieu::MOTIF_NOM_IMPRECIS)
+        ->and(Lieu::where('ville_id', $nantes->id)->count())->toBe(1);
+});
+
+it('retire le nom de la salle collé après l’adresse, et la collecte suivante retrouve le lieu (L01f)', function () {
+    $datatourisme = Source::firstWhere('code', 'datatourisme');
+    $ancienne = ['lieuAdresse' => '41 rue Jobin, Cabaret Aléatoire, Friche la Belle de Mai', 'lieuCodePostal' => '84000', 'lieuVille' => 'Avignon', 'lieuLatitude' => 43.9460, 'lieuLongitude' => 4.8200];
+    $lieu = ($this->rattacher)(annonceLieu($ancienne), $datatourisme);
+    expect($lieu->nom)->toBe('41 rue Jobin, Cabaret Aléatoire, Friche la Belle de Mai');
+
+    $this->artisan('lieux:reparer-noms', ['--simulation' => true])->expectsOutputToContain('Simulation : 1 nom(s) de salle retiré(s)')->assertSuccessful();
+    expect($lieu->fresh()->nom)->toBe($ancienne['lieuAdresse']);
+
+    $this->artisan('lieux:reparer-noms')->assertSuccessful();
+    expect($lieu->fresh()->nom)->toBe('Cabaret Aléatoire')
+        ->and($lieu->fresh()->adresse)->toBe('41 rue Jobin, Friche la Belle de Mai');
+
+    // Le connecteur lit désormais l'annonce ainsi : même lieu, sans doublon ni nouvel élément à vérifier.
+    $nouvelle = [...$ancienne, 'lieuNom' => 'Cabaret Aléatoire', 'lieuAdresse' => '41 rue Jobin, Friche la Belle de Mai'];
+    expect(($this->rattacher)(annonceLieu($nouvelle, 'A-2'), $datatourisme)->is($lieu))->toBeTrue()
+        ->and(LieuSource::where('source_id', $datatourisme->id)->count())->toBe(1);
+
+    $this->artisan('lieux:reparer-noms')->expectsOutputToContain('0 nom(s) de salle retiré(s)')->assertSuccessful();
+});
+
+it('sort de la file les nouveaux lieux déjà en attente qui sont bien placés et bien nommés (L01f)', function () {
+    $this->avignon->update(['est_pilote' => true]);
+    $element = function (string $nom, PrecisionPosition $precision, string $motif = 'Nouveau lieu, absent du référentiel') {
+        $lieu = Lieu::create(['nom' => $nom, 'type' => TypeLieu::Autre, 'ville_id' => $this->avignon->id, 'position' => new Point(43.95, 4.81), 'precision_position' => $precision]);
+
+        return ElementATraiter::create(['file' => FileATraiter::LieuAVerifier, 'cible_type' => $lieu->getMorphClass(), 'cible_id' => $lieu->id, 'priorite' => 0, 'donnees' => ['motif' => $motif, 'source' => 'Fnac Spectacles']]);
+    };
+    $fiable = $element('Théâtre des Carmes', PrecisionPosition::Exacte);
+    $vague = $element('Salle des fêtes', PrecisionPosition::Exacte);
+    $approximatif = $element('Théâtre du Balcon', PrecisionPosition::Commune, 'Position approximative (centre de la commune)');
+
+    $this->artisan('lieux:alleger-verification', ['--simulation' => true])->expectsOutputToContain('Simulation : 1 lieu(x) sorti(s) de la file, 1 gardé(s)')->assertSuccessful();
+    expect($fiable->fresh()->statut)->toBe(StatutElement::EnAttente);
+
+    $this->artisan('lieux:alleger-verification')->assertSuccessful();
+    expect($fiable->fresh()->statut)->toBe(StatutElement::Traite)
+        ->and($fiable->fresh()->decision['par_regle'])->toContain('L01f')
+        ->and($fiable->fresh()->traite_par)->toBeNull()
+        ->and($vague->fresh()->statut)->toBe(StatutElement::EnAttente)
+        ->and($vague->fresh()->donnees['motif'])->toBe(RattacherLieu::MOTIF_NOM_IMPRECIS)
+        ->and($approximatif->fresh()->statut)->toBe(StatutElement::EnAttente);
 });

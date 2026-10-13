@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\BaseAdresseNationale;
 use App\Collecte\ComparaisonLieux;
+use App\Collecte\NomDeLieu;
 use App\Enums\FileATraiter;
 use App\Enums\PrecisionPosition;
 use App\Enums\TypeLieu;
@@ -23,7 +24,8 @@ use Illuminate\Support\Facades\DB;
  * 1. lieu déjà vu chez cette source ; 2-3. rapprochement avec un lieu existant (référentiel du Ministère compris) :
  * nom proche et < 200 m, ou même adresse ; 4. sinon nouveau lieu (position de la source, sinon Base Adresse
  * Nationale, sinon centre de la commune = « approximative ») ; 5. fuseau horaire de la commune.
- * Les nouveaux lieux et les rapprochements incertains vont dans « Lieux à vérifier », mais sont publiés quand même.
+ * Les lieux mal placés, mal nommés dans une ville pilote, et les rapprochements incertains vont dans « Lieux à vérifier »,
+ * mais sont publiés quand même.
  */
 class RattacherLieu
 {
@@ -39,6 +41,8 @@ class RattacherLieu
         [-28.0, -7.0, -155.0, -134.0],  // Polynésie
         [-14.5, -13.0, -178.5, -176.0], // Wallis-et-Futuna
     ];
+
+    public const MOTIF_NOM_IMPRECIS = 'Nom imprécis dans une ville pilote (adresse, commune ou nom générique)';
 
     /** Au-delà, la position donnée par la source est trop loin de sa propre commune pour être crue (km). */
     private const ECART_COMMUNE_MAX_KM = 50;
@@ -133,13 +137,17 @@ class RattacherLieu
             'fuseau_horaire' => $ville?->fuseau_horaire ?? 'Europe/Paris', // 5. fuseau de la commune
         ]);
 
+        // Un nouveau lieu bien nommé et bien placé n'est plus vérifié à la main (décision du 13/10/2026, L01f).
         [$motif, $priorite] = match (true) {
             $ville === null => ['Commune introuvable : position inconnue', 3],
             $precision === PrecisionPosition::Commune => ['Position approximative (centre de la commune)', 2],
-            default => ['Nouveau lieu, absent du référentiel', 0],
+            $ville->est_pilote && NomDeLieu::estImprecis($lieu->nom, $lieu->adresse, $ville->nom) => [self::MOTIF_NOM_IMPRECIS, 1],
+            default => [null, 0],
         };
 
-        $this->aVerifier($lieu, $source, $annonce, $motif, $priorite);
+        if ($motif !== null) {
+            $this->aVerifier($lieu, $source, $annonce, $motif, $priorite);
+        }
 
         return $lieu;
     }
@@ -147,10 +155,16 @@ class RattacherLieu
     /** Même nom, même adresse, même ville : la façon dont la source écrit ce lieu. */
     private function cle(AnnonceNormalisee $annonce): string
     {
+        return $this->cleSource($annonce->lieuNom, $annonce->lieuAdresse, $annonce->lieuCodePostal, $annonce->lieuVille);
+    }
+
+    /** Clé d'un lieu chez une source (aussi pour réécrire celles des lieux renommés, voir lieux:reparer-noms). */
+    public function cleSource(?string $nom, ?string $adresse, ?string $codePostal, ?string $ville): string
+    {
         return hash('sha256', implode('|', [
-            Texte::normaliser($annonce->lieuNom),
-            $this->comparaison->adresseNormalisee($annonce->lieuAdresse),
-            $annonce->lieuCodePostal ?: Texte::normaliser($annonce->lieuVille),
+            Texte::normaliser($nom),
+            $this->comparaison->adresseNormalisee($adresse),
+            $codePostal ?: Texte::normaliser($ville),
         ]));
     }
 

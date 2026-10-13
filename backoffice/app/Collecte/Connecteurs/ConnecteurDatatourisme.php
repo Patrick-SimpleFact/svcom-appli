@@ -6,6 +6,7 @@ use App\Collecte\AnnonceNormalisee;
 use App\Collecte\CollecteParIntervalle;
 use App\Collecte\Connecteur;
 use App\Collecte\LigneIllisible;
+use App\Collecte\NomDeLieu;
 use App\Models\Source;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
@@ -148,21 +149,14 @@ class ConnecteurDatatourisme implements CollecteParIntervalle, Connecteur
     }
 
     /**
-     * Lieu : la première ligne de l'adresse est souvent le nom de la salle (« TMP - Théâtre Municipal Pazenais »,
-     * puis « 7 rue du Ballon »).
+     * Lieu : le nom de la salle est dans les lignes de l'adresse, avant (« TMP - Théâtre Municipal Pazenais »,
+     * puis « 7 rue du Ballon ») ou après (« 41 rue Jobin », « Cabaret Aléatoire ») — voir NomDeLieu.
      */
     private function lieu(array $evenement): array
     {
         $lieu = $evenement['isLocatedAt'][0] ?? [];
         $adresse = $lieu['address'][0] ?? [];
-        $lignes = array_values(array_filter(array_map('trim', (array) ($adresse['streetAddress'] ?? []))));
-        $nom = null;
-
-        if (count($lignes) >= 2 && ! preg_match('/^\d/', $lignes[0])) {
-            $nom = array_shift($lignes);
-        } elseif (count($lignes) === 1 && ! preg_match('/\d/', $lignes[0])) {
-            $nom = array_shift($lignes); // une seule ligne sans numéro : un nom de salle (« Cinéma Le Doron »)
-        }
+        [$nom, $lignes] = NomDeLieu::separer((array) ($adresse['streetAddress'] ?? []));
 
         $ville = $adresse['addressLocality'] ?? ($adresse['hasAddressCity']['label']['@fr'] ?? null);
 
