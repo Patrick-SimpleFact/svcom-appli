@@ -57,6 +57,23 @@ services:
       - traefik.http.routers.spettacoli-site-admin.middlewares=spettacoli-admin-introuvable
       - traefik.http.middlewares.spettacoli-admin-introuvable.replacepathregex.regex=^/(.*)
       - traefik.http.middlewares.spettacoli-admin-introuvable.replacepathregex.replacement=/introuvable/$$1
+      # Ancien domaine (spectaclesvivants.com, jusqu'au 13/10/2026) : redirection permanente vers le nouveau, chemin gardé.
+      - traefik.http.routers.spettacoli-ancien-site.rule=Host(`${ANCIEN_DOMAINE_SITE}`) || Host(`www.${ANCIEN_DOMAINE_SITE}`)
+      - traefik.http.routers.spettacoli-ancien-site.entrypoints=websecure
+      - traefik.http.routers.spettacoli-ancien-site.tls.certresolver=letsencrypt
+      - traefik.http.routers.spettacoli-ancien-site.service=spettacoli
+      - traefik.http.routers.spettacoli-ancien-site.middlewares=spettacoli-vers-site
+      - traefik.http.middlewares.spettacoli-vers-site.redirectregex.regex=^https?://[^/]+(.*)
+      - traefik.http.middlewares.spettacoli-vers-site.redirectregex.replacement=https://${DOMAINE_SITE}$${1}
+      - traefik.http.middlewares.spettacoli-vers-site.redirectregex.permanent=true
+      - traefik.http.routers.spettacoli-ancien.rule=Host(`spettacoli.${ANCIEN_DOMAINE_SITE}`)
+      - traefik.http.routers.spettacoli-ancien.entrypoints=websecure
+      - traefik.http.routers.spettacoli-ancien.tls.certresolver=letsencrypt
+      - traefik.http.routers.spettacoli-ancien.service=spettacoli
+      - traefik.http.routers.spettacoli-ancien.middlewares=spettacoli-vers-backoffice
+      - traefik.http.middlewares.spettacoli-vers-backoffice.redirectregex.regex=^https?://[^/]+(.*)
+      - traefik.http.middlewares.spettacoli-vers-backoffice.redirectregex.replacement=https://${DOMAINE}$${1}
+      - traefik.http.middlewares.spettacoli-vers-backoffice.redirectregex.permanent=true
 
   # Un seul worker : les collectes ne doivent jamais tourner en parallèle (verrou commun, N05).
   worker:

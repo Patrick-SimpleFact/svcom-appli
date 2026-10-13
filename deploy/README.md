@@ -2,7 +2,7 @@
 
 Le back-office, l'API `/v1` et le site tournent sur le VPS Hostinger de Patrick (`ssh root@72.61.198.22`), en Docker Compose, derrière le Traefik déjà en place (`/opt/docker/traefik`, réseau `proxy`, HTTPS Let's Encrypt).
 
-Adresse : https://spettacoli.spectaclesvivants.com
+Adresse : https://spettacoli.spectacles-vivants.com
 
 ## Conteneurs
 

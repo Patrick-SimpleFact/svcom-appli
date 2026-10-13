@@ -2,7 +2,7 @@ Spettacoli vous aide à trouver un spectacle près de chez vous. Nous collectons
 
 ## Responsable du traitement
 
-**E.I. CARLONI Patrick** (Patrick CARLONI, entrepreneur individuel), SIRET 801 168 766 00047, 21, Avenue Pierre Barberan - 30960 SAINT-JEAN-DE-VALERISCLE. Contact pour vos données : **contact@spectaclesvivants.com**.
+**E.I. CARLONI Patrick** (Patrick CARLONI, entrepreneur individuel), SIRET 801 168 766 00047, 21, Avenue Pierre Barberan - 30960 SAINT-JEAN-DE-VALERISCLE. Contact pour vos données : **spettacoli@spectacles-vivants.com**.
 
 ## Sans compte
 
@@ -56,7 +56,7 @@ Vos données ne sont **ni vendues ni louées**. Elles sont accessibles à l’é
 
 ## Vos droits
 
-Vous pouvez accéder à vos données, les corriger, les effacer, en recevoir une copie, vous opposer à un traitement ou en demander la limitation. Dans l’application : **Profil › Compte › Recevoir mes données** et **Supprimer mon compte**. Pour toute autre demande : contact@spectaclesvivants.com.
+Vous pouvez accéder à vos données, les corriger, les effacer, en recevoir une copie, vous opposer à un traitement ou en demander la limitation. Dans l’application : **Profil › Compte › Recevoir mes données** et **Supprimer mon compte**. Pour toute autre demande : spettacoli@spectacles-vivants.com.
 
 Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la **CNIL** (www.cnil.fr).
 
@@ -64,7 +64,7 @@ Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la **C
 
 Si vous vous inscrivez pour tester l’application en avant-première, nous gardons votre **adresse e-mail**, votre type de téléphone (iPhone ou Android) et, si vous l’indiquez, votre ville. Votre inscription n’est valable qu’après avoir cliqué sur le lien de confirmation reçu par e-mail ; sans confirmation, elle est effacée sous **30 jours**. Nous vous écrivons uniquement pour l’ouverture de la bêta. Chaque e-mail contient un lien pour quitter la liste : votre adresse est alors effacée.
 
-## Site spectaclesvivants.com
+## Site spectacles-vivants.com
 
 Sur la page d’accueil, votre **ville est estimée à partir de votre adresse IP**, grâce à une base installée sur nos propres serveurs (DB-IP) : votre adresse n’est envoyée à aucun service extérieur, et ni l’adresse ni la ville ne sont enregistrées. Si vous cliquez sur « Voir les spectacles autour de moi », votre position sert uniquement à afficher les spectacles proches et n’est pas enregistrée.
 

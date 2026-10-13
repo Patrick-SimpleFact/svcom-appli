@@ -1,9 +1,9 @@
 ## Éditeur
 
-L’application Spettacoli et le site spectaclesvivants.com sont édités par **E.I. CARLONI Patrick**, entrepreneur individuel, immatriculé sous le numéro SIRET 801 168 766 00047, dont le siège est situé 21, Avenue Pierre Barberan - 30960 SAINT-JEAN-DE-VALERISCLE.
+L’application Spettacoli et le site spectacles-vivants.com sont édités par **E.I. CARLONI Patrick**, entrepreneur individuel, immatriculé sous le numéro SIRET 801 168 766 00047, dont le siège est situé 21, Avenue Pierre Barberan - 30960 SAINT-JEAN-DE-VALERISCLE.
 
 - Directeur de la publication : Patrick CARLONI
-- Contact : contact@spectaclesvivants.com
+- Contact : spettacoli@spectacles-vivants.com
 
 ## Hébergement
 
