@@ -1,13 +1,13 @@
 ## Éditeur
 
-L’application Spettacoli et le site spettacoli.fr sont édités par **[À COMPLÉTER : nom de la société ou de l’éditeur]**, [À COMPLÉTER : forme juridique et capital], immatriculée sous le numéro SIREN [À COMPLÉTER], dont le siège est situé [À COMPLÉTER : adresse].
+L’application Spettacoli et le site spectaclesvivants.com sont édités par **E.I. CARLONI Patrick**, entrepreneur individuel, immatriculé sous le numéro SIRET 801 168 766 00047, dont le siège est situé 21, Avenue Pierre Barberan - 30960 SAINT-JEAN-DE-VALERISCLE.
 
-- Directeur de la publication : [À COMPLÉTER : prénom et nom]
-- Contact : [À COMPLÉTER : adresse e-mail de contact]
+- Directeur de la publication : Patrick CARLONI
+- Contact : contact@spectaclesvivants.com
 
 ## Hébergement
 
-Les données sont hébergées en France par **OVH SAS**, 2 rue Kellermann, 59100 Roubaix, France — www.ovhcloud.com.
+Les données sont hébergées par **Hostinger International Ltd**, 61 Lordou Vironos Street, 6023 Larnaca, Chypre — www.hostinger.fr ; serveur situé en France (Paris).
 
 ## Sources des données
 
