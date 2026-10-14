@@ -59,6 +59,18 @@ it('envoie les messages de service pour tous et ceux de la ville de l’utilisat
         ->and(($this->ouvrir)()->json('messages_service.*.texte'))->toBe(['Pour tous']);
 });
 
+it('envoie les villes pilotes cochées dans le BO, la plus peuplée d’abord', function () {
+    $ville = fn (string $nom, string $insee, int $population, bool $pilote) => Ville::create(['nom' => $nom, 'nom_normalise' => mb_strtolower($nom), 'code_insee' => $insee, 'departement' => substr($insee, 0, 2), 'codes_postaux' => [], 'population' => $population, 'position' => new Point(43.9493, 4.8055), 'fuseau_horaire' => 'Europe/Paris', 'est_pilote' => $pilote]);
+    $ville('Avignon', '84007', 90_000, true);
+    $ville('Paris', '75056', 2_100_000, true);
+    $ville('Orange', '84087', 28_000, false);
+
+    expect(($this->ouvrir)()->json('villes_pilotes'))->toMatchArray([
+        ['id' => Ville::where('nom', 'Paris')->value('id'), 'nom' => 'Paris', 'lat' => 43.9493, 'lon' => 4.8055],
+        ['id' => Ville::where('nom', 'Avignon')->value('id'), 'nom' => 'Avignon', 'lat' => 43.9493, 'lon' => 4.8055],
+    ])->toHaveCount(2);
+});
+
 it('pose la question des suggestions une fois à la 5e ouverture, puis relance après 30 jours et 10 ouvertures', function () {
     $questions = collect(range(1, 6))->map(fn () => ($this->ouvrir)()->json('poser_question_suggestion'))->all();
     expect($questions)->toBe([false, false, false, false, true, false]);

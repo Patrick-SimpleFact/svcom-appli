@@ -128,9 +128,6 @@ export function jourTalon(jour: string): string {
   return `${JOURS[new Date(a, m - 1, j).getDay()]} ${j}`;
 }
 
-/** Villes pilotes proposées avant la frappe (maquette « Rechercher »). */
-export const VILLES_PILOTES = ['Paris', 'Bordeaux', 'Avignon'];
-
 // ─── Filtres (F4.3) ────────────────────────────────────────────────────────────
 
 const JOURS_LONGS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];

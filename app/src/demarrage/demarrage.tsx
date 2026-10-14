@@ -21,6 +21,8 @@ export type Configuration = {
   motifs_signalement: string[];
   messages_service: MessageService[];
   poser_question_suggestion: boolean;
+  /** Villes pilotes cochées dans le BO, la plus peuplée d'abord (Rechercher). */
+  villes_pilotes: { id: number; nom: string; lat: number; lon: number }[];
   liens: Record<string, string>;
 };
 
