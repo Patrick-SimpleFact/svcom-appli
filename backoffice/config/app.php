@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Adresse du site public (SEO) : le domaine principal en production (DOMAINE_SITE, deploy/.env), sinon APP_URL.
+    // Sert aux adresses canoniques, au plan du site et à la redirection des pages publiques du sous-domaine.
+    'url_site' => rtrim(env('DOMAINE_SITE') ? 'https://'.env('DOMAINE_SITE') : env('APP_URL', 'http://localhost'), '/'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

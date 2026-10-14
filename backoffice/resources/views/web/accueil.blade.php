@@ -9,7 +9,21 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="Spettacoli · Les spectacles autour de vous, ce soir">
     <meta property="og:description" content="Tous les spectacles vivants près de chez vous, au même endroit.">
-    <meta property="og:url" content="{{ url('/') }}">
+    @php($site = config('app.url_site'))
+    <link rel="canonical" href="{{ $site }}/">
+    <meta property="og:url" content="{{ $site }}/">
+    <meta property="og:site_name" content="Spettacoli">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:image" content="{{ $site }}/images/partage.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Spettacoli, les spectacles autour de vous, ce soir.">
+    <meta name="twitter:card" content="summary_large_image">
+    {{-- Données structurées (SEO 1) : le site et son éditeur, pour la fiche de Google (nom, logo). --}}
+    <script type="application/ld+json">{!! \App\Web\DonneesStructurees::accueil($site) !!}</script>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/images/favicon-48.png" type="image/png" sizes="48x48">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="stylesheet" href="/fonts/polices.css">
     <style>
         :root { --fond: #F7F5F2; --encre: #16161D; --gris: #5B5B66; --trait: #E2DED8; --carte: #FFFFFF; --rouge: #D23A1F; color-scheme: light; }
