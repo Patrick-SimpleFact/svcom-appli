@@ -30,7 +30,8 @@ beforeEach(function () {
 });
 
 it('inscrit après confirmation par e-mail seulement', function () {
-    $this->get('/')->assertSee('Testez Spettacoli en avant-première');
+    $this->get('/')->assertSee('Testez Spettacoli en avant-première')
+        ->assertSee('indiquez l’adresse e-mail du compte de votre téléphone', false); // invitation TestFlight / Google Play liée à ce compte
     $this->post('/beta', ($this->formulaire)())->assertRedirect(url('/').'#beta');
     $this->get('/')->assertDontSee('Prévenez-moi'); // message de remerciement à la place
 
