@@ -29,7 +29,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "fr.spettacoli.app"
+      "package": "fr.spettacoli.app",
+      "versionCode": 1
     },
     "web": {
       "output": "static",
@@ -38,6 +39,7 @@
     "plugins": [
       "expo-router",
       "./plugins/with-scene-lifecycle",
+      "./plugins/with-signature-play",
       [
         "expo-splash-screen",
         {

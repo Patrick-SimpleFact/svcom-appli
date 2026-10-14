@@ -37,6 +37,28 @@ npx expo run:android                # 1re fois : compile l'app (plusieurs minute
 - **Carte** : sans clé Google Maps, ouvrir la carte **fait planter l'app**. Clé dans `app/.env` (`GOOGLE_MAPS_ANDROID_KEY`, projet Google Cloud « Spettacoli », restreinte au paquet `fr.spettacoli.app`), lue par `app.config.ts` ; puis `npx expo prebuild -p android` et `npx expo run:android`.
 - **Position** : le GPS de l'émulateur ne répond qu'aux positions envoyées (panneau « … › Location ») ; sans elles, l'app part de la dernière position connue et affiche « Position approximative ».
 
+## Version de publication (Google Play, TestFlight)
+
+- Les builds de publication visent l'API en ligne (`app/.env.production`, chargé quand `NODE_ENV=production`).
+- **Android** : signés avec la **clé d'envoi Google Play** (`~/.android-cles/spettacoli-upload.jks`, alias `spettacoli-upload`). Les mots de passe sont dans `~/.gradle/gradle.properties` (`SPETTACOLI_UPLOAD_*`), lus par le plugin `plugins/with-signature-play.js`. Sans eux, la version Release est signée avec la clé de débogage (refusée par le Play Store). **Sauvegarder** le fichier `.jks` et ses mots de passe hors du Mac (gestionnaire de mots de passe). En cas de perte, Google peut réinitialiser la clé d'envoi (Play Console › Intégrité de l'application), mais cela prend plusieurs jours.
+- Augmenter `android.versionCode` (et `ios.buildNumber`) dans `app.json` à chaque envoi, puis :
+
+  ```bash
+  export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=~/Library/Android/sdk
+  CI=1 npx expo prebuild -p android --clean
+  cd android && NODE_ENV=production ./gradlew bundleRelease   # → android/app/build/outputs/bundle/release/app-release.aab
+  ```
+
+- Clé Google Maps (projet Google Cloud « Spettacolli », « Maps Platform API Key ») : limitée à **Maps SDK for Android** et aux applications Android `fr.spettacoli.app` signées par l'une de ces clés (SHA-1). Une clé de signature absente de la liste fait planter la carte.
+
+  | Clé | SHA-1 |
+  |---|---|
+  | Débogage (émulateur, `android/app/debug.keystore`) | `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` |
+  | Envoi (`~/.android-cles/spettacoli-upload.jks`) | `88:33:14:FD:B9:A9:80:CE:62:67:9E:90:0F:E9:76:EC:7F:63:FB:03` |
+  | Signature de Google Play (Play Console › Signature d'application) | `5A:F3:DC:BC:E2:C7:05:35:28:10:79:BA:9E:02:52:E2:3E:11:00:72` |
+
+- Liens universels Android (à venir) : SHA-256 de la clé de signature de Google Play, pour `assetlinks.json` : `C2:51:76:64:25:A3:C0:9E:F2:44:A6:4D:DE:7E:28:FC:9E:1E:06:0E:DA:8C:86:8A:3B:B5:F7:CE:F9:56:81:C2`.
+
 ## L'API locale (Herd)
 
 - Adresse : `app/.env` → `EXPO_PUBLIC_API_URL=https://spettacoli.test` (le back-office servi par Herd sur le Mac).

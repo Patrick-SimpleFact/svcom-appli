@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Spettacoli · Les spectacles autour de vous, ce soir</title>
-    <meta name="description" content="Théâtre, concerts, humour, danse, cirque : tous les spectacles vivants autour de vous, ce soir, au même endroit, avec la réservation en un geste.">
+    <meta name="description" content="Théâtre, concerts, humour, danse, cirque : tous les spectacles vivants autour de vous, ce soir, au même endroit, avec la réservation en un geste.">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Spettacoli · Les spectacles autour de vous, ce soir">
     <meta property="og:description" content="Tous les spectacles vivants près de chez vous, au même endroit.">
@@ -42,6 +42,7 @@
         .beta-ligne { display: flex; gap: 8px; flex-wrap: wrap; }
         .beta input[type=email], .beta .ville-saisie { flex: 1 1 220px; min-height: 52px; border-radius: 26px; border: 1px solid var(--trait); background: var(--carte); padding: 0 20px; font: inherit; font-size: 16px; color: var(--encre); }
         .beta .ville-saisie { flex: 1 1 180px; }
+        .beta input[type=email] { flex-basis: 100%; } /* le texte d'aide (compte Apple ou Google) doit tenir en entier */
         .beta-envoyer { margin-top: 14px; }
         .beta-options { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 12px; font-size: 15px; color: var(--gris); }
         .choix { display: inline-flex; gap: 6px; align-items: center; color: var(--encre); font-weight: 600; min-height: 44px; cursor: pointer; }
@@ -49,6 +50,9 @@
         .consentement { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--gris); margin-top: 10px; }
         .consentement input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--rouge); }
         .beta-erreur { color: #b42318; font-size: 14px; margin: 8px 0 0; }
+        .beta-compte { display: flex; gap: 12px; align-items: flex-start; background: #FCEDEA; border: 1.5px solid var(--rouge); border-radius: 12px; padding: 12px 16px; margin: 0 0 14px; font-size: 15.5px; line-height: 1.45; }
+        .beta-compte b { color: var(--rouge); }
+        .beta-compte svg { flex: none; margin-top: 2px; }
         .beta-merci { background: var(--carte); border-left: 4px solid var(--rouge); border-radius: 10px; padding: 12px 16px; margin: 0; }
         .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
         .pot { position: absolute; left: -10000px; }
@@ -110,7 +114,7 @@
 <body>
     <header class="haut cadre">
         <a class="logo" href="{{ url('/') }}">Spettacoli<span>.</span></a>
-        <a class="lien-theatre" href="#theatres">Vous êtes un théâtre ?</a>
+        <a class="lien-theatre" href="#theatres">Vous êtes un théâtre ?</a>
     </header>
 
     <main>
@@ -118,7 +122,7 @@
             <div>
                 <p class="surtitre">Théâtre · Concerts · Humour · Danse · Cirque</p>
                 <h1 class="titraille">Ce soir,<br>près de vous.</h1>
-                <p class="chapeau">Tous les spectacles vivants autour de vous, au même endroit : l’heure, le lieu, le prix, et la réservation en un geste.</p>
+                <p class="chapeau">Tous les spectacles vivants autour de vous, au même endroit : l’heure, le lieu, le prix, et la réservation en un geste.</p>
                 <div class="actions">
                     @if ($app['app_store'] || $app['google_play'])
                         @if ($app['app_store'])<a class="bouton noir" href="{{ $app['app_store'] }}">Télécharger sur l’App Store</a>@endif
@@ -138,16 +142,21 @@
                         @if (session('beta'))
                             <p class="beta-merci" role="status">{{ session('beta') }}</p>
                         @else
-                            <div class="beta-ligne">
-                                <label class="sr" for="beta-email">Votre e-mail</label>
-                                <input id="beta-email" type="email" name="email" placeholder="Votre e-mail" autocomplete="email" required value="{{ old('email') }}">
-                                <input id="beta-ville" class="ville-saisie" type="text" name="ville" placeholder="Votre ville (facultatif)" value="{{ old('ville') }}" maxlength="100" aria-label="Votre ville (facultatif)">
-                            </div>
                             <div class="beta-options">
-                                <span>Votre téléphone :</span>
+                                <span>Votre téléphone :</span>
                                 @foreach (\App\Models\InscriptionBeta::PLATEFORMES as $code => $nom)
                                     <label class="choix"><input type="radio" name="plateforme" value="{{ $code }}" @checked(old('plateforme') === $code) required> {{ $nom }}</label>
                                 @endforeach
+                            </div>
+                            {{-- L'invitation TestFlight ou Google Play ne marche qu'avec le compte du téléphone : le dire avant la saisie. --}}
+                            <p class="beta-compte" id="beta-compte">
+                                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#D23A1F"/><path d="M12 6.5v7M12 16.8v.2" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+                                <span id="beta-compte-texte"><b>Important :</b> indiquez l’adresse e-mail du compte de votre téléphone, celle de votre <b>identifiant Apple</b> sur iPhone ou de votre <b>compte Google</b> sur Android. L’invitation à la bêta ne fonctionne qu’avec ce compte.</span>
+                            </p>
+                            <div class="beta-ligne">
+                                <label class="sr" for="beta-email">E-mail du compte Apple ou Google de votre téléphone</label>
+                                <input id="beta-email" type="email" name="email" placeholder="E-mail du compte Apple ou Google de votre téléphone" autocomplete="email" required value="{{ old('email') }}" aria-describedby="beta-compte-texte">
+                                <input id="beta-ville" class="ville-saisie" type="text" name="ville" placeholder="Votre ville (facultatif)" value="{{ old('ville') }}" maxlength="100" aria-label="Votre ville (facultatif)">
                             </div>
                             <label class="consentement"><input type="checkbox" name="consentement" value="1" @checked(old('consentement'))>
                                 <span>J’accepte de recevoir un e-mail à l’ouverture de la bêta. Rien d’autre, désinscription en un clic (<a href="{{ url('/confidentialite') }}">confidentialité</a>).</span></label>
@@ -159,7 +168,7 @@
             </div>
             @if ($apercu)
             <div class="telephone-zone">
-                <div class="telephone" aria-label="Aperçu de l’application : les spectacles autour de vous">
+                <div class="telephone" aria-label="Aperçu de l’application : les spectacles autour de vous">
                     <div class="ecran" id="ecran">@include('web.accueil-apercu')</div>
                 </div>
                 <button type="button" class="localiser" id="localiser">
@@ -178,12 +187,12 @@
                 <div class="point">
                     <div class="pastille"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></div>
                     <h3>Autour de vous</h3>
-                    <p>Ce soir, demain ou ce week-end : les spectacles les plus proches d’abord, à pied ou à quelques minutes.</p>
+                    <p>Ce soir, demain ou ce week-end : les spectacles les plus proches d’abord, à pied ou à quelques minutes.</p>
                 </div>
                 <div class="point">
                     <div class="pastille"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
                     <h3>Tout au même endroit</h3>
-                    <p>Grandes salles, petits théâtres, concerts, humour, festivals : une seule liste, sans doublons.</p>
+                    <p>Grandes salles, petits théâtres, concerts, humour, festivals : une seule liste, sans doublons.</p>
                 </div>
                 <div class="point">
                     <div class="pastille"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 0 0 6v3h18v-3a2 2 0 0 0 0-6V6H3z"/><path d="M13 6v12" stroke-dasharray="2 2"/></svg></div>
@@ -212,7 +221,7 @@
         <section class="bande cadre" id="theatres">
             <div class="theatres">
                 <div>
-                    <h2 class="titraille">Vous êtes un théâtre ou une billetterie ?</h2>
+                    <h2 class="titraille">Vous êtes un théâtre ou une billetterie ?</h2>
                     <p>Spettacoli met vos spectacles sous les yeux du public qui cherche une sortie, ce soir, tout près de chez vous.</p>
                 </div>
                 <div>
@@ -241,6 +250,21 @@
     </footer>
 
     <script>
+        // Bêta : le texte et le champ e-mail nomment le compte du téléphone choisi (identifiant Apple ou compte Google).
+        (function () {
+            var texte = document.getElementById('beta-compte-texte'), email = document.getElementById('beta-email');
+            if (!texte) return;
+            var messages = {
+                ios: ['<b>Important :</b> indiquez l’adresse e-mail de votre <b>identifiant Apple</b>, celle utilisée sur votre iPhone (Réglages › votre nom). L’invitation TestFlight ne fonctionne qu’avec ce compte.', 'E-mail de votre identifiant Apple'],
+                android: ['<b>Important :</b> indiquez l’adresse de votre <b>compte Google</b>, celle utilisée par le Play Store de votre téléphone (souvent une adresse Gmail). L’invitation Google Play ne fonctionne qu’avec ce compte.', 'Adresse Gmail de votre compte Google']
+            };
+            function choisir(code) { if (messages[code]) { texte.innerHTML = messages[code][0]; email.placeholder = messages[code][1]; } }
+            document.querySelectorAll('input[name=plateforme]').forEach(function (r) {
+                r.addEventListener('change', function () { choisir(r.value); });
+                if (r.checked) choisir(r.value);
+            });
+        })();
+
         // « Voir les spectacles autour de moi » : la position part dans le corps d'une requête (jamais dans l'adresse) et n'est pas enregistrée.
         (function () {
             var bouton = document.getElementById('localiser'), message = document.getElementById('message-position');
@@ -256,7 +280,7 @@
                         .catch(function () { message.textContent = 'Impossible de charger les spectacles. Réessayez plus tard.'; })
                         .finally(function () { bouton.disabled = false; });
                 }, function () {
-                    bouton.disabled = false; message.textContent = 'Position non disponible : nous gardons l’estimation actuelle.';
+                    bouton.disabled = false; message.textContent = 'Position non disponible : nous gardons l’estimation actuelle.';
                 }, { timeout: 10000, maximumAge: 600000 });
             });
         })();

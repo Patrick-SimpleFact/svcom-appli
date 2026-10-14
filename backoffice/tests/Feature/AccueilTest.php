@@ -43,7 +43,7 @@ it('montre les spectacles de ce soir (Paris par défaut), les villes pilotes fou
         ->assertSee('Pièce parisienne')->assertSee('Exemple à Paris')
         ->assertSee('/s/piece-parisienne-', false)
         ->assertSee('18 000')->assertSee('Avignon')->assertDontSee('Courthézon') // moins de 50 représentations : pas montrée
-        ->assertSee('Vous êtes un théâtre ou une billetterie ?')->assertSee('Bientôt sur l’App Store et Google Play')
+        ->assertSee('Vous êtes un théâtre ou une billetterie ?') // espace insécable avant « ? »->assertSee('Bientôt sur l’App Store et Google Play')
         ->assertDontSee('fonts.googleapis.com');
 
     // Plus de 5 spectacles : les vrais genres passent avant « Autres », affichés dans l'ordre des heures.
