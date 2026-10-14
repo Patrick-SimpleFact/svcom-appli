@@ -31,7 +31,8 @@ beforeEach(function () {
 
 it('inscrit après confirmation par e-mail seulement', function () {
     $this->get('/')->assertSee('Testez Spettacoli en avant-première')
-        ->assertSee('indiquez l’adresse e-mail du compte de votre téléphone', false); // invitation TestFlight / Google Play liée à ce compte
+        ->assertSee('indiquez l’adresse e-mail que vous utilisez sur votre téléphone pour télécharger des applis', false)
+        ->assertDontSee('identifiant Apple')->assertDontSee('compte Google'); // classés en hameçonnage par Google Safe Browsing (14/10/2026)
     $this->post('/beta', ($this->formulaire)())->assertRedirect(url('/').'#beta');
     $this->get('/')->assertDontSee('Prévenez-moi'); // message de remerciement à la place
 
