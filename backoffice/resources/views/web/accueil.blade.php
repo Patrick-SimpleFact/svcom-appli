@@ -162,14 +162,15 @@
                                     <label class="choix"><input type="radio" name="plateforme" value="{{ $code }}" @checked(old('plateforme') === $code) required> {{ $nom }}</label>
                                 @endforeach
                             </div>
-                            {{-- L'invitation TestFlight ou Google Play ne marche qu'avec le compte du téléphone : le dire avant la saisie. --}}
+                            {{-- L'invitation TestFlight ou Google Play ne marche qu'avec l'adresse de la boutique d'applis : le dire avant la saisie,
+                                 sans parler d'« identifiant Apple » ni de « compte Google » (pris pour de l'hameçonnage par Google). --}}
                             <p class="beta-compte" id="beta-compte">
                                 <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#D23A1F"/><path d="M12 6.5v7M12 16.8v.2" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
-                                <span id="beta-compte-texte"><b>Important :</b> indiquez l’adresse e-mail du compte de votre téléphone, celle de votre <b>identifiant Apple</b> sur iPhone ou de votre <b>compte Google</b> sur Android. L’invitation à la bêta ne fonctionne qu’avec ce compte.</span>
+                                <span id="beta-compte-texte"><b>Important :</b> indiquez l’adresse e-mail que vous utilisez sur votre téléphone pour télécharger des applis (App Store ou Play Store). C’est à cette adresse que nous enverrons l’invitation à la bêta, et elle ne fonctionnera qu’avec elle.</span>
                             </p>
                             <div class="beta-ligne">
-                                <label class="sr" for="beta-email">E-mail du compte Apple ou Google de votre téléphone</label>
-                                <input id="beta-email" type="email" name="email" placeholder="E-mail du compte Apple ou Google de votre téléphone" autocomplete="email" required value="{{ old('email') }}" aria-describedby="beta-compte-texte">
+                                <label class="sr" for="beta-email">Votre e-mail</label>
+                                <input id="beta-email" type="email" name="email" placeholder="Votre e-mail" autocomplete="email" required value="{{ old('email') }}" aria-describedby="beta-compte-texte">
                                 <input id="beta-ville" class="ville-saisie" type="text" name="ville" placeholder="Votre ville (facultatif)" value="{{ old('ville') }}" maxlength="100" aria-label="Votre ville (facultatif)">
                             </div>
                             <label class="consentement"><input type="checkbox" name="consentement" value="1" @checked(old('consentement'))>
@@ -263,14 +264,15 @@
         <span>Programmes issus de billetteries, d’agendas et de sources publiques (DATAtourisme, OpenAgenda, Que faire à Paris…). Localisation approximative par adresse IP : <a href="https://db-ip.com">DB-IP</a> (CC BY 4.0).</span>
     </footer>
 
+    {{-- Bêta : le texte et le champ e-mail nomment la boutique d'applis du téléphone choisi. Ne jamais parler d'« identifiant Apple »
+         ou de « compte Google » à côté d'un champ e-mail : Google Safe Browsing a classé la page en hameçonnage le 14/10/2026. --}}
     <script>
-        // Bêta : le texte et le champ e-mail nomment le compte du téléphone choisi (identifiant Apple ou compte Google).
         (function () {
             var texte = document.getElementById('beta-compte-texte'), email = document.getElementById('beta-email');
             if (!texte) return;
             var messages = {
-                ios: ['<b>Important :</b> indiquez l’adresse e-mail de votre <b>identifiant Apple</b>, celle utilisée sur votre iPhone (Réglages › votre nom). L’invitation TestFlight ne fonctionne qu’avec ce compte.', 'E-mail de votre identifiant Apple'],
-                android: ['<b>Important :</b> indiquez l’adresse de votre <b>compte Google</b>, celle utilisée par le Play Store de votre téléphone (souvent une adresse Gmail). L’invitation Google Play ne fonctionne qu’avec ce compte.', 'Adresse Gmail de votre compte Google']
+                ios: ['<b>Important :</b> indiquez l’adresse e-mail que vous utilisez sur votre iPhone pour l’App Store. C’est à cette adresse que nous enverrons l’invitation à la bêta (par TestFlight), et elle ne fonctionnera qu’avec elle.', 'Votre e-mail (celui de l’App Store)'],
+                android: ['<b>Important :</b> indiquez l’adresse e-mail que vous utilisez sur votre téléphone pour le Play Store (souvent une adresse Gmail). C’est à cette adresse que nous enverrons l’invitation à la bêta, et elle ne fonctionnera qu’avec elle.', 'Votre e-mail (celui du Play Store)']
             };
             function choisir(code) { if (messages[code]) { texte.innerHTML = messages[code][0]; email.placeholder = messages[code][1]; } }
             document.querySelectorAll('input[name=plateforme]').forEach(function (r) {
