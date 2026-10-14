@@ -18,6 +18,7 @@ use App\Models\StatutUtilisateur;
 use App\Models\Utilisateur;
 use App\Models\Ville;
 use App\Support\Point;
+use App\Web\AntiRobot;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ParametresSeeder;
 use Illuminate\Support\Facades\Crypt;
@@ -52,7 +53,7 @@ it('enregistre une demande, la rapproche du référentiel, confirme et prévient
 
 it('exige le consentement et filtre les robots sans le leur dire', function () {
     $this->post('/espace-salle/demande', ($this->formulaire)(['consentement' => null]))->assertSessionHasErrors('consentement');
-    $this->post('/espace-salle/demande', ($this->formulaire)(['site_entreprise' => 'spam']))->assertRedirect('/espace-salle/merci');
+    $this->post('/espace-salle/demande', ($this->formulaire)([AntiRobot::CHAMP => 'spam']))->assertRedirect('/espace-salle/merci');
     $this->post('/espace-salle/demande', ($this->formulaire)(['debut' => Crypt::encrypt(now()->timestamp)]))->assertRedirect('/espace-salle/merci');
 
     expect(DemandeEspaceSalle::count())->toBe(0);

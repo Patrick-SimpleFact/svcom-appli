@@ -151,7 +151,7 @@
                     <form class="beta" id="beta" method="post" action="{{ route('beta.inscrire') }}">
                         @csrf
                         <input type="hidden" name="debut" value="{{ encrypt(now()->timestamp) }}">
-                        <div class="pot" aria-hidden="true"><label>Ne pas remplir <input type="text" name="site_entreprise" tabindex="-1" autocomplete="off"></label></div>
+                        <div class="pot" aria-hidden="true"><label>Ne pas remplir <input type="text" name="{{ \App\Web\AntiRobot::CHAMP }}" tabindex="-1" autocomplete="off"></label></div>
                         <p class="beta-titre">Testez Spettacoli en avant-première</p>
                         @if (session('beta'))
                             <p class="beta-merci" role="status">{{ session('beta') }}</p>

@@ -4,10 +4,12 @@ use App\Filament\Resources\InscriptionsBeta\Pages\ListInscriptionsBeta;
 use App\Mail\InscriptionBetaMail;
 use App\Models\Admin;
 use App\Models\InscriptionBeta;
+use App\Web\AntiRobot;
 use App\Web\ListeAttenteBeta;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ParametresSeeder;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -45,12 +47,23 @@ it('inscrit après confirmation par e-mail seulement', function () {
 
 it('exige le consentement et iPhone ou Android ; filtre les robots ; n’inonde pas une adresse', function () {
     $this->post('/beta', ($this->formulaire)(['consentement' => null, 'plateforme' => null]))->assertSessionHasErrorsIn('beta', ['consentement', 'plateforme']);
-    $this->post('/beta', ($this->formulaire)(['site_entreprise' => 'spam']));
+    $this->post('/beta', ($this->formulaire)([AntiRobot::CHAMP => 'spam']));
     expect(InscriptionBeta::count())->toBe(0);
 
     $this->post('/beta', ($this->formulaire)());
     $this->post('/beta', ($this->formulaire)());
     Mail::assertSent(InscriptionBetaMail::class, 1);
+});
+
+it('ne prend pas une saisie automatique (champ « Société ») pour un robot, et journalise la raison d’un rejet', function () {
+    // Précaution : l'ancien champ piège « site_entreprise » ressemblait à un champ « Société » que les navigateurs remplissent seuls.
+    $this->post('/beta', ($this->formulaire)(['site_entreprise' => 'SimpleFact']));
+    expect(InscriptionBeta::count())->toBe(1);
+
+    Log::spy();
+    $this->post('/beta', ($this->formulaire)(['email' => 'robot@exemple.fr', 'debut' => 'illisible']));
+    Log::shouldHaveReceived('info')->with('Formulaire ignoré (anti-robot)', ['formulaire' => 'beta', 'raison' => 'horodatage_illisible'])->once();
+    expect(InscriptionBeta::count())->toBe(1);
 });
 
 it('désinscrit en un bouton et efface les inscriptions jamais confirmées après 30 jours', function () {

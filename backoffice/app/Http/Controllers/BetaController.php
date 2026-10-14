@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\InscriptionBeta;
+use App\Web\AntiRobot;
 use App\Web\ListeAttenteBeta;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -24,7 +23,7 @@ class BetaController extends Controller
         ], ['consentement.accepted' => 'Cochez la case pour que nous puissions vous écrire.', 'plateforme.required' => 'Choisissez iPhone ou Android.']);
 
         // Anti-robot sans service tiers (champ piège, 3 s minimum) ; la réponse est la même dans tous les cas.
-        if (blank($request->input('site_entreprise')) && ! $this->tropRapide($request->input('debut'))) {
+        if (AntiRobot::raison($request, 'beta') === null) {
             $liste->inscrire($d['email'], $d['plateforme'], $d['ville'] ?? null);
         }
 
@@ -49,14 +48,5 @@ class BetaController extends Controller
         $liste->desinscrire($inscription);
 
         return view('web.message', ['titre' => 'C’est fait', 'texte' => 'Votre adresse a été effacée de la liste d’attente.']);
-    }
-
-    private function tropRapide(?string $debut): bool
-    {
-        try {
-            return now()->timestamp - (int) Crypt::decrypt((string) $debut) < EspaceSalleController::SECONDES_MIN;
-        } catch (DecryptException) {
-            return true;
-        }
     }
 }

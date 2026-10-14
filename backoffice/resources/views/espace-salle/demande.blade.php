@@ -12,7 +12,7 @@
         @csrf
         <input type="hidden" name="debut" value="{{ encrypt(now()->timestamp) }}">
         {{-- Champ piège, invisible pour les personnes : les robots le remplissent. --}}
-        <div class="pot" aria-hidden="true"><label>Ne pas remplir <input type="text" name="site_entreprise" tabindex="-1" autocomplete="off"></label></div>
+        <div class="pot" aria-hidden="true"><label>Ne pas remplir <input type="text" name="{{ \App\Web\AntiRobot::CHAMP }}" tabindex="-1" autocomplete="off"></label></div>
 
         <section class="bloc">
             <strong>Le lieu</strong>

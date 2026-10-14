@@ -8,11 +8,10 @@ use App\Exceptions\ErreurApi;
 use App\Models\Representation;
 use App\Models\StatutUtilisateur;
 use App\Models\Utilisateur;
+use App\Web\AntiRobot;
 use Carbon\CarbonImmutable;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -25,9 +24,6 @@ class EspaceSalleController extends Controller
 {
     /** Clé de session du compte connecté à l'espace salle (séparé du back-office). */
     public const SESSION = 'espace_salle_utilisateur';
-
-    /** Un formulaire rempli plus vite que ça est l'œuvre d'un robot. */
-    public const SECONDES_MIN = 3;
 
     public function demande(): View
     {
@@ -52,7 +48,7 @@ class EspaceSalleController extends Controller
         ], ['consentement.accepted' => 'Cochez la case pour que nous puissions traiter votre demande.']);
 
         // Anti-robot sans service tiers : champ piège rempli, ou formulaire envoyé trop vite. On fait comme si de rien n'était.
-        if (filled($request->input('site_entreprise')) || $this->tropRapide($request->input('debut'))) {
+        if (AntiRobot::raison($request, 'espace_salle') !== null) {
             return redirect()->route('espace-salle.merci');
         }
 
@@ -152,15 +148,6 @@ class EspaceSalleController extends Controller
     public static function estGestionnaire(Utilisateur $u): bool
     {
         return $u->supprime_le === null && $u->statuts()->where('statut', StatutUtilisateur::GESTIONNAIRE_LIEU)->exists();
-    }
-
-    private function tropRapide(?string $debut): bool
-    {
-        try {
-            return now()->timestamp - (int) Crypt::decrypt((string) $debut) < self::SECONDES_MIN;
-        } catch (DecryptException) {
-            return true;
-        }
     }
 
     /** Les spectacles à venir du lieu (lecture seule), prochaine date d'abord. */
