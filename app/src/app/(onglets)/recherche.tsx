@@ -15,7 +15,7 @@ import { jourLong } from '@/fiche/fiche';
 import { ajouterJours, versCarte } from '@/fiche/pages';
 import {
   ajouterRecente, chargerPropositions, chercher, type Criteres, enregistrerRecentes, jourTalon, LIBELLES_TRIS, lireRecentes, type Propositions, puces, type Recente, type Resultats, retirer,
-  type Tri, toutEffacer, VILLES_PILOTES, weekEnd,
+  type Tri, toutEffacer, weekEnd,
 } from '@/recherche/recherche';
 
 /** Genres proposés en raccourci (maquette « Rechercher »). */
@@ -29,6 +29,8 @@ type Etat = { mode: 'saisie' } | { mode: 'resultats'; criteres: Criteres; result
 /** Onglet « Rechercher » (F4, maquette « Rechercher ») : une seule barre pour les spectacles, artistes, lieux et villes. */
 export default function Recherche() {
   const { configuration } = useDemarrage();
+  /** Villes pilotes cochées dans le BO (configuration du démarrage) ; rubrique masquée si le BO n'a pas répondu. */
+  const villesPilotes = configuration?.villes_pilotes ?? [];
   const [texte, setTexte] = useState('');
   const [propositions, setPropositions] = useState<Propositions | null>(null);
   const [recentes, setRecentes] = useState<Recente[]>([]);
@@ -101,15 +103,6 @@ export default function Recherche() {
       ouvrirFiche(r.id, undefined, null, 'recherche');
     } else {
       router.push({ pathname: r.type === 'lieu' ? '/lieu/[id]' : '/artiste/[id]', params: { id: String(r.id) } });
-    }
-  };
-
-  /** Ville pilote : retrouvée par son nom parmi les villes proposées. */
-  const villePilote = async (nom: string) => {
-    const p = await chargerPropositions(nom).catch(() => null);
-    const ville = p?.villes.find((v) => v.nom === nom) ?? p?.villes[0];
-    if (ville) {
-      ouvrirVille({ id: ville.id, nom: ville.nom, lat: ville.lat, lon: ville.lon });
     }
   };
 
@@ -188,16 +181,21 @@ export default function Recherche() {
             ))}
           </View>
         </View>
-        <View style={styles.bloc}>
-          <Text style={styles.rubrique}>Villes pilotes</Text>
-          <View style={styles.villes}>
-            {VILLES_PILOTES.map((v) => (
-              <Pressable key={v} style={styles.ville} onPress={() => villePilote(v)} accessibilityRole="button">
-                <Text style={styles.villeTexte}>{v}</Text>
-              </Pressable>
-            ))}
+        {villesPilotes.length > 0 && (
+          <View style={styles.bloc}>
+            <Text style={styles.rubrique}>Villes pilotes</Text>
+            <View style={styles.villes}>
+              {villesPilotes.map((v) => (
+                <Pressable key={v.id} style={styles.ville} onPress={() => ouvrirVille(v)} accessibilityRole="button">
+                  {/* Un nom d'un seul mot rétrécit plutôt que d'être coupé ; un nom composé passe sur deux lignes. */}
+                  <Text style={styles.villeTexte} numberOfLines={/[\s-]/.test(v.nom) ? 2 : 1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                    {v.nom}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </View>
     );
   }
@@ -516,9 +514,9 @@ const styles = StyleSheet.create({
   puceSombre: { borderColor: Couleurs.encre, backgroundColor: Couleurs.encre },
   puceTexte: { fontFamily: Polices.texteMoyen, fontSize: 14, color: Couleurs.encre },
   puceTexteSombre: { fontFamily: Polices.texteGras, color: '#FFFFFF' },
-  villes: { flexDirection: 'row', gap: 8 },
-  ville: { flex: 1, height: 64, borderRadius: Espaces.rayonCarte, borderWidth: 1, borderColor: Couleurs.traitCarte, backgroundColor: Couleurs.carte, alignItems: 'center', justifyContent: 'center' },
-  villeTexte: { fontFamily: Polices.titre, fontSize: 17, color: Couleurs.encre },
+  villes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  ville: { flexGrow: 1, flexBasis: '30%', minHeight: 64, paddingHorizontal: 10, paddingVertical: 8, borderRadius: Espaces.rayonCarte, borderWidth: 1, borderColor: Couleurs.traitCarte, backgroundColor: Couleurs.carte, alignItems: 'center', justifyContent: 'center' },
+  villeTexte: { fontFamily: Polices.titre, fontSize: 17, textAlign: 'center', color: Couleurs.encre },
   groupes: { gap: 18 },
   groupeTitre: { marginBottom: 2, fontFamily: Polices.texteTresGras, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: Couleurs.gris },
   proposition: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, borderBottomWidth: 1, borderBottomColor: Couleurs.traitCarte },

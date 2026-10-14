@@ -69,6 +69,9 @@ class AppareilController extends Controller
             'messages_service' => MessageService::aAfficher($villeId)->get()
                 ->map(fn (MessageService $m) => ['id' => $m->id, 'type' => $m->type->value, 'texte' => $m->texte])->values(),
             'poser_question_suggestion' => $poserQuestion,
+            // Rechercher › Villes pilotes : celles cochées dans le BO, la plus peuplée d'abord.
+            'villes_pilotes' => Ville::where('est_pilote', true)->orderByDesc('population')->orderBy('nom')->get()
+                ->map(fn (Ville $v) => ['id' => $v->id, 'nom' => $v->nom, 'lat' => $v->position->latitude, 'lon' => $v->position->longitude])->values(),
             // Profil › À propos (F1.6) et demande d'espace salle (F9.1) : pages web du BO.
             'liens' => [
                 'confidentialite' => url('/confidentialite'), 'conditions' => url('/conditions'), 'mentions_legales' => url('/mentions-legales'),
