@@ -5,12 +5,18 @@ use App\Http\Controllers\BetaController;
 use App\Http\Controllers\EspaceSalleController;
 use App\Http\Controllers\PageLegaleController;
 use App\Http\Controllers\PartageController;
+use App\Http\Controllers\ReferencementController;
 use App\Http\Middleware\ConnecteEspaceSalle;
+use App\Http\Middleware\VersSitePublic;
 use Illuminate\Support\Facades\Route;
 
 // Page d'accueil du site (W05a).
-Route::get('/', [AccueilController::class, 'accueil'])->name('accueil');
+Route::get('/', [AccueilController::class, 'accueil'])->name('accueil')->middleware(VersSitePublic::class);
 Route::post('accueil/autour', [AccueilController::class, 'apercuPosition'])->name('accueil.autour')->middleware('throttle:30,1');
+
+// Moteurs de recherche (SEO 1) : robots.txt selon le domaine, plan du site sur le domaine principal.
+Route::get('robots.txt', [ReferencementController::class, 'robots']);
+Route::get('sitemap.xml', [ReferencementController::class, 'plan'])->middleware(VersSitePublic::class);
 
 // Liste d'attente de la bêta (W05b) : double opt-in, désinscription en un bouton.
 Route::post('beta', [BetaController::class, 'inscrire'])->name('beta.inscrire')->middleware('throttle:5,60');

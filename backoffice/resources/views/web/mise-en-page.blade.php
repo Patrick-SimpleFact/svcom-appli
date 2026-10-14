@@ -6,6 +6,9 @@
     {{-- Page d'un lien partagé : pas une version web de l'app, donc pas d'indexation (F5.8). --}}
     <meta name="robots" content="noindex">
     <title>@yield('titre') · Spettacoli</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/images/favicon-48.png" type="image/png" sizes="48x48">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     @yield('meta')
     <style>
         :root { --rouge: #D23A1F; --encre: #1d1a17; --gris: #6b6560; --fond: #faf7f2; --carte: #fff; --trait: #e7e1d8; }
