@@ -7,6 +7,7 @@ use App\Http\Controllers\PageLegaleController;
 use App\Http\Controllers\PartageController;
 use App\Http\Controllers\ReferencementController;
 use App\Http\Middleware\ConnecteEspaceSalle;
+use App\Http\Middleware\VersBackOffice;
 use App\Http\Middleware\VersSitePublic;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +31,8 @@ Route::get('.well-known/apple-app-site-association', [PartageController::class, 
 Route::get('.well-known/assetlinks.json', [PartageController::class, 'android']);
 
 // Espace salle (F9.1) : demande publique, connexion par lien d'invitation ou code e-mail, accueil des théâtres.
-Route::prefix('espace-salle')->name('espace-salle.')->group(function () {
+// Servi seulement sur le sous-domaine du back-office (VersBackOffice) : jamais de page de connexion sur le domaine principal.
+Route::prefix('espace-salle')->name('espace-salle.')->middleware(VersBackOffice::class)->group(function () {
     Route::get('demande', [EspaceSalleController::class, 'demande'])->name('demande');
     Route::post('demande', [EspaceSalleController::class, 'deposer'])->name('deposer')->middleware('throttle:5,60');
     Route::get('merci', [EspaceSalleController::class, 'merci'])->name('merci');

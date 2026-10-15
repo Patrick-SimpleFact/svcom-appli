@@ -49,3 +49,15 @@ it('donne à l’accueil son adresse canonique, son image de partage et ses donn
         ->and(file_exists(public_path('images/logo-512.png')))->toBeTrue()
         ->and(filesize(public_path('favicon.ico')))->toBeGreaterThan(0);
 });
+
+it('sert l’espace salle seulement sur le sous-domaine : pas de page de connexion sur le domaine principal', function () {
+    config(['app.url' => 'https://spettacoli.spectacles-vivants.com']);
+
+    $this->get('https://spectacles-vivants.com/espace-salle/connexion')->assertStatus(301)->assertRedirect('https://spettacoli.spectacles-vivants.com/espace-salle/connexion');
+    $this->get('https://spectacles-vivants.com/espace-salle/demande?source=accueil')->assertStatus(301)->assertRedirect('https://spettacoli.spectacles-vivants.com/espace-salle/demande?source=accueil');
+    $this->get('https://spettacoli.spectacles-vivants.com/espace-salle/connexion')->assertOk();
+
+    $this->get('https://spectacles-vivants.com/')->assertOk()
+        ->assertSee('href="https://spettacoli.spectacles-vivants.com/espace-salle/connexion"', false)
+        ->assertDontSee('href="https://spectacles-vivants.com/espace-salle/', false);
+});

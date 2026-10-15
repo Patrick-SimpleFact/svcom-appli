@@ -246,8 +246,8 @@
                         <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg><span><b>Gratuit</b> : vos spectacles sont déjà peut-être dans Spettacoli.</span></li>
                     </ul>
                     <div class="actions" style="margin-top: 26px">
-                        <a class="bouton blanc" href="{{ url('/espace-salle/demande') }}">Demander votre espace</a>
-                        <a class="bouton contour" href="{{ url('/espace-salle/connexion') }}">Se connecter</a>
+                        <a class="bouton blanc" href="{{ config('app.url') }}/espace-salle/demande">Demander votre espace</a>
+                        <a class="bouton contour" href="{{ config('app.url') }}/espace-salle/connexion">Se connecter</a>
                     </div>
                 </div>
             </div>
@@ -259,7 +259,7 @@
             <a href="{{ url('/mentions-legales') }}">Mentions légales</a>
             <a href="{{ url('/confidentialite') }}">Confidentialité</a>
             <a href="{{ url('/conditions') }}">Conditions d’utilisation</a>
-            <a href="{{ url('/espace-salle/demande') }}">Espace salle</a>
+            <a href="{{ config('app.url') }}/espace-salle/demande">Espace salle</a>
         </nav>
         <span>Programmes issus de billetteries, d’agendas et de sources publiques (DATAtourisme, OpenAgenda, Que faire à Paris…). Localisation approximative par adresse IP : <a href="https://db-ip.com">DB-IP</a> (CC BY 4.0).</span>
     </footer>
