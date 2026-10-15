@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Comptes\CodesConnexion;
 use App\Comptes\Comptes;
 use App\Comptes\JetonsExternes;
+use App\Comptes\RevocationApple;
 use App\Http\Controllers\Controller;
+use App\Models\ConnexionExterne;
 use App\Models\Utilisateur;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,10 +52,23 @@ class CompteController extends Controller
 
     private function externe(string $fournisseur, Request $request, JetonsExternes $jetons, Comptes $comptes): JsonResponse
     {
-        $d = $request->validate(['jeton' => ['required', 'string', 'max:5000'], ...self::REGLES_INVITE]);
+        $d = $request->validate([
+            'jeton' => ['required', 'string', 'max:5000'],
+            // Apple seulement : code d'autorisation, échangé pour pouvoir révoquer l'accès à la suppression du compte (M10b).
+            'code_autorisation' => ['nullable', 'string', 'max:2000'],
+            ...self::REGLES_INVITE,
+        ]);
         $identite = $jetons->verifier($fournisseur, $d['jeton']);
+        $reponse = $comptes->connecter($identite['email'], $fournisseur, $identite['identifiant'], $request->attributes->get('appareil'), $d);
 
-        return $this->json($comptes->connecter($identite['email'], $fournisseur, $identite['identifiant'], $request->attributes->get('appareil'), $d));
+        if ($fournisseur === 'apple' && filled($d['code_autorisation'] ?? null)) {
+            $connexion = ConnexionExterne::where('fournisseur', 'apple')->where('identifiant_fournisseur', $identite['identifiant'])->first();
+            if ($connexion) {
+                app(RevocationApple::class)->enregistrer($connexion, $d['code_autorisation']);
+            }
+        }
+
+        return $this->json($reponse);
     }
 
     public function deconnexion(Request $request): JsonResponse

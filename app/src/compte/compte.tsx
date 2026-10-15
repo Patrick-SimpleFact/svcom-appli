@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { appelApi, definirJeton, ErreurApi, quandJetonRefuse } from '@/api/client';
+import { type JetonExterne, oublierGoogle } from '@/compte/fournisseurs';
 import type { Gouts } from '@/gouts/gouts';
 
 /** Compte connecté (`GET /v1/moi`, API §7). */
@@ -20,7 +21,7 @@ export type Utilisateur = {
   preferences: { genres: number[]; rayon_m: number | null } | null;
 };
 
-type Connexion = { jeton: string; nouveau_compte: boolean; utilisateur: Utilisateur };
+export type Connexion = { jeton: string; nouveau_compte: boolean; utilisateur: Utilisateur };
 
 /** Le jeton est un secret : il est gardé dans le trousseau du téléphone, jamais en clair. */
 const CLE_JETON = 'spettacoli.jeton';
@@ -34,6 +35,14 @@ export function demanderCode(email: string): Promise<{ envoye: boolean; valable_
 /** Le code reçu par e-mail ; les goûts du mode invité sont repris si le compte n'en a pas encore (F1.4). */
 export function verifierCode(email: string, code: string, gouts: Gouts): Promise<Connexion> {
   return appelApi('/v1/auth/code/verification', { methode: 'POST', corps: { email, code, gouts: gouts.genres, rayon_m: gouts.rayon_m } });
+}
+
+/** « Continuer avec Apple / Google » (F1.4, M10b) : le BO vérifie le jeton d'identité et renvoie le jeton de l'app. */
+export function connecterExterne(fournisseur: 'apple' | 'google', externe: JetonExterne, gouts: Gouts): Promise<Connexion> {
+  return appelApi(`/v1/auth/${fournisseur}`, {
+    methode: 'POST',
+    corps: { jeton: externe.jeton, code_autorisation: externe.code_autorisation, gouts: gouts.genres, rayon_m: gouts.rayon_m },
+  });
 }
 
 export function modifierMoi(champs: Partial<Pick<Utilisateur, 'prenom' | 'naissance_mois' | 'naissance_annee' | 'lettre_info'>> & { cgu_acceptees?: true }): Promise<Utilisateur> {
@@ -125,6 +134,7 @@ export function CompteProvider({ children }: { children: ReactNode }) {
   /** Déconnexion (F1.5) : retour au mode invité ; les goûts restent sur le téléphone, les favoris dans le compte. */
   const deconnecter = useCallback(async () => {
     await appelApi('/v1/auth/deconnexion', { methode: 'POST' }).catch(() => {});
+    oublierGoogle();
     await oublier();
   }, [oublier]);
 

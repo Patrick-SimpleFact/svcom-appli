@@ -1,3 +1,4 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
@@ -6,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { ErreurApi } from '@/api/client';
-import { demanderCode, messageErreur, modifierMoi, tropJeune, useCompte, verifierCode } from '@/compte/compte';
+import { connecterExterne, type Connexion as ReponseConnexion, demanderCode, messageErreur, modifierMoi, tropJeune, useCompte, verifierCode } from '@/compte/compte';
+import { appleDisponible, jetonApple, jetonGoogle } from '@/compte/fournisseurs';
 import { useFavoris } from '@/favoris/favoris';
 import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
@@ -24,7 +26,8 @@ const RAISONS: Record<string, string> = {
 };
 
 /**
- * Créer un compte ou se connecter (F1.3–F1.5), sans mot de passe : un code à 6 chiffres reçu par e-mail.
+ * Créer un compte ou se connecter (F1.3–F1.5), sans mot de passe : « Continuer avec Apple » (iPhone), « avec Google »,
+ * ou un code à 6 chiffres reçu par e-mail.
  * Puis, une seule fois : prénom, mois et année de naissance, conditions. L'action en cours (le favori) est ensuite terminée.
  */
 export default function Connexion() {
@@ -44,6 +47,11 @@ export default function Connexion() {
   const [lettre, setLettre] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [apple, setApple] = useState(false);
+
+  useEffect(() => {
+    appleDisponible().then(setApple);
+  }, []);
 
   // Entonnoir F1.9 : propositions de compte vues, puis acceptées (méthode de connexion choisie).
   useEffect(() => mesurer('proposition_compte_vue', { raison: params.raison ?? 'autre' }), [params.raison]);
@@ -77,21 +85,34 @@ export default function Connexion() {
       setEtape('code');
     });
 
+  /** Après toute connexion (code, Apple, Google) : goûts du compte, puis profil à compléter ou action terminée. */
+  const apresConnexion = async (connexion: ReponseConnexion, methode: 'email' | 'apple' | 'google', prenomPropose?: string) => {
+    await connecter(connexion);
+    mesurer('connexion', { methode, raison: params.raison ?? 'autre' });
+    // Goûts du compte retrouvés sur ce téléphone (F1.2) ; ceux du mode invité ont été repris si le compte n'en avait pas.
+    const prefs = connexion.utilisateur.preferences;
+    if (prefs && (prefs.genres.length || prefs.rayon_m !== null)) {
+      modifierGouts(lireGouts(JSON.stringify(prefs)));
+    }
+    if (connexion.utilisateur.profil_complet) {
+      await terminer();
+    } else {
+      setPrenom(connexion.utilisateur.prenom ?? prenomPropose ?? '');
+      setEtape('profil');
+    }
+  };
+
   const validerCode = () =>
     agir(async () => {
-      const connexion = await verifierCode(email.trim(), code, gouts);
-      await connecter(connexion);
-      mesurer('connexion', { methode: 'email', raison: params.raison ?? 'autre' });
-      // Goûts du compte retrouvés sur ce téléphone (F1.2) ; ceux du mode invité ont été repris si le compte n'en avait pas.
-      const prefs = connexion.utilisateur.preferences;
-      if (prefs && (prefs.genres.length || prefs.rayon_m !== null)) {
-        modifierGouts(lireGouts(JSON.stringify(prefs)));
-      }
-      if (connexion.utilisateur.profil_complet) {
-        await terminer();
-      } else {
-        setPrenom(connexion.utilisateur.prenom ?? '');
-        setEtape('profil');
+      await apresConnexion(await verifierCode(email.trim(), code, gouts), 'email');
+    });
+
+  /** « Continuer avec Apple / Google » : annuler la fenêtre du fournisseur ne montre aucune erreur. */
+  const continuerAvec = (fournisseur: 'apple' | 'google') =>
+    agir(async () => {
+      const externe = fournisseur === 'apple' ? await jetonApple() : await jetonGoogle();
+      if (externe) {
+        await apresConnexion(await connecterExterne(fournisseur, externe, gouts), fournisseur, externe.prenom);
       }
     });
 
@@ -135,7 +156,22 @@ export default function Connexion() {
           <>
             <Text style={styles.titre} accessibilityRole="header">Créer un compte ou se connecter</Text>
             <Text style={styles.texte}>{RAISONS[params.raison ?? 'profil'] ?? RAISONS.profil}</Text>
-            <Champ libelle="Votre e-mail" valeur={email} changer={setEmail} clavier="email-address" contenu="emailAddress" valider={envoyerCode} />
+            {apple ? (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={27}
+                style={styles.boutonApple}
+                onPress={() => continuerAvec('apple')}
+              />
+            ) : null}
+            <BoutonGoogle envoi={envoi} onPress={() => continuerAvec('google')} />
+            <View style={styles.ou}>
+              <View style={styles.ouTrait} />
+              <Text style={styles.ouTexte}>ou avec votre e-mail</Text>
+              <View style={styles.ouTrait} />
+            </View>
+            <Champ libelle="Votre e-mail" valeur={email} changer={setEmail} clavier="email-address" contenu="emailAddress" valider={envoyerCode} focus={false} />
             <Text style={styles.aide}>Pas de mot de passe : nous vous envoyons un code à 6 chiffres.</Text>
             <Bouton texte="Recevoir un code" actif={/^\S+@\S+\.\S+$/.test(email.trim())} envoi={envoi} onPress={envoyerCode} />
           </>
@@ -203,6 +239,8 @@ function Champ(props: {
   contenu?: 'emailAddress' | 'oneTimeCode' | 'givenName';
   valider?: () => void;
   grand?: boolean;
+  /** Clavier ouvert d'office (sauf l'e-mail, sous les boutons Apple et Google). */
+  focus?: boolean;
 }) {
   return (
     <View style={styles.champBloc}>
@@ -216,7 +254,7 @@ function Champ(props: {
         autoComplete={props.contenu === 'oneTimeCode' ? 'one-time-code' : props.contenu === 'emailAddress' ? 'email' : props.contenu === 'givenName' ? 'given-name' : undefined}
         autoCapitalize={props.contenu === 'givenName' ? 'words' : 'none'}
         autoCorrect={false}
-        autoFocus
+        autoFocus={props.focus ?? true}
         onSubmitEditing={props.valider}
         accessibilityLabel={props.libelle}
       />
@@ -247,6 +285,21 @@ function Bouton({ texte, actif, envoi, onPress }: { texte: string; actif: boolea
   );
 }
 
+/** « Continuer avec Google » aux couleurs de Google (logo « G » officiel, fond blanc, contour gris). */
+function BoutonGoogle({ envoi, onPress }: { envoi: boolean; onPress: () => void }) {
+  return (
+    <Pressable style={styles.boutonGoogle} onPress={onPress} disabled={envoi} accessibilityRole="button" accessibilityLabel="Continuer avec Google">
+      <Svg width={20} height={20} viewBox="0 0 48 48">
+        <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+        <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+        <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+        <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+      </Svg>
+      <Text style={styles.boutonGoogleTexte}>Continuer avec Google</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   fond: { flex: 1, backgroundColor: Couleurs.fond },
   entete: { flexDirection: 'row', justifyContent: 'flex-end', padding: Espaces.bord },
@@ -273,6 +326,15 @@ const styles = StyleSheet.create({
   bouton: { height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: Couleurs.encre },
   boutonInactif: { opacity: 0.35 },
   boutonTexte: { fontFamily: Polices.texteTresGras, fontSize: 16, color: '#FFFFFF' },
+  boutonApple: { height: 54, width: '100%' },
+  boutonGoogle: {
+    height: 54, borderRadius: 27, borderWidth: 1, borderColor: '#747775', backgroundColor: '#FFFFFF',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+  },
+  boutonGoogleTexte: { fontFamily: Polices.texteTresGras, fontSize: 16, color: '#1F1F1F' },
+  ou: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 4 },
+  ouTrait: { flex: 1, height: 1, backgroundColor: Couleurs.trait },
+  ouTexte: { fontFamily: Polices.texte, fontSize: 13, color: Couleurs.gris },
   liensBas: { flexDirection: 'row', justifyContent: 'space-between' },
   lien: { fontFamily: Polices.texteGras, fontSize: 14, color: Couleurs.encre, textDecorationLine: 'underline', paddingVertical: 8 },
   erreur: { fontFamily: Polices.texteGras, fontSize: 14, lineHeight: 20, color: Couleurs.rouge },
