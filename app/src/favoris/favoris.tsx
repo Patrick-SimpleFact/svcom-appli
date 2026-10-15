@@ -1,7 +1,9 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { appelApi } from '@/api/client';
 import { useCompte } from '@/compte/compte';
+import { mettreAJourPastille, proposerAlertes } from '@/notifications/notifications';
 
 /** Un favori (`GET /v1/moi/favoris`, API §8) : la séance choisie, sinon la prochaine du spectacle. */
 export type Favori = {
@@ -100,6 +102,24 @@ export function FavorisProvider({ children }: { children: ReactNode }) {
     };
   }, [connecte, appliquer]);
 
+  // Retour dans l'app (après une notification de 18 h, par exemple) : nouveautés et favoris rechargés.
+  useEffect(() => {
+    if (!connecte) {
+      return;
+    }
+    const abonnement = AppState.addEventListener('change', (etat) => {
+      if (etat === 'active') {
+        recharger().catch(() => {});
+      }
+    });
+
+    return () => abonnement.remove();
+  }, [connecte, recharger]);
+
+  // Pastille de l'icône de l'app : les nouveautés non vues, effacée quand tout est vu ou en mode invité (F3.4).
+  const pastille = connecte ? nouveautes.non_vues : 0;
+  useEffect(() => mettreAJourPastille(pastille), [pastille]);
+
   const favoriDe = useCallback(
     (spectacleId: number) => [...favoris.ce_soir, ...favoris.a_venir, ...favoris.passes].find((f) => f.spectacle.id === spectacleId)?.id ?? null,
     [favoris],
@@ -128,6 +148,8 @@ export function FavorisProvider({ children }: { children: ReactNode }) {
   const suivre = useCallback(async (type: Suivi['type'], id: number) => {
     const r = await appelApi<{ suivi: Suivi; deja_suivi: boolean }>('/v1/moi/suivis', { methode: 'POST', corps: { type, id } });
     setSuivis((avant) => (avant.some((s) => s.id === r.suivi.id) ? avant : [r.suivi, ...avant]));
+    // Autorisation des notifications demandée au premier suivi, jamais avant (F3.4, M12b).
+    proposerAlertes(type).catch(() => {});
 
     return r.suivi;
   }, []);

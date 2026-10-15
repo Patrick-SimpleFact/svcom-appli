@@ -16,6 +16,7 @@ import { Couleurs, Espaces, Polices } from '@/constants/theme';
 import { useDemarrage } from '@/demarrage/demarrage';
 import { libelleRayon, useGouts } from '@/gouts/gouts';
 import { choisir, useChoixSuggestion } from '@/suggestion/suggestion';
+import { demanderAutorisation, etatAutorisation, transmettreJeton } from '@/notifications/notifications';
 
 /** Onglet « Profil » (F1.6, maquette « Profil ») : sans compte ou connecté. */
 export default function Profil() {
@@ -26,6 +27,7 @@ export default function Profil() {
   const [suivis, setSuivis] = useState<number | null>(null);
   const suggestion = useChoixSuggestion() === 'oui';
   const [localisation, setLocalisation] = useState<string>('…');
+  const [notifications, setNotifications] = useState<'a_demander' | 'accordee' | 'refusee' | null>(null);
   const [suppression, setSuppression] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -35,6 +37,7 @@ export default function Profil() {
       Location.getForegroundPermissionsAsync()
         .then((p) => setLocalisation(p.granted ? 'Autorisée' : p.canAskAgain ? 'Pas encore demandée' : 'Refusée'))
         .catch(() => setLocalisation('Inconnue'));
+      etatAutorisation().then(setNotifications).catch(() => setNotifications(null));
     }, []),
   );
 
@@ -123,6 +126,17 @@ export default function Profil() {
             </>
           )}
           <Lien libelle="Localisation" valeur={localisation} onPress={() => Linking.openSettings()} separe />
+          {/* Notifications (F3.4, M12b) : demandées ici si jamais proposées, sinon réglées dans le téléphone. */}
+          <Lien
+            libelle="Notifications"
+            valeur={notifications === 'accordee' ? 'Autorisées' : notifications === 'refusee' ? 'Refusées' : notifications === 'a_demander' ? 'Pas encore demandées' : '…'}
+            onPress={() =>
+              notifications === 'a_demander'
+                ? demanderAutorisation().then((ok) => (ok ? transmettreJeton() : undefined)).then(() => etatAutorisation().then(setNotifications)).catch(() => {})
+                : Linking.openSettings()
+            }
+            separe
+          />
           {utilisateur ? <Interrupteur libelle="Lettre d’information" sous="Facultative" valeur={utilisateur.lettre_info} changer={basculerLettre} separe /> : null}
         </Section>
 

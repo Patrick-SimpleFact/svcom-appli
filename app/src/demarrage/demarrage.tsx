@@ -3,6 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { Platform } from 'react-native';
 
 import { appelApi, comparerVersions, quandVersionObsolete, VERSION_APP } from '@/api/client';
+import { jetonNatif } from '@/notifications/notifications';
 
 /** Message de service saisi dans le BO (F2.8) : maintenance, incident… */
 export type MessageService = { id: number; type: 'info' | 'alerte'; texte: string };
@@ -64,8 +65,15 @@ export function Demarrage({ children }: { children: ReactNode }) {
       .then((json) => setFermes(json ? (JSON.parse(json) as number[]) : []))
       .catch(() => {});
 
-    // Pas de position ni de jeton de notification à cette étape (M04 et M12).
-    appelApi<Configuration>('/v1/appareils', { methode: 'POST', corps: { plateforme: Platform.OS === 'android' ? 'android' : 'ios' } })
+    // Jeton de notification si l'autorisation est déjà donnée (F3.4, M12b) ; jamais de position à cette étape.
+    jetonNatif()
+      .catch(() => null)
+      .then((jeton) =>
+        appelApi<Configuration>('/v1/appareils', {
+          methode: 'POST',
+          corps: { plateforme: Platform.OS === 'android' ? 'android' : 'ios', ...(jeton ? { jeton_push: jeton } : {}) },
+        }),
+      )
       .then((config) => {
         setConfiguration(config);
         if (comparerVersions(VERSION_APP, config.version_minimale) < 0) {

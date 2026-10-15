@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "714979703885",
+    "project_id": "spettacoli-f946d",
+    "storage_bucket": "spettacoli-f946d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:714979703885:android:e714cf78b2a490c466b004",
+        "android_client_info": {
+          "package_name": "fr.spettacoli.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAntqYuC5Spb5g9gTZ4Ve3cRfCaXLQgIFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

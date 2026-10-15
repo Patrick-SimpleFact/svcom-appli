@@ -8,3 +8,15 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
   isSuccessResponse: (r) => r?.type === 'success',
   statusCodes: { SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED', IN_PROGRESS: 'IN_PROGRESS' },
 }));
+
+// Notifications (M12b) : module natif absent pendant les tests.
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => null),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'undetermined', canAskAgain: true })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'denied' })),
+  getDevicePushTokenAsync: jest.fn(async () => ({ type: 'ios', data: '' })),
+  useLastNotificationResponse: jest.fn(() => null),
+  setBadgeCountAsync: jest.fn(async () => true),
+  AndroidImportance: { DEFAULT: 3 },
+}));
