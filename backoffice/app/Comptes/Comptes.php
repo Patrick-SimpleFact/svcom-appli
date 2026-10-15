@@ -151,6 +151,9 @@ class Comptes
      */
     public function supprimer(Utilisateur $u): void
     {
+        // « Continuer avec Apple » : l'accès donné à l'app est révoqué chez Apple (M10b, règle 5.1.1(v)).
+        $u->connexionsExternes()->where('fournisseur', 'apple')->get()->each(fn (ConnexionExterne $c) => app(RevocationApple::class)->revoquer($c));
+
         DB::transaction(function () use ($u) {
             $u->tokens()->delete();
             $u->connexionsExternes()->delete();

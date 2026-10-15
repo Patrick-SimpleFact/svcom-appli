@@ -3,12 +3,16 @@
 use App\Mail\CodeConnexionMail;
 use App\Mail\ExportDonneesMail;
 use App\Models\Appareil;
+use App\Models\ConnexionExterne;
 use App\Models\Genre;
 use App\Models\Utilisateur;
 use Carbon\CarbonImmutable;
 use Database\Seeders\GenresSeeder;
 use Database\Seeders\ParametresSeeder;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
@@ -39,7 +43,13 @@ beforeEach(function () {
     $details = openssl_pkey_get_details($cle)['rsa'];
     $b64 = fn (string $s) => rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
     $jwks = ['keys' => [['kty' => 'RSA', 'kid' => 'cle-test', 'use' => 'sig', 'alg' => 'RS256', 'n' => $b64($details['n']), 'e' => $b64($details['e'])]]];
-    Http::fake(['appleid.apple.com/*' => Http::response($jwks), 'www.googleapis.com/*' => Http::response($jwks)]);
+    // Échange du code d'autorisation et révocation Apple (M10b) : réponses simulées, appels gardés pour les tests.
+    Http::fake([
+        'appleid.apple.com/auth/keys' => Http::response($jwks),
+        'appleid.apple.com/auth/token' => Http::response(['access_token' => 'acces', 'refresh_token' => 'rafraichissement-apple', 'id_token' => 'x']),
+        'appleid.apple.com/auth/revoke' => Http::response(),
+        'www.googleapis.com/*' => Http::response($jwks),
+    ]);
     config(['services.apple.client_ids' => 'fr.spettacoli.app', 'services.google.client_ids' => 'client-google.apps.googleusercontent.com']);
     $this->jeton = fn (array $contenu, ?string $cle = null) => JWT::encode([
         'iss' => 'https://appleid.apple.com', 'aud' => 'fr.spettacoli.app', 'sub' => '001234.apple', 'iat' => time(), 'exp' => time() + 600, ...$contenu,
@@ -203,4 +213,32 @@ it('supprime le compte : accès coupé et données effacées tout de suite, lign
     $this->travel(31)->days();
     $this->artisan('comptes:purger')->expectsOutputToContain('1 compte(s)')->assertSuccessful();
     expect(Utilisateur::count())->toBe(1);
+});
+
+it('garde le jeton Apple chiffré à la connexion et révoque l’accès chez Apple à la suppression du compte (M10b)', function () {
+    // Vraie clé EC (P-256) comme la clé .p8 d'Apple : le « client_secret » est signé avec elle.
+    $cle = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+    openssl_pkey_export($cle, $pem);
+    $fichier = tempnam(sys_get_temp_dir(), 'apple').'.p8';
+    file_put_contents($fichier, $pem);
+    config(['services.apple.cle' => $fichier, 'services.apple.cle_id' => '93XM2V34RM', 'services.apple.equipe_id' => 'X4CB98WRUP']);
+
+    $connexion = ($this->api)('POST', '/v1/auth/apple', ['jeton' => ($this->jeton)(['email' => 'p@exemple.fr', 'email_verified' => true]), 'code_autorisation' => 'code-apple'])->assertOk()->json();
+
+    Http::assertSent(fn (Request $r) => $r->url() === 'https://appleid.apple.com/auth/token' && $r['code'] === 'code-apple'
+        && $r['client_id'] === 'fr.spettacoli.app' && JWT::decode($r['client_secret'], new Key(openssl_pkey_get_details($cle)['key'], 'ES256'))->iss === 'X4CB98WRUP');
+    expect(ConnexionExterne::sole()->jeton_apple)->toBe('rafraichissement-apple')
+        ->and(DB::table('connexions_externes')->value('jeton_apple'))->not->toBe('rafraichissement-apple'); // chiffré en base
+
+    ($this->api)('DELETE', '/v1/moi', [], $connexion['jeton'])->assertNoContent();
+    Http::assertSent(fn (Request $r) => $r->url() === 'https://appleid.apple.com/auth/revoke' && $r['token'] === 'rafraichissement-apple' && $r['token_type_hint'] === 'refresh_token');
+    expect(ConnexionExterne::count())->toBe(0);
+    unlink($fichier);
+});
+
+it('connecte avec Apple même si l’échange du code échoue ou si la clé n’est pas configurée', function () {
+    config(['services.apple.cle' => null]);
+    ($this->api)('POST', '/v1/auth/apple', ['jeton' => ($this->jeton)([]), 'code_autorisation' => 'code-apple'])->assertOk();
+    Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/auth/token'));
+    expect(ConnexionExterne::sole()->jeton_apple)->toBeNull();
 });

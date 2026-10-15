@@ -59,7 +59,13 @@ return [
     ],
 
     // Connexion à l'app (F1.4) : identifiants de l'app chez Apple et Google, séparés par des virgules (P06).
-    'apple' => ['client_ids' => env('APPLE_CLIENT_IDS')],
+    'apple' => [
+        'client_ids' => env('APPLE_CLIENT_IDS'),
+        // Révocation à la suppression du compte (M10b) : la même clé .p8 que les notifications (APNs + Sign in with Apple).
+        'cle' => env('APPLE_KEY_PATH', env('APNS_KEY_PATH')),
+        'cle_id' => env('APPLE_KEY_ID', env('APNS_KEY_ID')),
+        'equipe_id' => env('APPLE_TEAM_ID', env('APNS_TEAM_ID')),
+    ],
     'google' => ['client_ids' => env('GOOGLE_CLIENT_IDS')],
 
     // Notifications envoyées directement, sans intermédiaire (D6, P11). Clés à créer au bloc 7 (compte Apple Developer, projet Firebase).

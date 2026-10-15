@@ -13,7 +13,15 @@ class ConnexionExterne extends Model
 
     protected $table = 'connexions_externes';
 
-    protected $fillable = ['utilisateur_id', 'fournisseur', 'identifiant_fournisseur'];
+    protected $fillable = ['utilisateur_id', 'fournisseur', 'identifiant_fournisseur', 'jeton_apple'];
+
+    /** Jeton de rafraîchissement d'Apple, gardé seulement pour la révocation à la suppression du compte (M10b). */
+    protected $hidden = ['jeton_apple'];
+
+    protected function casts(): array
+    {
+        return ['jeton_apple' => 'encrypted'];
+    }
 
     public function utilisateur(): BelongsTo
     {

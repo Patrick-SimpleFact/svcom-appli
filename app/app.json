@@ -12,6 +12,7 @@
       "bundleIdentifier": "fr.spettacoli.app",
       "buildNumber": "2",
       "appleTeamId": "X4CB98WRUP",
+      "usesAppleSignIn": true,
       "supportsTablet": false,
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
@@ -57,7 +58,14 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.42633763194-br6hme9vk7ub3uuqodlpdeusv3fubeh4"
+        }
+      ]
     ],
     "extra": {
       "boutiques": {
