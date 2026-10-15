@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { EcranMiseAJour } from '@/components/mise-a-jour';
+import { OuvertureNotification } from '@/components/ouverture-notification';
 import { PremierLancement } from '@/components/premier-lancement';
 import { SuggestionOuverture } from '@/components/suggestion-ouverture';
 import { Couleurs } from '@/constants/theme';
@@ -15,8 +16,11 @@ import { FavorisProvider } from '@/favoris/favoris';
 import { Demarrage, useDemarrage } from '@/demarrage/demarrage';
 import { GoutsProvider, useGouts } from '@/gouts/gouts';
 import { useMesure } from '@/mesure/mesure';
+import { configurerAffichage } from '@/notifications/notifications';
 
 SplashScreen.preventAutoHideAsync();
+// Notifications reçues app ouverte : affichées comme app fermée (F3.4).
+configurerAffichage();
 
 /** Thème de navigation aux couleurs des maquettes (fond crème, accent rouge). */
 const theme = {
@@ -82,6 +86,7 @@ function Contenu() {
         <Stack.Screen name="propositions" options={{ presentation: 'modal' }} />
       </Stack>
       <SuggestionOuverture />
+      <OuvertureNotification />
     </>
   ) : (
     <PremierLancement />

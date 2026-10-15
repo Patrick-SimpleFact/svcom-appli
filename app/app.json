@@ -31,6 +31,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "fr.spettacoli.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1
     },
     "web": {
@@ -64,6 +65,13 @@
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.42633763194-br6hme9vk7ub3uuqodlpdeusv3fubeh4"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#D23A1F"
         }
       ]
     ],
