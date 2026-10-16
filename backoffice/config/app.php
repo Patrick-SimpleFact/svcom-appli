@@ -59,6 +59,13 @@ return [
     // Adresse de contact affichée sur les pages Assistance et Suppression du compte (exigées par Apple et Google Play).
     'email_contact' => env('EMAIL_CONTACT', 'spettacoli@spectacles-vivants.com'),
 
+    // Compte de démonstration pour l'examen des boutiques (Google Play, App Store) : code fixe pour cette seule adresse,
+    // sans e-mail envoyé. Désactivé si l'une des deux valeurs manque.
+    'compte_examen' => [
+        'email' => mb_strtolower(trim((string) env('COMPTE_EXAMEN_EMAIL', ''))),
+        'code' => (string) env('COMPTE_EXAMEN_CODE', ''),
+    ],
+
     'url_site' => rtrim(env('DOMAINE_SITE') ? 'https://'.env('DOMAINE_SITE') : env('APP_URL', 'http://localhost'), '/'),
 
     /*

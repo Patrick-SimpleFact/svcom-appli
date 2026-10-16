@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
  * Connexion par code envoyé par e-mail (F1.4, F1.5) : pas de mot de passe. Code à 6 chiffres, valable 10 min, une seule fois,
  * jamais en clair en base. 5 essais faux → 15 min d'attente. Au plus un code par minute et 5 par heure pour une même adresse.
  * La réponse ne dit jamais si un compte existe pour cette adresse.
+ * Compte de démonstration des boutiques (config app.compte_examen) : code fixe, pas d'e-mail, mêmes limites.
  */
 class CodesConnexion
 {
@@ -40,10 +41,21 @@ class CodesConnexion
         // Un seul code valable à la fois : les précédents ne servent plus.
         CodeConnexion::where('email', $email)->whereNull('utilise_le')->update(['expire_le' => now()]);
 
-        $code = str_pad((string) random_int(0, 999_999), 6, '0', STR_PAD_LEFT);
+        $examen = $this->codeExamen($email);
+        $code = $examen ?? str_pad((string) random_int(0, 999_999), 6, '0', STR_PAD_LEFT);
         CodeConnexion::create(['email' => $email, 'code_hash' => CodeConnexion::empreinte($email, $code), 'expire_le' => now()->addMinutes(self::VALIDITE_MINUTES)]);
 
-        Mail::to($email)->send(new CodeConnexionMail($code));
+        if ($examen === null) {
+            Mail::to($email)->send(new CodeConnexionMail($code));
+        }
+    }
+
+    /** Le code fixe du compte de démonstration, si cette adresse est la sienne (6 chiffres exigés). */
+    private function codeExamen(string $email): ?string
+    {
+        ['email' => $adresse, 'code' => $code] = config('app.compte_examen');
+
+        return $adresse !== '' && $email === $adresse && preg_match('/^\d{6}$/', $code) ? $code : null;
     }
 
     /** Vérifie le code ; renvoie l'adresse e-mail (normalisée) à connecter. */

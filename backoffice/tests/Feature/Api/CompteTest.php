@@ -254,3 +254,21 @@ it('supprime par la commande le compte demandé par e-mail, comme depuis l’app
     expect(Utilisateur::sole())->email->toBeNull()->supprime_le->not->toBeNull()
         ->and(Appareil::sole()->utilisateur_id)->toBeNull();
 });
+
+it('connecte le compte de démonstration des boutiques avec son code fixe, sans e-mail, avec les mêmes limites', function () {
+    config(['app.compte_examen' => ['email' => 'examen@spectacles-vivants.com', 'code' => '246810']]);
+    $verifier = fn (string $code) => ($this->api)('POST', '/v1/auth/code/verification', ['email' => 'Examen@Spectacles-Vivants.com', 'code' => $code]);
+
+    ($this->api)('POST', '/v1/auth/code', ['email' => 'Examen@Spectacles-Vivants.com'])->assertStatus(202);
+    Mail::assertNothingSent();
+    $verifier('111111')->assertStatus(422)->assertJsonPath('erreur.code', 'code_invalide');
+    $verifier('246810')->assertOk()->assertJsonPath('nouveau_compte', true);
+
+    // Une autre adresse reçoit toujours un code aléatoire par e-mail.
+    expect(($this->codeEnvoye)('patrick@exemple.fr'))->toMatch('/^\d{6}$/');
+
+    // Code mal formé dans la configuration : compte de démonstration coupé, retour à l'e-mail.
+    config(['app.compte_examen' => ['email' => 'autre@spectacles-vivants.com', 'code' => '12']]);
+    ($this->api)('POST', '/v1/auth/code', ['email' => 'autre@spectacles-vivants.com'])->assertStatus(202);
+    Mail::assertSent(CodeConnexionMail::class, fn (CodeConnexionMail $m) => $m->hasTo('autre@spectacles-vivants.com'));
+});
