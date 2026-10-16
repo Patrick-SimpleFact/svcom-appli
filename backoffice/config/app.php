@@ -56,6 +56,9 @@ return [
 
     // Adresse du site public (SEO) : le domaine principal en production (DOMAINE_SITE, deploy/.env), sinon APP_URL.
     // Sert aux adresses canoniques, au plan du site et à la redirection des pages publiques du sous-domaine.
+    // Adresse de contact affichée sur les pages Assistance et Suppression du compte (exigées par Apple et Google Play).
+    'email_contact' => env('EMAIL_CONTACT', 'spettacoli@spectacles-vivants.com'),
+
     'url_site' => rtrim(env('DOMAINE_SITE') ? 'https://'.env('DOMAINE_SITE') : env('APP_URL', 'http://localhost'), '/'),
 
     /*

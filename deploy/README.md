@@ -72,6 +72,7 @@ Le script refuse de redémarrer le worker pendant une collecte (`--force` pour p
 docker compose logs -f worker                 # suivre une collecte
 docker compose exec app php artisan tinker
 docker compose exec db psql -U spettacoli spettacoli
+docker compose exec app php artisan comptes:supprimer adresse@exemple.fr   # suppression demandée par e-mail (page /suppression-compte)
 ```
 
 ## Essai en local

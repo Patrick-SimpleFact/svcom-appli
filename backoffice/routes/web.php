@@ -47,5 +47,10 @@ Route::prefix('espace-salle')->name('espace-salle.')->middleware(VersBackOffice:
     });
 });
 
+// Pages exigées par les boutiques : assistance (App Store) et suppression du compte (Google Play).
+// Sans formulaire ni champ de saisie : une page de connexion sur le domaine principal a valu l'alerte Safe Browsing du 14/10/2026.
+Route::view('assistance', 'web.assistance')->name('assistance');
+Route::view('suppression-compte', 'web.suppression-compte')->name('suppression-compte');
+
 // Pages légales (F1.6, API §12).
 Route::get('{slug}', PageLegaleController::class)->whereIn('slug', ['confidentialite', 'conditions', 'mentions-legales'])->name('page-legale');

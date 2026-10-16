@@ -53,14 +53,14 @@ it('donne à l’accueil son adresse canonique, son image de partage et ses donn
 
 it('donne au site les icônes et le logo de la marque, et aux e-mails le logo du site principal', function () {
     $this->get('https://spectacles-vivants.com/')->assertOk()
-        ->assertSee('<link rel="manifest" href="/site.webmanifest">', false)
+        ->assertSee('<link rel="manifest" href="/manifest.json">', false)
         ->assertSee('<img src="/images/logo.svg" alt="Spettacoli"', false);
 
     foreach (['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'android-chrome-192x192.png', 'android-chrome-512x512.png',
         'maskable-icon-512x512.png', 'images/logo.svg', 'images/logo-sombre.svg', 'images/logo-email.png'] as $fichier) {
         expect(file_exists(public_path($fichier)))->toBeTrue("{$fichier} manque");
     }
-    $manifeste = json_decode(file_get_contents(public_path('site.webmanifest')), true);
+    $manifeste = json_decode(file_get_contents(public_path('manifest.json')), true);
     foreach ($manifeste['icons'] as $icone) {
         expect(file_exists(public_path(ltrim($icone['src'], '/'))))->toBeTrue();
     }
