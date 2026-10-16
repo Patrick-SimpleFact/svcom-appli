@@ -71,6 +71,7 @@
         <a href="{{ url('/mentions-legales') }}">Mentions légales</a>
         <a href="{{ url('/confidentialite') }}">Confidentialité</a>
         <a href="{{ url('/conditions') }}">Conditions d’utilisation</a>
+        <a href="{{ url('/assistance') }}">Assistance</a>
     </footer>
 </body>
 </html>

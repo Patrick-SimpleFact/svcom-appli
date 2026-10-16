@@ -258,6 +258,7 @@
             <a href="{{ url('/mentions-legales') }}">Mentions légales</a>
             <a href="{{ url('/confidentialite') }}">Confidentialité</a>
             <a href="{{ url('/conditions') }}">Conditions d’utilisation</a>
+            <a href="{{ url('/assistance') }}">Assistance</a>
             <a href="{{ config('app.url') }}/espace-salle/demande">Espace salle</a>
         </nav>
         <span>Programmes issus de billetteries, d’agendas et de sources publiques (DATAtourisme, OpenAgenda, Que faire à Paris…). Localisation approximative par adresse IP : <a href="https://db-ip.com">DB-IP</a> (CC BY 4.0).</span>

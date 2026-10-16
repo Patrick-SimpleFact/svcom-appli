@@ -242,3 +242,15 @@ it('connecte avec Apple même si l’échange du code échoue ou si la clé n’
     Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/auth/token'));
     expect(ConnexionExterne::sole()->jeton_apple)->toBeNull();
 });
+
+it('supprime par la commande le compte demandé par e-mail, comme depuis l’app (page /suppression-compte)', function () {
+    ($this->connecter)()->assertOk();
+
+    $this->artisan('comptes:supprimer', ['email' => 'inconnu@exemple.fr'])->assertFailed();
+    $this->artisan('comptes:supprimer', ['email' => ' Patrick@Exemple.fr '])->expectsConfirmation('Supprimer le compte n° '.Utilisateur::sole()->id.' (patrick@exemple.fr, créé le '.now()->format('d/m/Y').') ?', 'no')->assertSuccessful();
+    expect(Utilisateur::sole()->supprime_le)->toBeNull();
+
+    $this->artisan('comptes:supprimer', ['email' => 'patrick@exemple.fr'])->expectsConfirmation('Supprimer le compte n° '.Utilisateur::sole()->id.' (patrick@exemple.fr, créé le '.now()->format('d/m/Y').') ?', 'yes')->assertSuccessful();
+    expect(Utilisateur::sole())->email->toBeNull()->supprime_le->not->toBeNull()
+        ->and(Appareil::sole()->utilisateur_id)->toBeNull();
+});
