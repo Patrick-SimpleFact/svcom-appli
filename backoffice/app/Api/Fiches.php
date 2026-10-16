@@ -53,7 +53,7 @@ class Fiches
             'titre' => $spectacle->titre,
             'image_url' => $spectacle->image_url,
             'genre' => $spectacle->genre ? ['id' => $spectacle->genre->id, 'slug' => $spectacle->genre->slug, 'libelle' => $spectacle->genre->libelle] : null,
-            'classification' => $spectacle->classification_fine,
+            'classification' => Classification::affichable($spectacle->classification_fine),
             'jeune_public' => $spectacle->jeune_public,
             'age_min' => $spectacle->age_min,
             'duree_minutes' => $spectacle->duree_minutes,
