@@ -147,3 +147,21 @@ it('dit si le lieu ou l’artiste est suivi par le compte connecté (F3.2)', fun
         ->and($this->getJson("/v1/lieux/{$this->marseille->id}", $entetes)->json())->toMatchArray(['suivi' => false, 'suivi_id' => null])
         ->and($this->getJson("/v1/artistes/{$artiste->id}", $entetes)->json('suivi'))->toBeFalse();
 });
+
+it('ne montre comme classification qu’un sous-genre connu, jamais la catégorie brute de la source', function () {
+    ($this->seance)($this->observance, '2026-10-17 19:30');
+    $classification = function (?string $brute) {
+        $this->spectacle->update(['classification_fine' => $brute]);
+
+        return ($this->get)("/v1/spectacles/{$this->spectacle->id}")->json('classification');
+    };
+
+    expect($classification('Arts & Theatre'))->toBeNull()        // Ticketmaster : l'app affiche alors le genre
+        ->and($classification('ShowEvent'))->toBeNull()          // DATAtourisme
+        ->and($classification('Concerts, Festivals, Musical'))->toBeNull()
+        ->and($classification('Loisirs'))->toBeNull()
+        ->and($classification('jazz'))->toBe('Jazz')
+        ->and($classification('Musique Classique'))->toBe('Musique classique')
+        ->and($classification('Spectacles Enfants'))->toBe('Jeune public')
+        ->and($classification(null))->toBeNull();
+});

@@ -270,7 +270,7 @@ class AutourDeMoi
 
     private static function spectacle(object $l): array
     {
-        return ['id' => $l->spectacle_id, 'titre' => $l->titre, 'classification' => $l->classification_fine, 'genre_id' => $l->genre_id, 'jeune_public' => (bool) $l->jeune_public];
+        return ['id' => $l->spectacle_id, 'titre' => $l->titre, 'classification' => Classification::affichable($l->classification_fine), 'genre_id' => $l->genre_id, 'jeune_public' => (bool) $l->jeune_public];
     }
 
     private static function lieu(object $l): array

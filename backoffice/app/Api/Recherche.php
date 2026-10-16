@@ -169,7 +169,7 @@ class Recherche
             $sansHoraire = $g->type !== TypeRepresentation::Seance->value;
 
             return [
-                'spectacle' => ['id' => $s->id, 'titre' => $s->titre, 'classification' => $s->classification_fine, 'genre_id' => $s->genre_id, 'jeune_public' => $s->jeune_public],
+                'spectacle' => ['id' => $s->id, 'titre' => $s->titre, 'classification' => Classification::affichable($s->classification_fine), 'genre_id' => $s->genre_id, 'jeune_public' => $s->jeune_public],
                 'lieu' => ['id' => $l->id, 'nom' => $l->nom, 'ville' => $l->ville?->nom, 'position_approximative' => $l->precision_position?->value === 'commune'],
                 'distance_m' => $g->distance_m === null ? null : (int) (round((float) $g->distance_m / 10) * 10),
                 'date_locale' => $g->date_locale,

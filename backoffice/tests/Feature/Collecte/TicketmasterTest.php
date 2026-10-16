@@ -45,6 +45,21 @@ it('lit le flux national événement par événement, sans les annulés', functi
         ->and($lopin->lien)->toStartWith('https://www.ticketmaster.fr/');
 });
 
+it('écarte les billets de musées et d’expositions rangés sous « Arts & Theatre › Cultural »', function () {
+    $donnees = json_decode(file_get_contents(base_path('tests/Fixtures/ticketmaster.json')), true);
+    $expo = $donnees['events'][0];
+    $expo['eventId'] = 'expo-versace';
+    $expo['eventName'] = 'GIANNI VERSACE RETROSPECTIVE';
+    $expo['classificationGenre'] = $expo['classificationSubGenre'] = 'Cultural';
+    $donnees['events'][] = $expo;
+    $this->flux = gzencode(json_encode($donnees));
+
+    $annonces = ($this->lire)()->whereInstanceOf(AnnonceNormalisee::class);
+
+    expect($annonces)->toHaveCount(6)
+        ->and($annonces->pluck('identifiantExterne'))->not->toContain('expo-versace');
+});
+
 it('regroupe pour le tri les séances d’un même spectacle dans une même salle', function () {
     $laroque = ($this->lire)()->whereInstanceOf(AnnonceNormalisee::class)->filter(fn ($a) => str_starts_with($a->titre, 'MICHELE LAROQUE'));
 

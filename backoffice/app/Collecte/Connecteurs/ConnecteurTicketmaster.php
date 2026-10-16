@@ -25,6 +25,13 @@ class ConnecteurTicketmaster implements Connecteur, DetecteVersion
     /** Valeurs de classification sans information. */
     private const SANS_INFORMATION = ['Undefined', 'Indéfini', 'Other', 'Autre'];
 
+    /**
+     * Genres rangés sous « Arts & Theatre » qui ne sont pas du spectacle vivant : « Cultural » regroupe des billets de musées,
+     * d'expositions, de visites, de croisières-dîners (« GIANNI VERSACE RETROSPECTIVE », musée Grévin…). Écartés à la lecture
+     * plutôt que par un mot exclu : « cultural » écarterait aussi la catégorie « CulturalEvent » de DATAtourisme (16/10/2026).
+     */
+    private const GENRES_HORS_SPECTACLE = ['Cultural'];
+
     public function versionDisponible(Source $source): ?string
     {
         $reponse = Http::withoutRedirecting()->timeout(30)->retry(2, 2000, throw: false)->get($this->adresseDuFlux($source));
@@ -90,6 +97,10 @@ class ConnecteurTicketmaster implements Connecteur, DetecteVersion
     private function annonce(array $e): ?AnnonceNormalisee
     {
         if (($e['eventStatus'] ?? '') === 'cancelled' || blank($e['eventStartLocalDate'] ?? null)) {
+            return null;
+        }
+
+        if (in_array($e['classificationGenre'] ?? null, self::GENRES_HORS_SPECTACLE, true)) {
             return null;
         }
 
