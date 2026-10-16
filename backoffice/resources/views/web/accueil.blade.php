@@ -17,13 +17,11 @@
     <meta property="og:image" content="{{ $site }}/images/partage.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Spettacoli, les spectacles autour de vous, ce soir.">
+    <meta property="og:image:alt" content="Le logo de Spettacoli : la mascotte au haut-de-forme et ses deux billets.">
     <meta name="twitter:card" content="summary_large_image">
     {{-- Données structurées (SEO 1) : le site et son éditeur, pour la fiche de Google (nom, logo). --}}
     <script type="application/ld+json">{!! \App\Web\DonneesStructurees::accueil($site) !!}</script>
-    <link rel="icon" href="/favicon.ico" sizes="32x32">
-    <link rel="icon" href="/images/favicon-48.png" type="image/png" sizes="48x48">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    @include('web.icones')
     <link rel="stylesheet" href="/fonts/polices.css">
     <style>
         :root { --fond: #F7F5F2; --encre: #16161D; --gris: #5B5B66; --trait: #E2DED8; --carte: #FFFFFF; --rouge: #D23A1F; color-scheme: light; }
@@ -34,8 +32,9 @@
         .titraille { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -0.02em; }
 
         header.haut { display: flex; align-items: center; justify-content: space-between; padding-top: 22px; padding-bottom: 22px; }
-        .logo { font-family: 'Bricolage Grotesque', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; text-decoration: none; }
-        .logo span { color: var(--rouge); }
+        .logo { display: block; line-height: 0; }
+        .logo img { height: 60px; width: auto; }
+        @media (max-width: 420px) { .logo img { height: 48px; } }
         .lien-theatre { font-size: 15px; font-weight: 600; text-decoration: none; padding: 10px 0; }
 
         .hero { display: grid; gap: 48px; align-items: center; padding-top: 24px; padding-bottom: 72px; }
@@ -127,7 +126,7 @@
 </head>
 <body>
     <header class="haut cadre">
-        <a class="logo" href="{{ url('/') }}">Spettacoli<span>.</span></a>
+        <a class="logo" href="{{ url('/') }}"><img src="/images/logo.svg" alt="Spettacoli" width="167" height="60"></a>
         <a class="lien-theatre" href="#theatres">Vous êtes un théâtre ?</a>
     </header>
 
