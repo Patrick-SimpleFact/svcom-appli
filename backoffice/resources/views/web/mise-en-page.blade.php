@@ -6,9 +6,7 @@
     {{-- Page d'un lien partagé : pas une version web de l'app, donc pas d'indexation (F5.8). --}}
     <meta name="robots" content="noindex">
     <title>@yield('titre') · Spettacoli</title>
-    <link rel="icon" href="/favicon.ico" sizes="32x32">
-    <link rel="icon" href="/images/favicon-48.png" type="image/png" sizes="48x48">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    @include('web.icones')
     @yield('meta')
     <style>
         :root { --rouge: #D23A1F; --encre: #1d1a17; --gris: #6b6560; --fond: #faf7f2; --carte: #fff; --trait: #e7e1d8; }
@@ -16,7 +14,8 @@
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--fond); color: var(--encre); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         main { max-width: 520px; margin: 0 auto; padding: 0 16px 40px; }
-        header.marque { max-width: 520px; margin: 0 auto; padding: 14px 16px; font-weight: 700; letter-spacing: .02em; color: var(--rouge); }
+        header.marque { max-width: 520px; margin: 0 auto; padding: 14px 16px; line-height: 0; }
+        header.marque img { height: 44px; width: auto; }
         .visuel { width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; object-fit: cover; display: block; background: var(--trait); }
         .affiche { width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; display: flex; align-items: flex-end; padding: 22px; color: #fff;
                    background: linear-gradient(150deg, var(--rouge), #6e1a0c); font: 700 clamp(26px, 8vw, 40px)/1.05 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
@@ -59,7 +58,14 @@
     </style>
 </head>
 <body>
-    <header class="marque">Spettacoli</header>
+    <header class="marque">
+        <a href="{{ config('app.url_site') }}/">
+            <picture>
+                <source srcset="/images/logo-sombre.svg" media="(prefers-color-scheme: dark)">
+                <img src="/images/logo.svg" alt="Spettacoli" width="123" height="44">
+            </picture>
+        </a>
+    </header>
     <main>@yield('contenu')</main>
     <footer class="pied">
         <a href="{{ url('/mentions-legales') }}">Mentions légales</a>

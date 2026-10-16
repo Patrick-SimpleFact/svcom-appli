@@ -2,6 +2,7 @@
 
 use Database\Seeders\GenresSeeder;
 use Database\Seeders\ParametresSeeder;
+use Illuminate\Mail\Markdown;
 
 /** SEO 1 : le site public a une seule adresse (domaine principal), un robots.txt et un plan du site ; le sous-domaine du BO est fermé. */
 beforeEach(function () {
@@ -48,6 +49,25 @@ it('donne à l’accueil son adresse canonique, son image de partage et ses donn
     expect(file_exists(public_path('images/partage.png')))->toBeTrue()
         ->and(file_exists(public_path('images/logo-512.png')))->toBeTrue()
         ->and(filesize(public_path('favicon.ico')))->toBeGreaterThan(0);
+});
+
+it('donne au site les icônes et le logo de la marque, et aux e-mails le logo du site principal', function () {
+    $this->get('https://spectacles-vivants.com/')->assertOk()
+        ->assertSee('<link rel="manifest" href="/site.webmanifest">', false)
+        ->assertSee('<img src="/images/logo.svg" alt="Spettacoli"', false);
+
+    foreach (['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'android-chrome-192x192.png', 'android-chrome-512x512.png',
+        'maskable-icon-512x512.png', 'images/logo.svg', 'images/logo-sombre.svg', 'images/logo-email.png'] as $fichier) {
+        expect(file_exists(public_path($fichier)))->toBeTrue("{$fichier} manque");
+    }
+    $manifeste = json_decode(file_get_contents(public_path('site.webmanifest')), true);
+    foreach ($manifeste['icons'] as $icone) {
+        expect(file_exists(public_path(ltrim($icone['src'], '/'))))->toBeTrue();
+    }
+
+    config(['app.url_site' => 'https://spectacles-vivants.com']);
+    $html = (string) app(Markdown::class)->render('mail.code-connexion', ['code' => '123456', 'minutes' => 10]);
+    expect($html)->toContain('src="https://spectacles-vivants.com/images/logo-email.png"');
 });
 
 it('sert l’espace salle seulement sur le sous-domaine : pas de page de connexion sur le domaine principal', function () {

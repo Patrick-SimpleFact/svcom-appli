@@ -10,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>Page introuvable · Spettacoli</title>
+    @include('web.icones')
     <link rel="stylesheet" href="/fonts/polices.css">
     <style>
         /* Page 404 du site et du back-office : un rideau de théâtre s'ouvre sur une scène vide. */
@@ -41,8 +42,8 @@
             background: var(--rouge); color: #fff; font-weight: 700; text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
         .bouton:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(210, 58, 31, .35); }
         .bouton:focus-visible { outline: 3px solid var(--or); outline-offset: 3px; }
-        .logo { position: absolute; left: 0; right: 0; bottom: 4.5%; text-align: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800;
-            font-size: 20px; letter-spacing: -0.02em; color: rgba(247, 245, 242, .55); text-decoration: none; }
+        .logo { position: absolute; left: 50%; bottom: 4.5%; transform: translateX(-50%); line-height: 0; opacity: .6; }
+        .logo img { height: 40px; width: auto; }
 
         /* Rideau : dessiné pli par pli dans le canvas (script en bas de page). */
         .rideau { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
@@ -79,7 +80,7 @@
 
         <canvas class="rideau" aria-hidden="true"></canvas>
         <div class="lambrequin" aria-hidden="true"></div>
-        <a class="logo" href="{{ url('/') }}">Spettacoli</a>
+        <a class="logo" href="{{ url('/') }}"><img src="/images/logo-sombre.svg" alt="Spettacoli" width="112" height="40"></a>
     </div>
     <script>
         // Rideau à l'italienne : chaque pli reste accroché en haut ; au-dessus de la corde il descend vers elle,

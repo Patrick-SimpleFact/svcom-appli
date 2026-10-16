@@ -28,6 +28,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('Spettacoli')
+            ->brandLogo(asset('images/logo.svg'))
+            ->darkModeBrandLogo(asset('images/logo-sombre.svg'))
+            ->brandLogoHeight('3rem')
+            ->favicon(asset('favicon.ico'))
             ->login()
             ->profile(EditProfile::class, isSimple: false)
             // Double authentification obligatoire pour tous les comptes (F7.1).
