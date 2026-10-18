@@ -35,7 +35,8 @@ class EnregistrerOffre
             // Sans horaire sur plusieurs jours : une période (dernier jour inclus), publiée « du … au … ».
             'date_fin' => ! $annonce->heureConnue && $annonce->fin !== null && $annonce->fin->format('Y-m-d') > $dateLocale->format('Y-m-d')
                 ? $annonce->fin->format('Y-m-d') : null,
-            'titre_comparable' => mb_substr($this->comparaison->titreComparable($annonce->titre, $annonce->lieuNom ?? $lieu->nom, $annonce->lieuVille), 0, 255),
+            'titre_comparable' => mb_substr($this->comparaison->titreComparable($annonce->titre, $annonce->lieuNom ?? $lieu->nom, $annonce->lieuVille,
+                in_array($source->code, ComparaisonSeances::SOURCES_CATEGORIE_EN_TETE, true)), 0, 255),
         ];
 
         $offre = Offre::firstOrNew(['source_id' => $source->id, 'identifiant_externe' => $annonce->identifiantExterne]);

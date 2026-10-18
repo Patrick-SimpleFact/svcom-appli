@@ -18,7 +18,7 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->seed(SourcesSeeder::class);
     [$this->billetreduc, $this->fnac] = [Source::firstWhere('code', 'billetreduc'), Source::firstWhere('code', 'fnac')];
-    $this->representation = Representation::factory()->create(['debut' => CarbonImmutable::parse('2026-10-17 20:30', 'Europe/Paris')]);
+    $this->representation = Representation::factory()->create(['debut' => CarbonImmutable::tomorrow('Europe/Paris')->setTime(20, 30)]);
     $this->vendue = fn (Representation $r, Source $source, bool $disparue = false) => Offre::create([
         'source_id' => $source->id, 'identifiant_externe' => $source->code.'-'.$r->id, 'donnees_normalisees' => ['titre' => 'Test'],
         'empreinte' => str_repeat('a', 64), 'vue_le' => now(), 'representation_id' => $r->id, 'disparue_le' => $disparue ? now() : null,
@@ -105,7 +105,7 @@ it('corrige l’horaire d’une séance à l’heure du lieu, et le verrouille c
     $this->actingAs($this->admin);
 
     Livewire::test(RepresentationsRelationManager::class, ['ownerRecord' => $this->representation->spectacle, 'pageClass' => ViewSpectacle::class])
-        ->callTableAction('edit', $this->representation, ['debut' => '2026-10-17 21:00:00'])
+        ->callTableAction('edit', $this->representation, ['debut' => CarbonImmutable::tomorrow('Europe/Paris')->setTime(21, 0)->format('Y-m-d H:i:s')])
         ->assertHasNoTableActionErrors();
 
     $corrigee = $this->representation->fresh();
