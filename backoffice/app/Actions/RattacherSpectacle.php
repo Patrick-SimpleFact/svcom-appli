@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Collecte\ComparaisonSeances;
 use App\Enums\FileATraiter;
 use App\Models\ElementATraiter;
+use App\Models\Genre;
 use App\Models\Offre;
 use App\Models\Spectacle;
 use App\Support\Texte;
@@ -21,18 +22,31 @@ use Illuminate\Support\Facades\DB;
  *      mais le spectacle va dans « Spectacles à contrôler » ;
  * 3. sinon un nouveau spectacle.
  * Un titre générique (« Concert », « Spectacle de Noël ») n'est jamais regroupé entre deux lieux différents.
+ * Sur le titre seul, plusieurs spectacles possibles (« L'Avare » de plusieurs troupes) : aucun n'est choisi, le nouveau
+ * spectacle va dans « Spectacles à contrôler ». Une lettre masquée (« c*ns ») vaut le titre connu qui lui correspond, et
+ * la catégorie retirée en tête du titre (« Opéra - Carmen ») écarte les spectacles d'un autre genre.
  * Le spectacle n'est visible dans l'app qu'avec des représentations (K08).
  */
 class RattacherSpectacle
 {
-    private const ARTISTES_COMMUNS = 3;
+    public const ARTISTES_COMMUNS = 3;
 
-    private const MEME_LIEU_OU_BILLETTERIE = 2;
+    public const MEME_LIEU_OU_BILLETTERIE = 2;
 
-    private const TITRE_SEUL = 1;
+    public const TITRE_SEUL = 1;
+
+    /** Le titre seul désigne plusieurs spectacles : aucun n'est choisi. */
+    public const AMBIGU = 0;
+
+    private const MOTIF_TITRE_SEUL = 'Dates de plusieurs lieux réunies sur le titre seul (artistes inconnus)';
+
+    public const MOTIF_AMBIGU = 'Plusieurs spectacles portent ce titre : rien n’a été réuni';
 
     /** @var array<int, list<string>> artistes connus de chaque spectacle (pendant cette collecte) */
     private array $artistesDesSpectacles = [];
+
+    /** @var array<string, ?string>|null titres masqués connus → le titre en clair qu'ils désignent (pendant cette collecte) */
+    private ?array $masquesConnus = null;
 
     /** Mots qui, seuls, ne désignent pas un spectacle précis. */
     private const MOTS_GENERIQUES = [
@@ -47,15 +61,24 @@ class RattacherSpectacle
     {
         $spectacle = $this->spectacleDuGroupe($offre);
 
+        $ambigu = false;
+
         if ($spectacle === null) {
             [$spectacle, $niveau] = $this->memeTitre($offre);
+            $ambigu = $niveau === self::AMBIGU;
 
             if ($spectacle !== null && $niveau === self::TITRE_SEUL) {
                 $this->aControler($spectacle);
             }
         }
 
-        $spectacle ??= $this->creer($offre);
+        if ($spectacle === null) {
+            $spectacle = $this->creer($offre);
+
+            if ($ambigu) {
+                $this->aControler($spectacle, self::MOTIF_AMBIGU);
+            }
+        }
 
         // Toutes les offres de la séance suivent le même spectacle.
         $premiere = $offre->meme_seance_que_id ?? $offre->id;
@@ -67,7 +90,7 @@ class RattacherSpectacle
         return $spectacle;
     }
 
-    public function estGenerique(?string $titreComparable): bool
+    public static function estGenerique(?string $titreComparable): bool
     {
         $mots = array_filter(explode(' ', (string) $titreComparable));
 
@@ -88,19 +111,24 @@ class RattacherSpectacle
 
     /**
      * Le meilleur spectacle au même titre dont les artistes ne contredisent pas ceux de la séance.
+     * $sauf : le spectacle actuel de la séance, écarté (rattrapage des titres, commande spectacles:rapprocher-titres).
      *
-     * @return array{0: ?Spectacle, 1: ?int} le spectacle et la force du rapprochement
+     * @return array{0: ?Spectacle, 1: ?int} le spectacle et la force du rapprochement (AMBIGU : plusieurs sur le titre seul)
      */
-    private function memeTitre(Offre $offre): array
+    public function memeTitre(Offre $offre, ?int $sauf = null): array
     {
         if (blank($offre->titre_comparable)) {
             return [null, null];
         }
 
+        $genres = $this->genresCompatibles($offre);
+
         $candidats = Offre::whereKeyNot($offre->id)
             ->whereNotNull('spectacle_id')
-            ->where('titre_comparable', $offre->titre_comparable)
+            ->whereIn('titre_comparable', $this->titresEquivalents($offre->titre_comparable))
             ->when($this->estGenerique($offre->titre_comparable), fn ($q) => $q->where('lieu_id', $offre->lieu_id))
+            ->when($sauf !== null, fn ($q) => $q->where('spectacle_id', '!=', $sauf))
+            ->when($genres !== null, fn ($q) => $q->whereIn('spectacle_id', Spectacle::select('id')->whereIn('genre_id', $genres)))
             ->distinct()
             ->orderBy('spectacle_id')
             ->limit(50)
@@ -108,6 +136,7 @@ class RattacherSpectacle
 
         $artistes = $this->artistes($offre);
         $meilleur = [null, null];
+        $surLeTitreSeul = 0;
 
         foreach ($candidats as $spectacleId) {
             $artistesDuSpectacle = $this->artistesDuSpectacle($spectacleId);
@@ -119,12 +148,67 @@ class RattacherSpectacle
                 default => self::TITRE_SEUL,
             };
 
+            if ($niveau === self::TITRE_SEUL) {
+                $surLeTitreSeul++;
+            }
+
             if ($niveau !== null && $niveau > ($meilleur[1] ?? 0)) {
                 $meilleur = [$spectacleId, $niveau];
             }
         }
 
+        if ($meilleur[1] === self::TITRE_SEUL && $surLeTitreSeul > 1) {
+            return [null, self::AMBIGU];
+        }
+
         return [$meilleur[0] ? Spectacle::find($meilleur[0]) : null, $meilleur[1]];
+    }
+
+    /**
+     * Le titre, et le titre qui lui correspond quand une lettre est masquée d'un côté ou de l'autre
+     * (« oh p* laurent » / « oh putain laurent »), seulement s'il n'y en a qu'un.
+     *
+     * @return list<string>
+     */
+    public function titresEquivalents(string $titre): array
+    {
+        if (str_contains($titre, '*')) {
+            $correspondant = $this->titreDuMasque($titre);
+
+            return $correspondant === null ? [$titre] : [$titre, $correspondant];
+        }
+
+        // Les titres masqués connus, lus une fois par collecte (ils sont rares) : seulement ceux qui désignent ce titre.
+        $this->masquesConnus ??= Offre::where('titre_comparable', 'like', '%*%')->distinct()->pluck('titre_comparable')
+            ->mapWithKeys(fn (string $masque) => [$masque => $this->titreDuMasque($masque)])->all();
+
+        return [$titre, ...array_keys(array_filter($this->masquesConnus, fn (?string $correspondant) => $correspondant === $titre))];
+    }
+
+    /** L'unique titre en clair qui correspond au titre masqué, ou null (aucun, ou plusieurs). */
+    private function titreDuMasque(string $masque): ?string
+    {
+        $trouves = Offre::whereRaw('titre_comparable ~ ?', ['^'.str_replace('*', '[a-z]+', $masque).'$']) // seulement [a-z0-9 *]
+            ->where('titre_comparable', 'not like', '%*%')
+            ->distinct()->limit(2)->pluck('titre_comparable');
+
+        return $trouves->count() === 1 ? $trouves->first() : null;
+    }
+
+    /**
+     * Genres admis par la catégorie retirée en tête du titre (« Opéra - Carmen » : opéra), ou null.
+     *
+     * @return list<int>|null
+     */
+    private function genresCompatibles(Offre $offre): ?array
+    {
+        if (! in_array($offre->source?->code, ComparaisonSeances::SOURCES_CATEGORIE_EN_TETE, true)) {
+            return null;
+        }
+
+        $genres = app(ComparaisonSeances::class)->categorieEnTete((string) ($offre->donnees_normalisees['titre'] ?? ''))['genres'] ?? null;
+
+        return $genres === null ? null : Genre::whereIn('slug', [...$genres, 'autres'])->pluck('id')->all();
     }
 
     /** @return list<string> */
@@ -155,8 +239,8 @@ class RattacherSpectacle
         return ! ($proche && mb_strlen($nom) >= 0.7 * mb_strlen($titreComparable));
     }
 
-    /** Le spectacle réunit des dates sur la foi du titre seul : à contrôler (une ligne par spectacle). */
-    private function aControler(Spectacle $spectacle): void
+    /** Le spectacle réunit des dates sur la foi du titre seul, ou son titre est ambigu : à contrôler (une ligne par spectacle). */
+    public function aControler(Spectacle $spectacle, string $motif = self::MOTIF_TITRE_SEUL): void
     {
         $dejaVu = ElementATraiter::where('file', FileATraiter::SpectacleAControler)
             ->where('cible_type', $spectacle->getMorphClass())
@@ -168,7 +252,7 @@ class RattacherSpectacle
                 'file' => FileATraiter::SpectacleAControler,
                 'cible_type' => $spectacle->getMorphClass(),
                 'cible_id' => $spectacle->id,
-                'donnees' => ['titre' => $spectacle->titre, 'motif' => 'Dates de plusieurs lieux réunies sur le titre seul (artistes inconnus)'],
+                'donnees' => ['titre' => $spectacle->titre, 'motif' => $motif],
             ]);
         }
     }

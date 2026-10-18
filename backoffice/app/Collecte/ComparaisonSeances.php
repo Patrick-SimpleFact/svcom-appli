@@ -2,6 +2,7 @@
 
 namespace App\Collecte;
 
+use App\Actions\RattacherSpectacle;
 use App\Support\Texte;
 
 /**
@@ -23,9 +24,77 @@ class ComparaisonSeances
         // ajoutés par les billetteries autour du vrai titre (N02) : « Harold Barbé dans Relax Max », « Naïm - Chapitre 3 - Tournée »
         'dans', 'tournee'];
 
-    /** Titre ramené à une forme comparable : sans le nom du lieu ajouté en sous-titre, sans accents ni mots vides. */
-    public function titreComparable(string $titre, ?string $lieu = null, ?string $ville = null): string
+    /**
+     * Sources dont les titres commencent souvent par leur catégorie (« Théâtre : … », « Humour “…” ») : les agendas
+     * publics, remplis à la main. Mesuré en production le 17/10/2026 : DATAtourisme 23,6 %, OpenAgenda 12,3 %,
+     * Que faire à Paris 2,8 % ; les billetteries presque jamais, et chez elles « Concert : » peut faire partie du titre.
+     */
+    public const SOURCES_CATEGORIE_EN_TETE = ['datatourisme', 'openagenda', 'paris_qfap'];
+
+    /**
+     * Mots de catégorie qu'on retire en tête du titre, avec les genres compatibles (null : pas de contrainte).
+     * Le genre évite de réunir « Opéra - Carmen » et « Carmen - Ballet Julien Lestel ».
+     */
+    private const CATEGORIES = [
+        'theatre' => ['theatre', 'humour'], 'piece' => ['theatre', 'humour'], 'comedie' => ['theatre', 'humour', 'comedie-musicale-cabaret'],
+        'humour' => ['theatre', 'humour'], 'humoristique' => ['theatre', 'humour'], 'one' => ['theatre', 'humour'], 'stand' => ['theatre', 'humour'],
+        'concert' => ['concert', 'opera-lyrique'], 'concerts' => ['concert', 'opera-lyrique'], 'chanson' => ['concert'], 'jazz' => ['concert'],
+        'recital' => ['concert', 'opera-lyrique'], 'musique' => ['concert', 'comedie-musicale-cabaret', 'opera-lyrique'],
+        'danse' => ['danse'], 'ballet' => ['danse'], 'opera' => ['opera-lyrique'], 'cirque' => ['cirque-magie'], 'magie' => ['cirque-magie'],
+        'cabaret' => ['comedie-musicale-cabaret'], 'musical' => ['concert', 'comedie-musicale-cabaret'], 'musicale' => ['concert', 'comedie-musicale-cabaret'],
+        'spectacle' => null, 'spectacles' => null, 'conte' => null, 'contes' => null, 'lecture' => null, 'marionnettes' => null,
+        'jeune' => null, 'public' => null, 'man' => null, 'woman' => null, 'show' => null, 'up' => null, 'seul' => null, 'en' => null,
+        'scene' => null, 'de' => null,
+    ];
+
+    /**
+     * La catégorie annoncée en tête du titre, suivie d'un séparateur ou de guillemets : « Humour “Les c*ns, c'est les autres” »,
+     * « Théâtre : Nénène », « Spectacle - Climax ». « Concert de Noël » n'en a pas (pas de séparateur), « Concert : Jazz » non plus
+     * (il ne resterait qu'un titre générique).
+     *
+     * @return array{titre: string, genres: ?list<string>}|null le titre sans la catégorie et les genres compatibles
+     */
+    public function categorieEnTete(string $titre): ?array
     {
+        if (! preg_match('/^(.{3,40}?)\s*(?:[:|–—]|\s-\s|(?=[«“"„]))\s*(.+)$/u', $titre, $m)) {
+            return null;
+        }
+
+        $mots = array_values(array_filter(explode(' ', Texte::normaliser($m[1]))));
+
+        if ($mots === [] || array_diff($mots, array_keys(self::CATEGORIES)) !== []) {
+            return null;
+        }
+
+        $reste = preg_replace('/^[\s«»“”"„]+|[\s«»“”"„]+$/u', '', $m[2]);
+        $comparable = $this->titreComparable($reste);
+
+        if (mb_strlen($comparable) < 5 || RattacherSpectacle::estGenerique($comparable)) {
+            return null;
+        }
+
+        // Plusieurs catégories (« Théâtre musical ») : les genres communs, sinon tous ceux qu'elles admettent.
+        $genres = null;
+
+        foreach ($mots as $mot) {
+            if (self::CATEGORIES[$mot] !== null) {
+                $genres = $genres === null ? self::CATEGORIES[$mot] : (array_values(array_intersect($genres, self::CATEGORIES[$mot])) ?: array_values(array_unique([...$genres, ...self::CATEGORIES[$mot]])));
+            }
+        }
+
+        return ['titre' => $reste, 'genres' => $genres];
+    }
+
+    /**
+     * Titre ramené à une forme comparable : sans le nom du lieu ajouté en sous-titre, sans accents ni mots vides,
+     * et sans la catégorie en tête pour les sources qui l'ajoutent ($sansCategorie).
+     */
+    public function titreComparable(string $titre, ?string $lieu = null, ?string $ville = null, bool $sansCategorie = false): string
+    {
+        if ($sansCategorie && ($categorie = $this->categorieEnTete($titre)) !== null) {
+            $titre = $categorie['titre'];
+        }
+
         // « Mamouchka – Café Théâtre de la Porte d'Italie, Avignon » : le sous-titre qui nomme le lieu ou la ville est retiré.
         $morceaux = preg_split('/\s+[–—|-]\s+|\s*\|\s*/u', $titre);
 

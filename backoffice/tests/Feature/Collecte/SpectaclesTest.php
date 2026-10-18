@@ -22,6 +22,7 @@ use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Source;
 use App\Models\Spectacle;
+use App\Models\Utilisateur;
 use App\Models\Ville;
 use App\Support\Point;
 use Carbon\CarbonImmutable;
@@ -31,6 +32,7 @@ use Database\Seeders\ParametresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
 use Database\Seeders\SourcesSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -97,10 +99,61 @@ it('réunit le même titre de deux sources seulement s’ils partagent un artist
     $bordeaux = Lieu::create(['nom' => 'Théâtre Femina', 'type' => TypeLieu::Theatre, 'position' => new Point(44.8410, -0.5760), 'precision_position' => PrecisionPosition::Exacte]);
     $d = ($this->seance)(Source::firstWhere('code', 'ticketmaster'), 'TM-1', 'Le Prénom', $bordeaux, '2026-11-03 20:00');
 
+    $controle = ElementATraiter::where('file', FileATraiter::SpectacleAControler)->sole();
+
     expect($b->spectacle_id)->toBe($a->spectacle_id)
         ->and($c->fresh()->spectacle_id)->not->toBe($a->spectacle_id) // même titre et même source que B, mais autre troupe (K07b)
-        ->and($d->spectacle_id)->toBe($a->spectacle_id)          // titre seul (artistes inconnus chez Ticketmaster) : regroupé…
-        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->sole()->cible_id)->toBe($a->spectacle_id); // …à contrôler
+        // titre seul (artistes inconnus chez Ticketmaster) et deux troupes possibles : aucune n'est choisie…
+        ->and($d->spectacle_id)->not->toBeIn([$a->spectacle_id, $c->fresh()->spectacle_id])
+        ->and($controle->cible_id)->toBe($d->spectacle_id) // …à contrôler
+        ->and($controle->donnees['motif'])->toBe(RattacherSpectacle::MOTIF_AMBIGU);
+});
+
+it('réunit sur le titre seul quand un seul spectacle porte ce titre, puis le met à contrôler', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', 'Le Prénom', $this->avignon, artistes: ['Patrick Bruel']);
+    $b = ($this->seance)(Source::firstWhere('code', 'ticketmaster'), 'TM-1', 'Le Prénom', $this->lyon, '2026-11-03 20:00');
+
+    expect($b->spectacle_id)->toBe($a->spectacle_id)
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->sole()->cible_id)->toBe($a->spectacle_id);
+});
+
+it('retire la catégorie en tête du titre d’un agenda public et reconnaît la lettre masquée (487 et 24493 en production)', function () {
+    $openagenda = Source::firstWhere('code', 'openagenda');
+    $a = ($this->seance)($this->billetreduc, 'BR-1', "Les cons c'est les autres", $this->avignon, genre: 'humour');
+    $b = ($this->seance)($openagenda, 'OA-1', 'Humour “Les c*ns, c’est les autres”', $this->avignon, '2026-11-05 20:30', genre: 'humour');
+    $c = ($this->seance)($openagenda, 'OA-2', 'Théâtre : Edmond', $this->marseille);
+    $d = ($this->seance)($this->billetreduc, 'BR-2', 'Edmond', $this->marseille, '2026-11-06 20:30');
+
+    expect($b->titre_comparable)->toBe('c*ns c est autres')
+        ->and($b->spectacle_id)->toBe($a->spectacle_id)
+        ->and($c->titre_comparable)->toBe('edmond')
+        ->and($d->spectacle_id)->toBe($c->spectacle_id);
+});
+
+it('garde la catégorie dans le titre d’une billetterie et ne retire pas « Concert de Noël »', function () {
+    $fnac = ($this->seance)($this->fnac, 'FN-1', 'Concert : Les Vieilles Canailles', $this->avignon, genre: 'concert');
+    $agenda = ($this->seance)(Source::firstWhere('code', 'datatourisme'), 'DT-1', 'Concert de Noël des Petits Chanteurs', $this->lyon, genre: 'concert');
+    $generique = ($this->seance)(Source::firstWhere('code', 'datatourisme'), 'DT-2', 'Concert : Jazz', $this->lyon, genre: 'concert');
+
+    expect($fnac->titre_comparable)->toBe('concert vieilles canailles')
+        ->and($agenda->titre_comparable)->toBe('concert noel petits chanteurs')
+        ->and($generique->titre_comparable)->toBe('concert jazz');
+});
+
+it('ne réunit pas un titre dont la catégorie annonce un autre genre (« Opéra - Carmen » et le ballet Carmen)', function () {
+    $ballet = ($this->seance)($this->billetreduc, 'BR-1', 'Carmen', $this->avignon, genre: 'danse');
+    $opera = ($this->seance)(Source::firstWhere('code', 'datatourisme'), 'DT-1', 'Opéra - Carmen', $this->avignon, '2026-11-05 20:30', genre: 'opera-lyrique');
+
+    expect($opera->titre_comparable)->toBe('carmen')
+        ->and($opera->spectacle_id)->not->toBe($ballet->spectacle_id);
+});
+
+it('réunit les titres à lettres masquées de la Fnac (« Oh P****n Laurent ! »)', function () {
+    $a = ($this->seance)($this->fnac, 'FN-1', 'Oh putain Laurent !', $this->avignon, genre: 'humour');
+    $b = ($this->seance)($this->fnac, 'FN-2', 'Oh P****n Laurent !', $this->lyon, '2026-11-05 20:30', genre: 'humour');
+
+    expect($b->titre_comparable)->toBe('oh p*n laurent')
+        ->and($b->spectacle_id)->toBe($a->spectacle_id);
 });
 
 it('réunit le même titre dans le même lieu, même vendu par deux sources à des dates différentes', function () {
@@ -250,4 +303,29 @@ it('affiche les lieux de chaque spectacle dans la liste, pour distinguer les hom
 
     expect($nice->spectacle_id)->not->toBe($bordeaux->spectacle_id);
     $this->get('/admin/spectacles')->assertOk()->assertSee('2 lieux')->assertSee('Théâtre du Chêne noir');
+});
+
+it('rattrape les doublons déjà en base : simulation sans effet, puis fusion avec le favori (spectacles:rapprocher-titres)', function () {
+    $a = ($this->seance)($this->billetreduc, 'BR-1', "Les cons c'est les autres", $this->avignon, genre: 'humour');
+    $b = ($this->seance)(Source::firstWhere('code', 'openagenda'), 'OA-1', 'Humour “Les c*ns, c’est les autres”', $this->avignon, '2026-11-05 20:30', genre: 'humour');
+
+    // L'état d'avant le correctif : un second spectacle, et le titre comparable avec la catégorie.
+    $doublon = Spectacle::factory()->create(['titre' => 'Humour “Les c*ns, c’est les autres”', 'genre_id' => Genre::firstWhere('slug', 'humour')->id]);
+    Offre::whereKey($b->id)->update(['spectacle_id' => $doublon->id, 'titre_comparable' => 'humour c*ns c est autres']);
+    $u = Utilisateur::create(['email' => 'patrick@exemple.fr']);
+    DB::table('favoris')->insert(['utilisateur_id' => $u->id, 'spectacle_id' => $doublon->id, 'created_at' => now(), 'updated_at' => now()]);
+
+    $this->artisan('spectacles:rapprocher-titres', ['--simulation' => true])
+        ->expectsOutputToContain("#{$doublon->id} « Humour “Les c*ns, c’est les autres” »  →  #{$a->spectacle_id} « Les cons c'est les autres »")
+        ->assertSuccessful();
+    expect($b->fresh()->spectacle_id)->toBe($doublon->id)->and($b->fresh()->titre_comparable)->toBe('humour c*ns c est autres');
+
+    $this->artisan('spectacles:rapprocher-titres')->assertSuccessful();
+
+    expect($b->fresh()->spectacle_id)->toBe($a->spectacle_id)
+        ->and($b->fresh()->titre_comparable)->toBe('c*ns c est autres')
+        ->and(DB::table('favoris')->where('utilisateur_id', $u->id)->value('spectacle_id'))->toBe($a->spectacle_id)
+        ->and(Offre::where('spectacle_id', $doublon->id)->exists())->toBeFalse();
+
+    $this->artisan('spectacles:rapprocher-titres')->expectsOutputToContain('Réunis (artiste commun, même lieu ou même billetterie) : 0')->assertSuccessful();
 });
