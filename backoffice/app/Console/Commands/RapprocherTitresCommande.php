@@ -18,19 +18,22 @@ use Illuminate\Support\Facades\DB;
  * autres” ») et certains titres ont une lettre masquée ; le même spectacle avait donc deux fiches (487 et 24493 en
  * production). Le titre comparable de ces offres est recalculé sans la catégorie, puis chaque spectacle concerné rejoint
  * celui que la collecte lui choisirait aujourd'hui (règles de RattacherSpectacle, lui-même écarté) :
- * artiste commun, même lieu ou même billetterie → fusionné ; titre seul → fusionné et « à contrôler » ;
- * plusieurs spectacles au même titre → rien, « à contrôler ». Jamais deux spectacles séparés à la main, ni un spectacle
- * corrigé à la main. Sans effet une fois passé (les collectes suivantes calculent déjà ces titres).
+ * seuls les cas sûrs (artiste commun, même lieu ou même billetterie) sont fusionnés ; titre seul ou plusieurs spectacles
+ * au même titre → listés, rien n'est modifié (choix de Patrick le 18/10 après la simulation de production). --sauf écarte
+ * les spectacles repérés à tort dans la simulation. Jamais deux spectacles séparés à la main, ni un spectacle corrigé à la
+ * main. Sans effet une fois passé (les collectes suivantes calculent déjà ces titres).
  */
 class RapprocherTitresCommande extends Command
 {
-    protected $signature = 'spectacles:rapprocher-titres {--simulation : lister sans rien modifier}';
+    protected $signature = 'spectacles:rapprocher-titres {--simulation : lister sans rien modifier}
+        {--sauf= : numéros des spectacles à ne pas réunir, séparés par des virgules}';
 
     protected $description = 'Réunit les spectacles en double à cause d\'une catégorie en tête du titre ou d\'une lettre masquée';
 
     public function handle(ComparaisonSeances $comparaison, RattacherSpectacle $rattacher, FusionnerSpectacles $fusionner): int
     {
         $simulation = (bool) $this->option('simulation');
+        $sauf = array_map('intval', array_filter(explode(',', (string) $this->option('sauf'))));
         $sources = Source::whereIn('code', ComparaisonSeances::SOURCES_CATEGORIE_EN_TETE)->pluck('nom', 'id');
 
         // 1. Titres comparables recalculés. En simulation, dans une transaction annulée à la fin.
@@ -46,7 +49,7 @@ class RapprocherTitresCommande extends Command
 
         // 2. Chaque spectacle concerné, avec l'une de ses offres concernées, cherche le spectacle qui lui correspond.
         $parSpectacle = collect($concernees)->unique()->sortKeys(); // la première offre concernée de chaque spectacle
-        $issues = ['fusion' => [], 'controle' => [], 'ambigu' => []];
+        $issues = ['fusion' => [], 'titre_seul' => [], 'ambigu' => [], 'sauf' => []];
         $absorbes = []; // spectacle réuni → spectacle gardé (en simulation, rien n'est vidé : la paire ne compte qu'une fois)
 
         foreach ($parSpectacle as $offreId => $spectacleId) {
@@ -62,7 +65,6 @@ class RapprocherTitresCommande extends Command
 
             if ($niveau === RattacherSpectacle::AMBIGU) {
                 $issues['ambigu'][] = [$offre, $spectacle, null];
-                $simulation || $rattacher->aControler($spectacle, RattacherSpectacle::MOTIF_AMBIGU);
 
                 continue;
             }
@@ -75,14 +77,15 @@ class RapprocherTitresCommande extends Command
                 continue;
             }
 
-            $absorbes[$spectacle->id] = $cible->id;
+            if ($niveau === RattacherSpectacle::TITRE_SEUL || in_array($spectacle->id, $sauf, true)) {
+                $issues[$niveau === RattacherSpectacle::TITRE_SEUL ? 'titre_seul' : 'sauf'][] = [$offre, $spectacle, $cible];
 
-            $issues[$niveau === RattacherSpectacle::TITRE_SEUL ? 'controle' : 'fusion'][] = [$offre, $spectacle, $cible];
-
-            if (! $simulation) {
-                $fusionner->handle($spectacle, $cible);
-                $niveau === RattacherSpectacle::TITRE_SEUL && $rattacher->aControler($cible);
+                continue;
             }
+
+            $absorbes[$spectacle->id] = $cible->id;
+            $issues['fusion'][] = [$offre, $spectacle, $cible];
+            $simulation || $fusionner->handle($spectacle, $cible);
         }
 
         if ($simulation) {
@@ -138,8 +141,9 @@ class RapprocherTitresCommande extends Command
     {
         $titres = [
             'fusion' => $simulation ? 'Seraient réunis (artiste commun, même lieu ou même billetterie)' : 'Réunis (artiste commun, même lieu ou même billetterie)',
-            'controle' => $simulation ? 'Seraient réunis sur le titre seul, puis à contrôler' : 'Réunis sur le titre seul, à contrôler',
-            'ambigu' => 'Plusieurs spectacles portent ce titre : rien de réuni, à contrôler',
+            'titre_seul' => 'Même titre seulement : rien de réuni',
+            'ambigu' => 'Plusieurs spectacles portent ce titre : rien de réuni',
+            'sauf' => 'Écartés par --sauf : rien de réuni',
         ];
 
         foreach ($titres as $issue => $titre) {

@@ -329,3 +329,38 @@ it('rattrape les doublons déjà en base : simulation sans effet, puis fusion av
 
     $this->artisan('spectacles:rapprocher-titres')->expectsOutputToContain('Réunis (artiste commun, même lieu ou même billetterie) : 0')->assertSuccessful();
 });
+
+it('ne réunit en rattrapage que les cas sûrs : ni le titre seul, ni les spectacles écartés par --sauf (spectacles:rapprocher-titres)', function () {
+    $openagenda = Source::firstWhere('code', 'openagenda');
+    $doublon = function (Offre $offre, string $titre, string $comparable): Spectacle {
+        $spectacle = Spectacle::factory()->create(['titre' => $titre, 'genre_id' => Genre::firstWhere('slug', 'humour')->id]);
+        Offre::whereKey($offre->id)->update(['spectacle_id' => $spectacle->id, 'titre_comparable' => $comparable]);
+
+        return $spectacle;
+    };
+
+    // Autre lieu, autre billetterie, artistes inconnus : même titre seulement.
+    $a = ($this->seance)($this->billetreduc, 'BR-1', "Les cons c'est les autres", $this->avignon, genre: 'humour');
+    $b = ($this->seance)($openagenda, 'OA-1', 'Humour “Les c*ns, c’est les autres”', $this->lyon, '2026-11-05 20:30', genre: 'humour');
+    $titreSeul = $doublon($b, 'Humour “Les c*ns, c’est les autres”', 'humour c*ns c est autres');
+
+    // Même lieu : cas sûr, mais écarté par --sauf.
+    $c = ($this->seance)($this->billetreduc, 'BR-2', 'Edmond', $this->marseille, genre: 'humour');
+    $d = ($this->seance)($openagenda, 'OA-2', 'Humour : Edmond', $this->marseille, '2026-11-06 20:30', genre: 'humour');
+    $ecarte = $doublon($d, 'Humour : Edmond', 'humour edmond');
+
+    $aControler = ElementATraiter::where('file', FileATraiter::SpectacleAControler)->count();
+
+    $this->artisan('spectacles:rapprocher-titres', ['--sauf' => (string) $ecarte->id])
+        ->expectsOutputToContain('Même titre seulement : rien de réuni : 1')
+        ->expectsOutputToContain('Écartés par --sauf : rien de réuni : 1')
+        ->expectsOutputToContain('Réunis (artiste commun, même lieu ou même billetterie) : 0')
+        ->assertSuccessful();
+
+    expect($b->fresh()->spectacle_id)->toBe($titreSeul->id)->not->toBe($a->spectacle_id)
+        ->and($d->fresh()->spectacle_id)->toBe($ecarte->id)->not->toBe($c->spectacle_id)
+        ->and(ElementATraiter::where('file', FileATraiter::SpectacleAControler)->count())->toBe($aControler);
+
+    $this->artisan('spectacles:rapprocher-titres')->assertSuccessful();
+    expect($d->fresh()->spectacle_id)->toBe($c->spectacle_id); // sans --sauf, le cas sûr est réuni
+});
