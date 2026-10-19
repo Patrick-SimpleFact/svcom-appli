@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import {
-  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, regionAutour, type ReponseAutour, titreAccueil, type TriAutour,
+  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, jourMois, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, regionAutour, type ReponseAutour, titreAccueil, type TriAutour,
 } from '@/autour/autour';
 import { coordonnees, usePosition } from '@/autour/position';
 import { type Ville, useVilleChoisie } from '@/autour/ville';
@@ -472,7 +472,7 @@ function ListeAutour(props: {
       data={liste.etat === 'prete' ? liste.cartes : []}
       keyExtractor={(c) => `${c.spectacle.id}-${c.lieu.id}-${c.date_locale}`}
       renderItem={({ item }) => (
-        <CarteSpectacle carte={item} genre={libelleGenre(item.spectacle.genre_id)} onPress={() => {
+        <CarteSpectacle carte={item} genre={libelleGenre(item.spectacle.genre_id)} jour={jourMois(item.date_locale)} onPress={() => {
             carteCliquee();
             ouvrirFiche(item.spectacle.id, item.seances[0]?.representation_id, centre);
           }} />

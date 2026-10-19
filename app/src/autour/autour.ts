@@ -170,7 +170,8 @@ export function ecartMetres(a: { lat: number; lon: number }, b: { lat: number; l
   return 2 * 6371000 * Math.asin(Math.sqrt(h));
 }
 
-function jourMois(date: string): string {
+/** « 2026-10-24 » → « 24 oct. » (« 1er » le premier du mois). */
+export function jourMois(date: string): string {
   const [, mois, jour] = date.split('-').map(Number);
 
   return `${jour === 1 ? '1er' : jour} ${MOIS[mois - 1]}`;
