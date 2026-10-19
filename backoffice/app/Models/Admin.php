@@ -13,11 +13,13 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 /**
- * Compte du back-office (super-admin au MVP1). Distinct des comptes de l'app.
+ * Compte du back-office. Distinct des comptes de l'app. Ses menus viennent de son modèle de profil,
+ * ou de sa propre liste pour un compte « Libre » (sans modèle).
  */
 class Admin extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasName
 {
@@ -36,6 +38,8 @@ class Admin extends Authenticatable implements FilamentUser, HasAppAuthenticatio
         'password',
         'actif',
         'derniere_connexion_le',
+        'profil_id',
+        'menus',
     ];
 
     protected $hidden = [
@@ -49,7 +53,25 @@ class Admin extends Authenticatable implements FilamentUser, HasAppAuthenticatio
             'password' => 'hashed',
             'actif' => 'boolean',
             'derniere_connexion_le' => 'datetime',
+            'menus' => 'array',
         ];
+    }
+
+    /** @return BelongsTo<Profil, $this> */
+    public function profil(): BelongsTo
+    {
+        return $this->belongsTo(Profil::class);
+    }
+
+    public function estSuperAdmin(): bool
+    {
+        return (bool) $this->profil?->super_admin;
+    }
+
+    /** @param  class-string  $ecran  ressource ou page du back-office ; compte « Libre » (sans modèle) : ses propres menus */
+    public function peutOuvrir(string $ecran): bool
+    {
+        return $this->profil ? $this->profil->ouvre($ecran) : in_array($ecran, $this->menus ?? [], true);
     }
 
     public function canAccessPanel(Panel $panel): bool

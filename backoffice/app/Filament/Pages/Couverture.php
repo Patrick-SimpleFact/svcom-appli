@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Actions\MesurerCouverture;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Widgets\CouvertureVilles;
 use App\Filament\Widgets\EvolutionCouverture;
 use BackedEnum;
@@ -17,6 +18,8 @@ use UnitEnum;
  */
 class Couverture extends Dashboard
 {
+    use OuvertSelonProfil;
+
     protected static string $routePath = '/couverture';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMap;

@@ -6,6 +6,7 @@ use App\Actions\DeciderDoublon;
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Enums\TypeDecisionDedoublonnage;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
@@ -26,6 +27,8 @@ use UnitEnum;
  */
 abstract class FileDoublonsResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = ElementATraiter::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Collecte';

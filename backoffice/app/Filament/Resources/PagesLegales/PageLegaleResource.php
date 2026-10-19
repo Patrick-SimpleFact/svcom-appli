@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PagesLegales;
 
 use App\Filament\Resources\PagesLegales\Pages\ManagePagesLegales;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\PageLegale;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -22,6 +23,8 @@ use UnitEnum;
  */
 class PageLegaleResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = PageLegale::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScale;

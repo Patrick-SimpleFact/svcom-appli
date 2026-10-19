@@ -6,6 +6,7 @@ use App\Filament\Resources\JournalActions\Pages\ListJournalActions;
 use App\Filament\Resources\JournalActions\Pages\ViewJournalAction;
 use App\Filament\Resources\JournalActions\Schemas\JournalActionInfolist;
 use App\Filament\Resources\JournalActions\Tables\JournalActionsTable;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\JournalAction;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -20,6 +21,8 @@ use UnitEnum;
  */
 class JournalActionResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = JournalAction::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;

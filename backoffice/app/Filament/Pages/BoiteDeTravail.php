@@ -36,6 +36,12 @@ class BoiteDeTravail extends Dashboard
         FileATraiter::SpectacleAControler->value => SpectacleAControlerResource::class,
     ];
 
+    /** Files que l'admin connecté peut ouvrir (modèle de profil) : seules celles-ci comptent dans la boîte de travail. */
+    public static function ressourcesOuvertes(): array
+    {
+        return array_filter(self::RESSOURCES, fn (string $ressource): bool => $ressource::canAccess());
+    }
+
     public static function getNavigationLabel(): string
     {
         return 'Boîte de travail';

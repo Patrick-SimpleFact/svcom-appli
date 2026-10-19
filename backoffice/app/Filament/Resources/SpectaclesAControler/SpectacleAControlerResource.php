@@ -7,6 +7,7 @@ use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Filament\Resources\Spectacles\SpectacleResource;
 use App\Filament\Resources\SpectaclesAControler\Pages\ListSpectaclesAControler;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
@@ -30,6 +31,8 @@ use UnitEnum;
  */
 class SpectacleAControlerResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = ElementATraiter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

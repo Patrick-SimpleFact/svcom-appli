@@ -7,6 +7,7 @@ use App\Enums\TypeLieu;
 use App\EspaceSalle\EspacesSalle;
 use App\Filament\Resources\DemandesEspaceSalle\Pages\ListDemandesEspaceSalle;
 use App\Filament\Resources\Lieux\LieuResource;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\DemandeEspaceSalle;
 use App\Models\Lieu;
 use App\Support\Texte;
@@ -32,6 +33,8 @@ use UnitEnum;
  */
 class DemandeEspaceSalleResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = DemandeEspaceSalle::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;

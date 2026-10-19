@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EvenementsApp;
 
 use App\Filament\Resources\EvenementsApp\Pages\ListEvenementsApp;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\EvenementApp;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
@@ -22,6 +23,8 @@ use UnitEnum;
  */
 class EvenementAppResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = EvenementApp::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;

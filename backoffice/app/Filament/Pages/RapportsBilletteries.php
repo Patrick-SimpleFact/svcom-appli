@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Lieu;
 use App\Models\Source;
 use App\Statistiques\ExportRapport;
@@ -27,6 +28,8 @@ use UnitEnum;
  */
 class RapportsBilletteries extends Page
 {
+    use OuvertSelonProfil;
+
     protected string $view = 'filament.pages.rapports-billetteries';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;

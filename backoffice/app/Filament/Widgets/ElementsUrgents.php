@@ -52,7 +52,7 @@ class ElementsUrgents extends TableWidget
         return $table
             ->query(fn (): Builder => ElementATraiter::query()
                 ->where('statut', StatutElement::EnAttente)
-                ->whereIn('file', array_keys(BoiteDeTravail::RESSOURCES))
+                ->whereIn('file', array_keys(BoiteDeTravail::ressourcesOuvertes()))
                 ->with(['cible' => fn (MorphTo $morph) => $morph->morphWith([Offre::class => ['lieu.ville', 'source'], Lieu::class => ['ville']])]))
             ->defaultSort(fn (Builder $query) => Urgence::trier($query))
             ->paginated([10, 25, 50])
@@ -72,7 +72,7 @@ class ElementsUrgents extends TableWidget
                     ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
                         ? $query->where('urgence', '>=', (int) $data['value']) : $query),
                 SelectFilter::make('file')->label('File')
-                    ->options(collect(BoiteDeTravail::RESSOURCES)->keys()->mapWithKeys(fn (string $f) => [$f => FileATraiter::from($f)->getLabel()])->all()),
+                    ->options(collect(BoiteDeTravail::ressourcesOuvertes())->keys()->mapWithKeys(fn (string $f) => [$f => FileATraiter::from($f)->getLabel()])->all()),
             ])
             ->recordActions([
                 ATrierResource::decision('garder', 'Garder', IssueFiltrage::Garde, 'success', Heroicon::OutlinedCheck),

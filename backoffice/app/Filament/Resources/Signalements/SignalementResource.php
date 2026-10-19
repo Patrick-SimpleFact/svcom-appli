@@ -8,6 +8,7 @@ use App\Enums\MotifSignalement;
 use App\Enums\StatutSignalement;
 use App\Filament\Resources\Signalements\Pages\ListSignalements;
 use App\Filament\Resources\Spectacles\SpectacleResource;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Signalement;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -27,6 +28,8 @@ use UnitEnum;
  */
 class SignalementResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Signalement::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFlag;

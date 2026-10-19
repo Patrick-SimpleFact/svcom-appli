@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MotifsRefus;
 
 use App\Filament\Resources\MotifsRefus\Pages\ManageMotifsRefus;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\MotifRefus;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -21,6 +22,8 @@ use UnitEnum;
  */
 class MotifRefusResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = MotifRefus::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftEllipsis;

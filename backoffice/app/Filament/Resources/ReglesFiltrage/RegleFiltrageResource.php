@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ReglesFiltrage;
 
 use App\Enums\TypeRegleFiltrage;
 use App\Filament\Resources\ReglesFiltrage\Pages\ManageReglesFiltrage;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\RegleFiltrage;
 use App\Support\Texte;
 use BackedEnum;
@@ -27,6 +28,8 @@ use UnitEnum;
  */
 class RegleFiltrageResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = RegleFiltrage::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFunnel;

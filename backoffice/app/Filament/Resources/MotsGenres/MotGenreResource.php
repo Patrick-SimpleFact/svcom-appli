@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MotsGenres;
 
 use App\Filament\Resources\MotsGenres\Pages\ManageMotsGenres;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\MotGenre;
 use App\Support\Texte;
 use BackedEnum;
@@ -29,6 +30,8 @@ use UnitEnum;
  */
 class MotGenreResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = MotGenre::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;

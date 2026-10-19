@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\NotificationsEnvoyees;
 
 use App\Filament\Resources\NotificationsEnvoyees\Pages\ListNotificationsEnvoyees;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Appareil;
 use App\Models\NotificationEnvoyee;
 use App\Push\Apns;
@@ -30,6 +31,8 @@ use UnitEnum;
  */
 class NotificationEnvoyeeResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = NotificationEnvoyee::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;

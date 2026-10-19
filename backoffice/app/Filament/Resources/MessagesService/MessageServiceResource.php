@@ -4,6 +4,7 @@ namespace App\Filament\Resources\MessagesService;
 
 use App\Enums\TypeMessageService;
 use App\Filament\Resources\MessagesService\Pages\ManageMessagesService;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\MessageService;
 use App\Models\Ville;
 use App\Support\Texte;
@@ -29,6 +30,8 @@ use UnitEnum;
  */
 class MessageServiceResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = MessageService::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
