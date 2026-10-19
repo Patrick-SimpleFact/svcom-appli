@@ -13,6 +13,7 @@ describe('recherche « autour de moi »', () => {
     expect(url({ ...base, onglet: 'pour_vous', rayon_m: 10000 })).toBe('?lat=43.95&lon=4.81&quand=ce_soir&rayon=10000&tri=heure&pour_vous=1&gouts%5B%5D=1&gouts%5B%5D=3');
     expect(url({ ...base, onglet: 'jeune_public' })).toContain('&jeune_public=1');
     expect(url({ ...base, point: { ville_id: 12329 }, onglet: 'tout', quand: '2026-10-17' })).toBe('?ville_id=12329&quand=2026-10-17&rayon=auto&tri=heure');
+    expect(url({ ...base, onglet: 'tout', tri: 'distance' })).toBe('?lat=43.95&lon=4.81&quand=ce_soir&rayon=auto&tri=distance');
   });
 
   it('donne le titre de chaque puce', () => {

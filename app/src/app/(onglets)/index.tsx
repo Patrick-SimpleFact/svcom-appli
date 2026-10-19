@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import {
-  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, regionAutour, type ReponseAutour, titreAccueil,
+  type Attente, type Carte, chargerAutour, compteur, ecartMetres, enFrance, etapeAttente, ilYA, messageVide, type Onglet, type Point, programmeAncien, type Quand, type Recherche, regionAutour, type ReponseAutour, titreAccueil, type TriAutour,
 } from '@/autour/autour';
 import { coordonnees, usePosition } from '@/autour/position';
 import { type Ville, useVilleChoisie } from '@/autour/ville';
@@ -137,6 +137,7 @@ function ListeAutour(props: {
   const { configuration } = useDemarrage();
   const { gouts } = useGouts();
   const [quand, setQuand] = useState<Quand>('ce_soir');
+  const [tri, setTri] = useState<TriAutour>('heure');
   // « Pour vous » en tête et par défaut quand des goûts sont enregistrés (F2.3, F1.10 point 3).
   const [onglet, setOnglet] = useState<Onglet>(gouts.genres.length ? 'pour_vous' : 'tout');
   const [liste, setListe] = useState<Liste>({ etat: 'chargement' });
@@ -153,7 +154,7 @@ function ListeAutour(props: {
   const chargeeLe = useRef<number | null>(null);
   const delais = configuration?.parametres.delais_messages_s;
 
-  const recherche: Recherche = { point, quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres };
+  const recherche: Recherche = { point, quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres, tri };
   const cle = JSON.stringify(recherche);
 
   // Statistiques par ville (F2.11) : la ville choisie, ou la position arrondie (jamais enregistrée par le BO).
@@ -202,7 +203,7 @@ function ListeAutour(props: {
       });
   }, [signalerSiCoupure]);
 
-  // Nouvelle recherche à chaque changement de lieu, de date, d'onglet ou de goûts.
+  // Nouvelle recherche à chaque changement de lieu, de date, d'onglet, de tri ou de goûts.
   useEffect(() => {
     debut.current = Date.now();
     recevoir(++demande.current, chargerAutour(JSON.parse(cle) as Recherche));
@@ -413,18 +414,30 @@ function ListeAutour(props: {
       />
       {reponse?.couverture_faible ? <BandeauCouverture proposer={proposerUnePiste} /> : null}
       <View style={styles.ligneCompteur}>
-        <Text style={styles.compteur}>{reponse && reponse.total > 0 ? compteur(reponse.total, reponse.rayon_retenu_m) : ''}</Text>
-        {centre ? (
-          <Pressable style={styles.bascule} onPress={() => {
-              if (vue === 'liste') {
-                mesurer('vue_carte', { ecran: 'accueil' });
-              }
-              setVue(vue === 'liste' ? 'carte' : 'liste');
-            }} accessibilityRole="button" hitSlop={8}>
-            <IconeVue vue={vue} />
-            <Text style={styles.basculeTexte}>{vue === 'liste' ? 'Carte' : 'Liste'}</Text>
-          </Pressable>
-        ) : null}
+        <Text style={[styles.compteur, styles.compteurLigne]}>{reponse && reponse.total > 0 ? compteur(reponse.total, reponse.rayon_retenu_m) : ''}</Text>
+        <View style={styles.boutons}>
+          {vue === 'liste' ? (
+            <Pressable style={styles.bascule} onPress={() => {
+                const suivant = tri === 'heure' ? 'distance' : 'heure';
+                mesurer('filtre_utilise', { ecran: 'accueil', filtre: 'tri', valeur: suivant });
+                changer(setTri)(suivant);
+              }} accessibilityRole="button" accessibilityLabel={`Trié par ${tri}, trier par ${tri === 'heure' ? 'distance' : 'heure'}`} hitSlop={8}>
+              <IconeTri />
+              <Text style={styles.basculeTexte}>{tri === 'heure' ? 'Par heure' : 'Par distance'}</Text>
+            </Pressable>
+          ) : null}
+          {centre ? (
+            <Pressable style={styles.bascule} onPress={() => {
+                if (vue === 'liste') {
+                  mesurer('vue_carte', { ecran: 'accueil' });
+                }
+                setVue(vue === 'liste' ? 'carte' : 'liste');
+              }} accessibilityRole="button" hitSlop={8}>
+              <IconeVue vue={vue} />
+              <Text style={styles.basculeTexte}>{vue === 'liste' ? 'Carte' : 'Liste'}</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -492,6 +505,15 @@ function IconeVue({ vue }: { vue: 'liste' | 'carte' }) {
   );
 }
 
+/** Icône du bouton de tri : deux flèches, montante et descendante. */
+function IconeTri() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={Couleurs.encre} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
+    </Svg>
+  );
+}
+
 /** « Avignon · Centre ⌄ » : toujours cliquable, pour changer de ville ou revenir à « Ma position » (F2.1). */
 function EnTeteLieu({ libelle, onPress }: { libelle: string; onPress: () => void }) {
   return (
@@ -540,7 +562,9 @@ const styles = StyleSheet.create({
   lieuTexte: { fontFamily: Polices.texteGras, fontSize: 14, color: Couleurs.encre },
   titre: { fontFamily: Polices.titreFort, fontSize: 34, lineHeight: 35, letterSpacing: -0.7, color: Couleurs.encre },
   compteur: { fontFamily: Polices.texte, fontSize: 13, color: Couleurs.gris },
-  ligneCompteur: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 20 },
+  ligneCompteur: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 20 },
+  compteurLigne: { flexShrink: 1 },
+  boutons: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   bascule: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   basculeTexte: { fontFamily: Polices.texteGras, fontSize: 13, color: Couleurs.encre },
   carteVue: { flex: 1, paddingHorizontal: Espaces.bord },
