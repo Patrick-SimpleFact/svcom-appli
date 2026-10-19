@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import { chaineParametres } from '@/api/client';
-import { type Carte, type CarteJournee, compteur, distance, estComplete, mentionJournee, talon, titreAccueil } from '@/autour/autour';
+import { type Carte, type CarteJournee, compteur, distance, estComplete, jourMois, mentionJournee, talon, titreAccueil } from '@/autour/autour';
 import { libelleLieu } from '@/autour/position';
 
 jest.mock('expo-location', () => ({}));
@@ -26,6 +26,11 @@ const journee = (type: CarteJournee['type'], dateFin: string | null, fin: string
 });
 
 describe('cartes « autour de moi »', () => {
+  it('date le talon (tri par distance, week-end) : jour et mois', () => {
+    expect(jourMois('2026-10-24')).toBe('24 oct.');
+    expect(jourMois('2026-11-01')).toBe('1er nov.');
+  });
+
   it('affiche l’heure du lieu et les séances suivantes', () => {
     expect(talon(carte([['2026-10-17T19:30:00+02:00', false], ['2026-10-17T21:15:00+02:00', false]]))).toEqual({ heure: '19:30', suite: '+ 21:15' });
     expect(talon(carte([['2026-10-17T20:30:00-04:00', false]]))).toEqual({ heure: '20:30', suite: '' }); // outre-mer : heure du lieu
