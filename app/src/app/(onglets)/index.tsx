@@ -147,6 +147,8 @@ function ListeAutour(props: {
   const [horsLigne, setHorsLigne] = useState(false);
   // Texte du bandeau hors ligne, calculé au moment où le réseau tombe (« liste mise à jour il y a 2 h »).
   const [miseAJour, setMiseAJour] = useState<string | null>(null);
+  // Rayon retenu par la dernière liste reçue, et pour quel lieu : la carte s'ouvre à ce zoom (F2.6).
+  const [rayonCarte, setRayonCarte] = useState<{ lieu: string; rayon_m: number } | null>(null);
   const pageEnCours = useRef(false);
   // Chaque chargement a un numéro : une réponse arrivée trop tard (après l'échec à 20 s, ou d'une ancienne recherche) est ignorée.
   const demande = useRef(0);
@@ -186,12 +188,13 @@ function ListeAutour(props: {
     }
   }, []);
 
-  const recevoir = useCallback((numero: number, envoi: Promise<ReponseAutour>) => {
-    envoi
+  const recevoir = useCallback((numero: number, recherche: Recherche) => {
+    chargerAutour(recherche)
       .then((reponse) => {
         if (numero === demande.current) {
           chargeeLe.current = Date.now();
           setListe({ etat: 'prete', reponse, cartes: reponse.cartes });
+          setRayonCarte({ lieu: JSON.stringify(recherche.point), rayon_m: reponse.rayon_retenu_m });
           setHorsLigne(false);
         }
       })
@@ -206,7 +209,7 @@ function ListeAutour(props: {
   // Nouvelle recherche à chaque changement de lieu, de date, d'onglet, de tri ou de goûts.
   useEffect(() => {
     debut.current = Date.now();
-    recevoir(++demande.current, chargerAutour(JSON.parse(cle) as Recherche));
+    recevoir(++demande.current, JSON.parse(cle) as Recherche);
   }, [cle, recevoir]);
 
   /** « Réessayer », retour du réseau : on repart des squelettes. */
@@ -214,7 +217,7 @@ function ListeAutour(props: {
     debut.current = Date.now();
     setAttente('squelettes');
     setListe({ etat: 'chargement' });
-    recevoir(++demande.current, chargerAutour(JSON.parse(cle) as Recherche));
+    recevoir(++demande.current, JSON.parse(cle) as Recherche);
   }, [cle, recevoir]);
 
   // Attente (F2.8) : squelettes, puis « Chargement en cours… » (3 s), « … plus de temps que d'habitude » (8 s), échec (20 s).
@@ -443,14 +446,23 @@ function ListeAutour(props: {
   );
 
   if (vue === 'carte' && centre) {
+    // Nouveau lieu : on attend sa liste pour ouvrir la carte au rayon qu'elle a retenu (pas celui de l'ancien lieu).
+    const rayon = rayonCarte?.lieu === lieuMesure ? rayonCarte.rayon_m : liste.etat === 'erreur' ? 5000 : null;
+
     return (
       <View style={styles.carteVue}>
         {entete}
-        <VueCarte
-          region={regionAutour(centre, reponse?.rayon_retenu_m ?? 5000)}
-          filtres={{ quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres }}
-          libelleGenre={libelleGenre}
-        />
+        {rayon === null ? (
+          <ActivityIndicator color={Couleurs.rouge} style={styles.pied} />
+        ) : (
+          <VueCarte
+            // Nouveau lieu (autre ville, « Ma position » actualisée) : carte recentrée et repères rechargés ; un filtre garde la zone.
+            key={lieuMesure}
+            region={regionAutour(centre, rayon)}
+            filtres={{ quand, onglet, rayon_m: gouts.rayon_m, gouts: gouts.genres }}
+            libelleGenre={libelleGenre}
+          />
+        )}
       </View>
     );
   }
