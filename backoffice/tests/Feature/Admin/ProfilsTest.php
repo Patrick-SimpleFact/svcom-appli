@@ -11,6 +11,7 @@ use App\Filament\Resources\Profils\Pages\CreateProfil;
 use App\Filament\Resources\Profils\Pages\EditProfil;
 use App\Filament\Resources\Profils\ProfilResource;
 use App\Filament\Resources\Sources\SourceResource;
+use App\Filament\Support\Documentation;
 use App\Filament\Support\MenusProfil;
 use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Support\ReserveAuSuperAdmin;
@@ -123,7 +124,7 @@ it('protège chaque menu du back-office par le modèle de profil', function () {
     $panel = Filament::getPanel('admin');
 
     foreach ([...$panel->getResources(), ...$panel->getPages()] as $ecran) {
-        if ($ecran === BoiteDeTravail::class) {
+        if (in_array($ecran, Documentation::OUVERTS_A_TOUS, true)) {
             continue;
         }
         $traits = class_uses_recursive($ecran);
