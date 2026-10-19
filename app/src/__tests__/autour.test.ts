@@ -40,8 +40,8 @@ describe('cartes « autour de moi »', () => {
   });
 
   it('compte les spectacles et le rayon retenu', () => {
-    expect(compteur(12, 5000)).toBe('12 spectacles à moins de 5 km');
-    expect(compteur(1, 50000)).toBe('1 spectacle à moins de 50 km');
+    expect(compteur(12, 5000)).toBe('12\u00a0spectacles à moins de 5\u00a0km');
+    expect(compteur(1, 50000)).toBe('1\u00a0spectacle à moins de 50\u00a0km');
   });
 
   it('une carte est complète quand toutes ses séances le sont', () => {

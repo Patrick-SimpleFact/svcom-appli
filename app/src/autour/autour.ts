@@ -59,15 +59,18 @@ export type Onglet = 'tout' | 'pour_vous' | 'jeune_public' | number;
 /** Où ? (F2.1) : la position du téléphone ou une ville choisie. */
 export type Point = { lat: number; lon: number } | { ville_id: number };
 
-export type Recherche = { point: Point; quand: Quand; onglet: Onglet; rayon_m: RayonM; gouts: number[]; suivant?: string | null };
+/** Ordre de la liste : heure de la 1re séance (par défaut) ou distance ; les complets restent en fin de liste (F2.5). */
+export type TriAutour = 'heure' | 'distance';
+
+export type Recherche = { point: Point; quand: Quand; onglet: Onglet; rayon_m: RayonM; gouts: number[]; tri?: TriAutour; suivant?: string | null };
 
 /** Paramètres de `GET /v1/representations/autour` (API §3) ; la position n'est jamais enregistrée par le BO (F2.11). */
-export function parametresAutour({ point, quand, onglet, rayon_m, gouts, suivant }: Recherche) {
+export function parametresAutour({ point, quand, onglet, rayon_m, gouts, tri, suivant }: Recherche) {
   return {
     ...point,
     quand,
     rayon: rayon_m ?? 'auto',
-    tri: 'heure',
+    tri: tri ?? 'heure',
     genres: typeof onglet === 'number' ? [onglet] : undefined,
     pour_vous: onglet === 'pour_vous' ? 1 : undefined,
     gouts: onglet === 'pour_vous' ? gouts : undefined,
@@ -108,9 +111,9 @@ export function distance(metres: number, approximative = false): string {
   return approximative ? `≈ ${texte}` : texte;
 }
 
-/** Compteur sous les onglets : « 12 spectacles à moins de 5 km » (F2.4). */
+/** Compteur sous les onglets : « 12 spectacles à moins de 5 km » (F2.4) ; espaces insécables : « 10 km » n'est jamais coupé. */
 export function compteur(total: number, rayonM: number): string {
-  return `${total} spectacle${total > 1 ? 's' : ''} à moins de ${distance(rayonM)}`;
+  return `${total}\u00a0spectacle${total > 1 ? 's' : ''} à moins de ${distance(rayonM).replace(' ', '\u00a0')}`;
 }
 
 const JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
