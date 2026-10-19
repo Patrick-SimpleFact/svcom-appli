@@ -8,6 +8,7 @@ use App\Filament\Resources\Lieux\Pages\ListLieux;
 use App\Filament\Resources\Lieux\RelationManagers\RepresentationsRelationManager;
 use App\Filament\Resources\Lieux\Schemas\LieuForm;
 use App\Filament\Resources\Lieux\Tables\LieuxTable;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Lieu;
 use App\Support\Texte;
 use BackedEnum;
@@ -22,6 +23,8 @@ use UnitEnum;
 
 class LieuResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Lieu::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;

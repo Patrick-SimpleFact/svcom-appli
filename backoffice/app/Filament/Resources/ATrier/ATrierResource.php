@@ -8,6 +8,7 @@ use App\Enums\IssueFiltrage;
 use App\Enums\StatutElement;
 use App\Filament\Resources\ATrier\Pages\ListATrier;
 use App\Filament\Resources\ReglesFiltrage\RegleFiltrageResource;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\RegleFiltrage;
@@ -34,6 +35,8 @@ use UnitEnum;
  */
 class ATrierResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = ElementATraiter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQuestionMarkCircle;

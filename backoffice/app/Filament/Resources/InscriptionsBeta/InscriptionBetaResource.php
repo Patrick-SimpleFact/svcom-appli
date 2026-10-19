@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\InscriptionsBeta;
 
 use App\Filament\Resources\InscriptionsBeta\Pages\ListInscriptionsBeta;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\InscriptionBeta;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -26,6 +27,8 @@ use UnitEnum;
  */
 class InscriptionBetaResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = InscriptionBeta::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;

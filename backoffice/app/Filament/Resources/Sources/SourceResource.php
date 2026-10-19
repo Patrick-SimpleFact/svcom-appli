@@ -6,6 +6,7 @@ use App\Enums\StatutCollecte;
 use App\Filament\Resources\Collectes\CollecteResource;
 use App\Filament\Resources\Sources\Pages\ListSources;
 use App\Filament\Resources\Sources\Pages\ViewSource;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Jobs\CollecterSource;
 use App\Models\Alerte;
 use App\Models\Source;
@@ -33,6 +34,8 @@ use UnitEnum;
  */
 class SourceResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Source::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Collectes;
 
 use App\Enums\StatutCollecte;
 use App\Filament\Resources\Collectes\Pages\ListCollectes;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Collecte;
 use App\Models\Source;
 use BackedEnum;
@@ -20,6 +21,8 @@ use UnitEnum;
  */
 class CollecteResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Collecte::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPath;

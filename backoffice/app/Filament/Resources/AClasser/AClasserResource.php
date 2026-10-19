@@ -6,6 +6,7 @@ use App\Actions\EnregistrerCorrespondanceGenre;
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Filament\Resources\AClasser\Pages\ListAClasser;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Genre;
@@ -29,6 +30,8 @@ use UnitEnum;
  */
 class AClasserResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = ElementATraiter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Villes;
 
 use App\Filament\Resources\Villes\Pages\ListVilles;
 use App\Filament\Resources\Villes\Tables\VillesTable;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Ville;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -17,6 +18,8 @@ use UnitEnum;
  */
 class VilleResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Ville::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;

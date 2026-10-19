@@ -6,6 +6,7 @@ use App\Filament\Resources\Parametres\Pages\EditParametre;
 use App\Filament\Resources\Parametres\Pages\ListParametres;
 use App\Filament\Resources\Parametres\Schemas\ParametreForm;
 use App\Filament\Resources\Parametres\Tables\ParametresTable;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Parametre;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -20,6 +21,8 @@ use UnitEnum;
  */
 class ParametreResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Parametre::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;

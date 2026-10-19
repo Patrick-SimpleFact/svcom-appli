@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Annonceurs;
 
 use App\Filament\Resources\Annonceurs\Pages\ManageAnnonceurs;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Annonceur;
 use App\Models\Lieu;
 use App\Support\Texte;
@@ -22,6 +23,8 @@ use UnitEnum;
 /** Annonceurs des campagnes sponsorisées (F6.4) : théâtres et producteurs, vente manuelle (D5). */
 class AnnonceurResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Annonceur::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;

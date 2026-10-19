@@ -7,6 +7,7 @@ use App\Enums\StatutPiste;
 use App\Enums\TypePiste;
 use App\Filament\Resources\Lieux\LieuResource;
 use App\Filament\Resources\Pistes\Pages\ListPistes;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Lieu;
 use App\Models\MotifRefus;
 use App\Models\Piste;
@@ -33,6 +34,8 @@ use UnitEnum;
  */
 class PisteResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Piste::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLightBulb;

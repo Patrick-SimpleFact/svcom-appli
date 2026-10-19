@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ComptesSalle;
 use App\EspaceSalle\EspacesSalle;
 use App\Filament\Resources\ComptesSalle\Pages\ListComptesSalle;
 use App\Filament\Resources\DemandesEspaceSalle\DemandeEspaceSalleResource;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\StatutUtilisateur;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -23,6 +24,8 @@ use UnitEnum;
  */
 class CompteSalleResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = StatutUtilisateur::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;

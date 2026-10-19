@@ -18,6 +18,9 @@ class AdminsTable
                 TextColumn::make('email')
                     ->label('E-mail')
                     ->searchable(),
+                TextColumn::make('profil.nom')
+                    ->label('Modèle de profil')
+                    ->placeholder('Libre'),
                 IconColumn::make('actif')
                     ->boolean(),
                 IconColumn::make('app_authentication_secret')

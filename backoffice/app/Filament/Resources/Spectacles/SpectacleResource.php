@@ -7,6 +7,7 @@ use App\Filament\Resources\Spectacles\Pages\ListSpectacles;
 use App\Filament\Resources\Spectacles\Pages\ViewSpectacle;
 use App\Filament\Resources\Spectacles\RelationManagers\OffresRelationManager;
 use App\Filament\Resources\Spectacles\RelationManagers\RepresentationsRelationManager;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Genre;
 use App\Models\Spectacle;
 use App\Support\Texte;
@@ -37,6 +38,8 @@ use UnitEnum;
  */
 class SpectacleResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Spectacle::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTicket;

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AgendasOpenagenda;
 
 use App\Enums\FrequenceAgenda;
 use App\Filament\Resources\AgendasOpenagenda\Pages\ManageAgendasOpenagenda;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\AgendaOpenagenda;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -22,6 +23,8 @@ use UnitEnum;
  */
 class AgendaOpenagendaResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = AgendaOpenagenda::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;

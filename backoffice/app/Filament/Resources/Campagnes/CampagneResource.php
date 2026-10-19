@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Campagnes;
 
 use App\Enums\StatutCampagne;
 use App\Filament\Resources\Campagnes\Pages\ManageCampagnes;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\Campagne;
 use App\Models\Genre;
 use App\Models\Spectacle;
@@ -33,6 +34,8 @@ use UnitEnum;
  */
 class CampagneResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = Campagne::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;

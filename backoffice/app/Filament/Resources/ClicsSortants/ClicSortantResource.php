@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ClicsSortants;
 
 use App\Filament\Resources\ClicsSortants\Pages\ListClicsSortants;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\ClicSortant;
 use App\Models\Source;
 use BackedEnum;
@@ -24,6 +25,8 @@ use UnitEnum;
  */
 class ClicSortantResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = ClicSortant::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCursorArrowRays;

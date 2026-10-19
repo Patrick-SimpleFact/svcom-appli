@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CorrespondancesGenres;
 
 use App\Actions\EnregistrerCorrespondanceGenre;
 use App\Filament\Resources\CorrespondancesGenres\Pages\ManageCorrespondancesGenres;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Models\CorrespondanceGenre;
 use App\Models\Genre;
 use App\Models\Source;
@@ -29,6 +30,8 @@ use UnitEnum;
  */
 class CorrespondanceGenreResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = CorrespondanceGenre::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;

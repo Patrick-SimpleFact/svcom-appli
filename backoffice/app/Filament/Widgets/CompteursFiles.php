@@ -45,7 +45,7 @@ class CompteursFiles extends StatsOverviewWidget
             ->get()
             ->keyBy(fn (ElementATraiter $e) => $e->file->value);
 
-        return collect(BoiteDeTravail::RESSOURCES)
+        return collect(BoiteDeTravail::ressourcesOuvertes())
             ->map(function (string $ressource, string $file) use ($compteurs): Stat {
                 $c = $compteurs->get($file);
                 $total = (int) ($c->total ?? 0);
@@ -78,19 +78,19 @@ class CompteursFiles extends StatsOverviewWidget
         $pistes = Piste::tetesDeGroupe()->whereIn('statut', StatutPiste::OUVERTS)->count();
         $pistesNouvelles = Piste::tetesDeGroupe()->where('statut', StatutPiste::Nouvelle)->count();
 
-        return [
-            Stat::make('Signalements', number_format($signalements, 0, ',', ' '))
+        return array_values(array_filter([
+            SignalementResource::canAccess() ? Stat::make('Signalements', number_format($signalements, 0, ',', ' '))
                 ->description($signalements === 0 ? 'Rien en attente' : 'Erreurs signalées par les utilisateurs')
                 ->color($signalements > 0 ? 'warning' : 'gray')
-                ->url(SignalementResource::getUrl()),
-            Stat::make('Pistes utilisateurs', number_format($pistes, 0, ',', ' '))
+                ->url(SignalementResource::getUrl()) : null,
+            PisteResource::canAccess() ? Stat::make('Pistes utilisateurs', number_format($pistes, 0, ',', ' '))
                 ->description($pistes === 0 ? 'Rien en attente' : "{$pistesNouvelles} nouvelle(s), une réponse attendue")
                 ->color($pistesNouvelles > 0 ? 'warning' : 'gray')
-                ->url(PisteResource::getUrl()),
-            Stat::make('Demandes d’espace salle', (string) ($demandes = DemandeEspaceSalle::where('statut', StatutDemandeSalle::EnAttente)->count()))
+                ->url(PisteResource::getUrl()) : null,
+            DemandeEspaceSalleResource::canAccess() ? Stat::make('Demandes d’espace salle', (string) ($demandes = DemandeEspaceSalle::where('statut', StatutDemandeSalle::EnAttente)->count()))
                 ->description($demandes === 0 ? 'Rien en attente' : 'Des théâtres attendent une réponse')
                 ->color($demandes > 0 ? 'warning' : 'gray')
-                ->url(DemandeEspaceSalleResource::getUrl()),
-        ];
+                ->url(DemandeEspaceSalleResource::getUrl()) : null,
+        ]));
     }
 }

@@ -9,6 +9,7 @@ use App\Enums\StatutElement;
 use App\Filament\Actions\ChercherAdresseBan;
 use App\Filament\Resources\Lieux\LieuResource;
 use App\Filament\Resources\LieuxAVerifier\Pages\ListLieuxAVerifier;
+use App\Filament\Support\OuvertSelonProfil;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Lieu;
@@ -32,6 +33,8 @@ use UnitEnum;
  */
 class LieuAVerifierResource extends Resource
 {
+    use OuvertSelonProfil;
+
     protected static ?string $model = ElementATraiter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
