@@ -49,6 +49,12 @@ it('enregistre l’appareil à chaque ouverture et renvoie la configuration du m
         ->assertJsonPath('genres.0.slug', 'theatre');
 });
 
+it('indique le dernier build publié de chaque plateforme, réglable dans le BO', function () {
+    Parametre::firstWhere('cle', 'dernier_build_ios')->update(['valeur' => 7]);
+
+    ($this->ouvrir)()->assertOk()->assertJsonPath('dernier_build', ['ios' => 7, 'android' => 3]);
+});
+
 it('envoie les messages de service pour tous et ceux de la ville de l’utilisateur', function () {
     $avignon = Ville::create(['nom' => 'Avignon', 'nom_normalise' => 'avignon', 'code_insee' => '84007', 'departement' => '84', 'codes_postaux' => [], 'population' => 1, 'position' => new Point(43.9493, 4.8055), 'fuseau_horaire' => 'Europe/Paris']);
     MessageService::create(['texte' => 'Pour tous', 'type' => TypeMessageService::Info, 'debut' => now()->subHour()]);

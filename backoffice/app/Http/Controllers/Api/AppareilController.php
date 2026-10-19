@@ -63,6 +63,8 @@ class AppareilController extends Controller
 
         return response()->json([
             'version_minimale' => Parametre::valeur('version_minimale_app'),
+            // Dernière version publiée de chaque plateforme : l'app plus ancienne propose la mise à jour (sans bloquer).
+            'dernier_build' => ['ios' => (int) Parametre::valeur('dernier_build_ios'), 'android' => (int) Parametre::valeur('dernier_build_android')],
             'parametres' => collect(self::PARAMETRES)->mapWithKeys(fn (string $cle) => [$cle => Parametre::valeur($cle)])->all(),
             'genres' => Genre::orderBy('ordre')->get(['id', 'slug', 'libelle']),
             'motifs_signalement' => self::MOTIFS_SIGNALEMENT,

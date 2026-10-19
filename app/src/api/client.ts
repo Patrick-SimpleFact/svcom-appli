@@ -15,6 +15,9 @@ export const API_URL = (URL_ANDROID ?? process.env.EXPO_PUBLIC_API_URL ?? 'https
 /** Version de l'app envoyée à chaque appel (X-App-Version) : l'API refuse une version trop ancienne (426, F2.8). */
 export const VERSION_APP = Constants.expoConfig?.version ?? '1.0.0';
 
+/** Numéro de build de cette installation (iOS : buildNumber, Android : versionCode), figé dans l'app à la compilation. */
+export const BUILD_APP = Number(Platform.OS === 'android' ? Constants.expoConfig?.android?.versionCode : Constants.expoConfig?.ios?.buildNumber) || 0;
+
 /** Erreur renvoyée par l'API (API §1) : seul le `code` sert à l'app, le message technique n'est jamais affiché (F2.8). */
 export class ErreurApi extends Error {
   constructor(

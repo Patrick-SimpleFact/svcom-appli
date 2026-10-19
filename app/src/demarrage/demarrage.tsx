@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { appelApi, comparerVersions, quandVersionObsolete, VERSION_APP } from '@/api/client';
+import { appelApi, BUILD_APP, comparerVersions, quandVersionObsolete, VERSION_APP } from '@/api/client';
 import { jetonNatif } from '@/notifications/notifications';
 
 /** Message de service saisi dans le BO (F2.8) : maintenance, incident… */
@@ -11,6 +11,8 @@ export type MessageService = { id: number; type: 'info' | 'alerte'; texte: strin
 /** Configuration du moment renvoyée par `POST /v1/appareils` (API §2). */
 export type Configuration = {
   version_minimale: string;
+  /** Dernière version publiée de chaque plateforme (réglages du BO) : plus récente que l'app → mise à jour proposée. */
+  dernier_build?: { ios: number; android: number };
   parametres: {
     rayon_auto_min_representations: number;
     seuil_couverture_faible: number;
@@ -33,17 +35,26 @@ type Etat = {
   /** `true` dès que le BO a répondu ou a échoué : on sait alors s'il y aura une configuration. */
   configurationTerminee: boolean;
   versionObsolete: boolean;
+  /** Une version plus récente est publiée : bandeau « Mettre à jour », sans bloquer l'app. */
+  miseAJourDisponible: boolean;
+  /** « Plus tard » : le bandeau de mise à jour revient à la prochaine ouverture de l'app. */
+  fermerMiseAJour: () => void;
   messagesAffiches: MessageService[];
   fermerMessage: (id: number) => void;
 };
 
 const CLE_FERMES = 'spettacoli.messages_fermes';
 
-const Contexte = createContext<Etat>({ configuration: null, configurationTerminee: false, versionObsolete: false, messagesAffiches: [], fermerMessage: () => {} });
+const Contexte = createContext<Etat>({ configuration: null, configurationTerminee: false, versionObsolete: false, miseAJourDisponible: false, fermerMiseAJour: () => {}, messagesAffiches: [], fermerMessage: () => {} });
 
 export const useDemarrage = () => useContext(Contexte);
 
 /** Messages encore à afficher : ceux du BO, moins ceux que l'utilisateur a fermés. */
+/** Le BO annonce un build plus récent que celui installé sur cette plateforme. */
+export function miseAJourProposee(dernier: Configuration['dernier_build'], plateforme: 'ios' | 'android', build: number): boolean {
+  return build > 0 && (dernier?.[plateforme] ?? 0) > build;
+}
+
 export function messagesAAfficher(messages: MessageService[], fermes: number[]): MessageService[] {
   return messages.filter((m) => !fermes.includes(m.id));
 }
@@ -56,6 +67,7 @@ export function Demarrage({ children }: { children: ReactNode }) {
   const [configuration, setConfiguration] = useState<Configuration | null>(null);
   const [configurationTerminee, setConfigurationTerminee] = useState(false);
   const [versionObsolete, setVersionObsolete] = useState(false);
+  const [miseAJourFermee, setMiseAJourFermee] = useState(false);
   const [fermes, setFermes] = useState<number[]>([]);
 
   useEffect(() => {
@@ -103,10 +115,12 @@ export function Demarrage({ children }: { children: ReactNode }) {
       configuration,
       configurationTerminee,
       versionObsolete,
+      miseAJourDisponible: !miseAJourFermee && miseAJourProposee(configuration?.dernier_build, Platform.OS === 'android' ? 'android' : 'ios', BUILD_APP),
+      fermerMiseAJour: () => setMiseAJourFermee(true),
       messagesAffiches: messagesAAfficher(configuration?.messages_service ?? [], fermes),
       fermerMessage,
     }),
-    [configuration, configurationTerminee, versionObsolete, fermes, fermerMessage],
+    [configuration, configurationTerminee, versionObsolete, miseAJourFermee, fermes, fermerMessage],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
