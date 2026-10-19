@@ -41,7 +41,7 @@ npx expo run:android                # 1re fois : compile l'app (plusieurs minute
 
 - Les builds de publication visent l'API en ligne (`app/.env.production`, chargé quand `NODE_ENV=production`).
 - **Android** : signés avec la **clé d'envoi Google Play** (`~/.android-cles/spettacoli-upload.jks`, alias `spettacoli-upload`). Les mots de passe sont dans `~/.gradle/gradle.properties` (`SPETTACOLI_UPLOAD_*`), lus par le plugin `plugins/with-signature-play.js`. Sans eux, la version Release est signée avec la clé de débogage (refusée par le Play Store). **Sauvegarder** le fichier `.jks` et ses mots de passe hors du Mac (gestionnaire de mots de passe). En cas de perte, Google peut réinitialiser la clé d'envoi (Play Console › Intégrité de l'application), mais cela prend plusieurs jours.
-- Augmenter `android.versionCode` (et `ios.buildNumber`) dans `app.json` à chaque envoi, puis :
+- Augmenter `ios.buildNumber` dans `app.json` à chaque envoi : c'est le numéro de build des deux stores (`app.config.ts` le reprend comme `android.versionCode`). Puis :
 
   ```bash
   export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=~/Library/Android/sdk
