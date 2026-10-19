@@ -7,17 +7,24 @@ import { Couleurs, Espaces, Polices } from '@/constants/theme';
 /** Adresses de l'app dans les boutiques (app.json › extra.boutiques), à compléter quand l'app y sera publiée. */
 const boutiques = (Constants.expoConfig?.extra?.boutiques ?? {}) as { ios?: string; android?: string };
 
+/** Ouvre la page de l'app dans la boutique (pendant la bêta : TestFlight sur iPhone, test interne sur Google Play). */
+export const adresseBoutique = Platform.OS === 'android' ? boutiques.android : boutiques.ios;
+
+export function ouvrirBoutique() {
+  if (adresseBoutique) {
+    Linking.openURL(adresseBoutique).catch(() => {});
+  }
+}
+
 /** Écran « Une nouvelle version de Spettacoli est disponible » (F2.8) : remplace toute l'app quand le BO l'exige. */
 export function EcranMiseAJour() {
-  const adresse = Platform.OS === 'android' ? boutiques.android : boutiques.ios;
-
   return (
     <SafeAreaView style={styles.fond}>
       <View style={styles.contenu}>
         <Text style={styles.titre} accessibilityRole="header">Une nouvelle version de Spettacoli est disponible</Text>
         <Text style={styles.texte}>Mettez l’application à jour pour continuer à trouver les spectacles autour de vous.</Text>
-        {adresse ? (
-          <Pressable style={styles.bouton} onPress={() => Linking.openURL(adresse)} accessibilityRole="button">
+        {adresseBoutique ? (
+          <Pressable style={styles.bouton} onPress={ouvrirBoutique} accessibilityRole="button">
             <Text style={styles.boutonTexte}>Mettre à jour</Text>
           </Pressable>
         ) : null}

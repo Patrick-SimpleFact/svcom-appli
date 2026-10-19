@@ -3,7 +3,7 @@ Les **réglages de l'app et de la collecte**. La liste est fixe : seules les val
 ### Les groupes
 
 - **Alertes** : zone et heure de la notification quotidienne.
-- **App** : version minimale (en dessous, l'app demande la mise à jour).
+- **App** : version minimale (en dessous, l'app est bloquée sur l'écran « mettez à jour ») ; **dernier build iOS / Android disponible** (un téléphone qui a un build plus ancien voit le bandeau « Une nouvelle version de Spettacoli est disponible », sans être bloqué). À chaque nouvelle version, changer le numéro **une fois la version visible chez les testeurs** (TestFlight ou Google Play), sinon le bandeau envoie vers une boutique où elle n'est pas encore.
 - **Autour de moi** : rayon automatique et ses paliers, seuil de couverture faible, délais des messages de chargement.
 - **Collecte** : horizon des séances, écarts d'heure pour fusionner ou signaler un doublon, file « Fusions à contrôler ».
 - **Pistes** : nombre maximum de pistes par jour et par téléphone.

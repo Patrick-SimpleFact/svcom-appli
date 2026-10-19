@@ -92,4 +92,14 @@ describe('messages de service', () => {
 
     expect(charger().demarrage.messagesAAfficher(messages, [4]).map((m) => m.id)).toEqual([5]);
   });
+
+  it('propose la mise à jour seulement quand le BO annonce un build plus récent pour la plateforme', () => {
+    const { miseAJourProposee } = charger().demarrage;
+
+    expect(miseAJourProposee({ ios: 5, android: 3 }, 'ios', 4)).toBe(true);
+    expect(miseAJourProposee({ ios: 5, android: 3 }, 'android', 3)).toBe(false);
+    expect(miseAJourProposee({ ios: 4, android: 3 }, 'ios', 5)).toBe(false);
+    expect(miseAJourProposee(undefined, 'ios', 4)).toBe(false); // BO plus ancien : pas de champ
+    expect(miseAJourProposee({ ios: 5, android: 3 }, 'ios', 0)).toBe(false); // build inconnu (développement)
+  });
 });

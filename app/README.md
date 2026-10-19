@@ -49,6 +49,10 @@ npx expo run:android                # 1re fois : compile l'app (plusieurs minute
   cd android && NODE_ENV=production ./gradlew bundleRelease   # → android/app/build/outputs/bundle/release/app-release.aab
   ```
 
+- **iOS avec Xcode 27.1 (Swift 6.4), constaté le 19/10/2026 au build 4** : l'archive Release échoue (`cannot find type '__ObjC::expo' in scope`, `this SDK is not supported by the compiler`) tant qu'Expo SDK 57 n'est pas corrigé. Avant d'archiver :
+  1. modules Expo compilés depuis les sources (les précompilés sont faits avec Swift 6.3.1) : `cd ios && EXPO_USE_PRECOMPILED_MODULES=0 pod install` ;
+  2. dans `node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh`, le nettoyage de l'interface publique doit aussi retirer la nouvelle syntaxe `extension __ObjC::expo…` : remplacer `sed '/^extension __ObjC\./,` par `sed -E '/^extension __ObjC(\.|::)/,`, puis `bash node_modules/expo-modules-jsi/apple/scripts/clear-caches.sh`. Ce correctif est perdu à chaque `npm install`.
+
 - Clé Google Maps (projet Google Cloud « Spettacolli », « Maps Platform API Key ») : limitée à **Maps SDK for Android** et aux applications Android `fr.spettacoli.app` signées par l'une de ces clés (SHA-1). Une clé de signature absente de la liste fait planter la carte.
 
   | Clé | SHA-1 |

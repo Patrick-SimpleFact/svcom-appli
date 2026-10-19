@@ -14,7 +14,7 @@
         "tinted": "./assets/images/icon-ios-teinte.png"
       },
       "bundleIdentifier": "fr.spettacoli.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "appleTeamId": "X4CB98WRUP",
       "usesAppleSignIn": true,
       "supportsTablet": false,
@@ -35,7 +35,12 @@
       "predictiveBackGestureEnabled": false,
       "package": "fr.spettacoli.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 2
+      "versionCode": 3,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -84,6 +89,7 @@
     ],
     "extra": {
       "boutiques": {
+        "ios": "itms-beta://",
         "android": "https://play.google.com/store/apps/details?id=fr.spettacoli.app"
       }
     },

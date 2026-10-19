@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -7,6 +6,7 @@ import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StyleSheet, S
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 
+import { BUILD_APP, VERSION_APP } from '@/api/client';
 import { modifierMoi, useCompte } from '@/compte/compte';
 import {
   exporterMesDonnees, ligneCompte, lirePreferences, modifierPreferences, nombreSuivis, type Preferences, resumeGenres, supprimerMonCompte,
@@ -165,7 +165,7 @@ export default function Profil() {
         ) : null}
         {message ? <Text style={styles.message} accessibilityRole="alert">{message}</Text> : null}
 
-        <Text style={styles.version}>Spettacoli · version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
+        <Text style={styles.version}>Spettacoli · version {VERSION_APP}{BUILD_APP ? ` (build ${BUILD_APP})` : ''}</Text>
       </ScrollView>
 
       <SuppressionCompte visible={suppression} fermer={() => setSuppression(false)} supprimer={async () => {

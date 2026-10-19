@@ -60,6 +60,8 @@ class ParametresSeeder extends Seeder
             ['cle' => 'alerte_heure_publication', 'groupe' => 'Supervision', 'libelle' => 'Heure de contrôle des publications', 'description' => 'À partir de cette heure, alerte pour toute source active sans publication réussie depuis la veille à la même heure (F7.9).', 'type' => $t, 'valeur' => '07:00'],
             ['cle' => 'couverture_rayon_km', 'groupe' => 'Supervision', 'libelle' => 'Rayon du tableau de couverture (km)', 'description' => 'La couverture d’une ville compte les spectacles dans ce rayon autour de son centre, comme « autour de moi » (F7.13).', 'type' => $e, 'valeur' => 10],
             ['cle' => 'version_minimale_app', 'groupe' => 'App', 'libelle' => 'Version minimale de l’app', 'description' => 'En dessous, l’écran « mettez à jour » s’affiche (F2.8).', 'type' => $t, 'valeur' => '1.0.0'],
+            ['cle' => 'dernier_build_ios', 'groupe' => 'App', 'libelle' => 'Dernier build iOS disponible', 'description' => 'Numéro de build de la dernière version iOS publiée (TestFlight ou App Store). Les iPhone qui ont un build plus ancien voient « Une nouvelle version est disponible ». À changer une fois le build disponible chez les testeurs.', 'type' => $e, 'valeur' => 4],
+            ['cle' => 'dernier_build_android', 'groupe' => 'App', 'libelle' => 'Dernier build Android disponible', 'description' => 'versionCode de la dernière version Android publiée (Google Play). Les téléphones Android qui ont un build plus ancien voient « Une nouvelle version est disponible ». À changer une fois la version disponible chez les testeurs.', 'type' => $e, 'valeur' => 3],
         ];
     }
 
