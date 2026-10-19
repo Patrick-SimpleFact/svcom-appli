@@ -2,7 +2,6 @@
 
 namespace App\Filament\Support;
 
-use App\Filament\Pages\BoiteDeTravail;
 use Closure;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
@@ -11,10 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Menus qu'un modèle de profil peut ouvrir : toutes les ressources et pages du back-office, sauf la boîte de travail
- * (ouverte à tous) et ce qui est réservé aux super admins. Un nouveau menu y apparaît tout seul.
+ * et la documentation (ouvertes à tous) et ce qui est réservé aux super admins. Un nouveau menu y apparaît tout seul.
  */
 class MenusProfil
 {
+    /** Ordre des groupes du menu. */
+    public const GROUPES = ['Collecte', 'Catalogue', 'Référentiels', 'Contributions', 'Espace salle', 'Suggestions', 'Statistiques', 'Administration'];
+
     /** @return array<string, array<class-string, string>> groupe → (classe → libellé), dans l'ordre du menu */
     public static function parGroupe(): array
     {
@@ -22,14 +24,14 @@ class MenusProfil
         $groupes = [];
 
         foreach ([...$panel->getResources(), ...$panel->getPages()] as $ecran) {
-            if ($ecran === BoiteDeTravail::class || in_array(ReserveAuSuperAdmin::class, class_uses_recursive($ecran), true)) {
+            if (in_array($ecran, Documentation::OUVERTS_A_TOUS, true) || in_array(ReserveAuSuperAdmin::class, class_uses_recursive($ecran), true)) {
                 continue;
             }
 
             $groupes[self::groupe($ecran)][$ecran] = $ecran::getNavigationLabel();
         }
 
-        $ordre = array_flip(['Collecte', 'Catalogue', 'Référentiels', 'Contributions', 'Espace salle', 'Suggestions', 'Statistiques', 'Administration']);
+        $ordre = array_flip(self::GROUPES);
         uksort($groupes, fn (string $a, string $b) => ($ordre[$a] ?? 99) <=> ($ordre[$b] ?? 99) ?: strcmp($a, $b));
 
         return array_map(fn (array $menus) => collect($menus)->sort()->all(), $groupes);
