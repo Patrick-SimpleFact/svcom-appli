@@ -15,7 +15,8 @@ if [[ "${1:-}" != "--force" ]] && docker compose ps --status running --services 
 fi
 
 git -C .. pull --ff-only
-docker compose build app
+# --pull : récupère la dernière image de base PHP 8.4 (correctifs de sécurité) ; sans lui, Docker réutilise sa copie locale indéfiniment.
+docker compose build --pull app
 # Les migrations et les caches sont faits au démarrage du conteneur app (AUTORUN_ENABLED).
 docker compose up -d --remove-orphans
 docker image prune -f >/dev/null
