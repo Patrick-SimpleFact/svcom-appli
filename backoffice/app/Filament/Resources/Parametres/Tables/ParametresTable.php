@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Parametres\Tables;
 
-use App\Enums\ModeIa;
 use App\Enums\TypeParametre;
 use App\Models\Parametre;
 use Filament\Actions\EditAction;
@@ -39,7 +38,6 @@ class ParametresTable
             TypeParametre::Booleen => $parametre->valeur ? 'Oui' : 'Non',
             TypeParametre::ListeEntiers => implode(' · ', (array) $parametre->valeur),
             TypeParametre::Decimal => str_replace('.', ',', (string) $parametre->valeur),
-            TypeParametre::ModeIa => ModeIa::tryFrom((string) $parametre->valeur)?->getLabel() ?? (string) $parametre->valeur,
             default => (string) $parametre->valeur,
         };
     }

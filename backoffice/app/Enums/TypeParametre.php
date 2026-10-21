@@ -11,7 +11,6 @@ enum TypeParametre: string implements HasLabel
     case Booleen = 'booleen';
     case Texte = 'texte';
     case ListeEntiers = 'liste_entiers';
-    case ModeIa = 'mode_ia';
 
     public function getLabel(): string
     {
@@ -21,7 +20,6 @@ enum TypeParametre: string implements HasLabel
             self::Booleen => 'Oui / non',
             self::Texte => 'Texte',
             self::ListeEntiers => 'Liste de nombres',
-            self::ModeIa => 'Mode de l’assistant IA',
         };
     }
 }
