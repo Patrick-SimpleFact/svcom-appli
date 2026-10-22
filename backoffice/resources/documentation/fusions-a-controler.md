@@ -1,4 +1,4 @@
-Des séances que la collecte a **déjà fusionnées automatiquement** alors que leurs heures différaient un peu (1 à 30 minutes). La fusion est appliquée ; cette file sert à vérifier que la règle se trompe rarement.
+Des séances que la collecte a **déjà fusionnées automatiquement** alors que leurs heures différaient un peu (1 à 30 minutes). La fusion est appliquée ; cette file sert à vérifier que la règle se trompe rarement. Exception : quand une billetterie enchaîne les séances du même spectacle (moins d'une heure d'écart le même jour), la collecte ne fusionne plus automatiquement : la paire va dans « Doublons probables ».
 
 > **Différence avec Doublons probables** : ici la fusion est déjà faite, vous la confirmez ou l'annulez. Dans « Doublons probables », rien n'est fusionné tant que vous n'avez pas décidé.
 
