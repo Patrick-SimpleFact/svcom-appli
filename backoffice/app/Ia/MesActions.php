@@ -14,6 +14,7 @@ use App\Enums\StatutElement;
 use App\Enums\TypeDecisionDedoublonnage;
 use App\Filament\Pages\BoiteDeTravail;
 use App\Filament\Support\Urgence;
+use App\Models\Admin;
 use App\Models\ElementATraiter;
 use App\Models\Genre;
 use App\Models\Offre;
@@ -36,10 +37,12 @@ class MesActions
 {
     public function __construct(private Assistant $assistant) {}
 
-    /** Les files ouvertes à l'admin connecté (modèle de profil). @return list<FileATraiter> */
+    /** Les files ouvertes à l'admin connecté (modèle de profil), ou toutes hors connexion (e-mail du matin). @return list<FileATraiter> */
     public function files(): array
     {
-        return array_map(fn (string $f) => FileATraiter::from($f), array_keys(BoiteDeTravail::ressourcesOuvertes()));
+        $ressources = auth()->user() instanceof Admin ? BoiteDeTravail::ressourcesOuvertes() : BoiteDeTravail::RESSOURCES;
+
+        return array_map(fn (string $f) => FileATraiter::from($f), array_keys($ressources));
     }
 
     public function requete(): Builder

@@ -4,6 +4,7 @@ namespace App\Ia;
 
 use App\Enums\FileATraiter;
 use App\Enums\ModeIa;
+use App\Enums\StatutCollecte;
 use App\Enums\StatutPropositionIa;
 use App\Ia\Taches\ClasserCategories;
 use App\Ia\Taches\ControlerFusions;
@@ -11,6 +12,7 @@ use App\Ia\Taches\ControlerSpectacles;
 use App\Ia\Taches\DepartagerDoublons;
 use App\Ia\Taches\TacheIa;
 use App\Ia\Taches\TrierAnnonces;
+use App\Models\Collecte;
 use App\Models\ElementATraiter;
 use App\Models\Parametre;
 use App\Models\PropositionIa;
@@ -88,6 +90,11 @@ class Assistant
 
         if (self::modelesNiveau1() === []) {
             return ['Arrêt : aucun modèle de 1er niveau dans les réglages.'];
+        }
+
+        // Jamais pendant une collecte : les éléments et les séances bougent encore (règle de Patrick).
+        if (Collecte::where('statut', StatutCollecte::EnCours)->exists()) {
+            return ['Collecte en cours : l’assistant attend qu’elle soit finie.'];
         }
 
         foreach ($taches as $tache) {

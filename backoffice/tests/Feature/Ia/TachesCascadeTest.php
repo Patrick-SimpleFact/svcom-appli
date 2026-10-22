@@ -9,6 +9,7 @@ use App\Enums\PrecisionPosition;
 use App\Enums\StatutElement;
 use App\Enums\StatutPropositionIa;
 use App\Enums\TypeLieu;
+use App\Ia\AnnulerDecision;
 use App\Ia\Quota;
 use App\Models\DecisionDedoublonnage;
 use App\Models\ElementATraiter;
@@ -16,6 +17,7 @@ use App\Models\Genre;
 use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Parametre;
+use App\Models\PropositionIa;
 use App\Models\Source;
 use App\Support\Point;
 use Carbon\CarbonImmutable;
@@ -123,4 +125,20 @@ it('envoie aux modèles les deux séances à comparer, avec leur billetterie, le
             && $paire['seance_a']['lieu'] === 'Théâtre du Chêne noir'
             && str_contains($r['messages'][0]['content'], 'séances enchaînées');
     });
+});
+
+it('annuler une fusion décidée par l’IA sépare les deux séances, et la collecte ne les refusionne pas', function () {
+    $a = ($this->offre)($this->billetreduc, 'BR-1', 'Edmond', '2026-10-17 20:30');
+    $b = ($this->offre)($this->fnac, 'FN-1', 'EDMOND', '2026-10-17 21:15');
+    ollamaRepond(fn () => ['decision' => 'meme_seance', 'confiance' => 95]);
+    $this->artisan('ia:traiter', ['--file' => 'doublon_probable']);
+    expect($b->fresh()->meme_seance_que_id)->toBe($a->id);
+
+    $message = app(AnnulerDecision::class)->handle(PropositionIa::where('modele', 'cascade')->sole());
+    app(DedoublonnerOffre::class)->handle($b->fresh()); // comme à la collecte suivante
+
+    expect($message)->toContain('de nouveau séparées')
+        ->and($b->fresh()->meme_seance_que_id)->toBeNull()
+        ->and(DecisionDedoublonnage::sole()->type->value)->toBe('separer')
+        ->and(ElementATraiter::where('file', FileATraiter::DoublonProbable)->sole()->decision)->toBe(['type' => 'separer']);
 });
