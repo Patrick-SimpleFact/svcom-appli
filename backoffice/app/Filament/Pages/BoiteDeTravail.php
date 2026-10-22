@@ -12,6 +12,8 @@ use App\Filament\Resources\LieuxAVerifier\LieuAVerifierResource;
 use App\Filament\Resources\SpectaclesAControler\SpectacleAControlerResource;
 use App\Filament\Widgets\CompteursFiles;
 use App\Filament\Widgets\ElementsUrgents;
+use App\Filament\Widgets\MesActionsDuJour;
+use App\Ia\MesActions;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -19,8 +21,8 @@ use Filament\Pages\Dashboard;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Page d'accueil du back-office : toutes les files qui attendent une décision, avec leurs compteurs,
- * et les éléments les plus urgents toutes files confondues (F7.10, A01).
+ * Page d'accueil du back-office : « Mes actions du jour » (une carte par décision qui attend vraiment Patrick,
+ * plan-module-ia v2), puis toutes les files avec leurs compteurs et les éléments les plus urgents (F7.10, A01).
  */
 class BoiteDeTravail extends Dashboard
 {
@@ -44,17 +46,24 @@ class BoiteDeTravail extends Dashboard
 
     public static function getNavigationLabel(): string
     {
-        return 'Boîte de travail';
+        return 'Mes actions du jour';
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $nombre = app(MesActions::class)->nombre();
+
+        return $nombre > 0 ? (string) $nombre : null;
     }
 
     public function getTitle(): string
     {
-        return 'Boîte de travail';
+        return 'Mes actions du jour';
     }
 
     public function getWidgets(): array
     {
-        return [CompteursFiles::class, ElementsUrgents::class];
+        return [MesActionsDuJour::class, CompteursFiles::class, ElementsUrgents::class];
     }
 
     public function getColumns(): int|array
