@@ -12,6 +12,7 @@ enum StatutPropositionIa: string implements HasColor, HasLabel
     case Appliquee = 'appliquee';
     case Refusee = 'refusee';
     case Annulee = 'annulee';
+    case Echec = 'echec'; // réponse absente ou hors cadre : l'élément n'est pas redemandé avant un moment
 
     public function getLabel(): string
     {
@@ -20,6 +21,7 @@ enum StatutPropositionIa: string implements HasColor, HasLabel
             self::Appliquee => 'Appliquée',
             self::Refusee => 'Refusée',
             self::Annulee => 'Annulée',
+            self::Echec => 'Sans réponse',
         };
     }
 
@@ -30,6 +32,7 @@ enum StatutPropositionIa: string implements HasColor, HasLabel
             self::Appliquee => 'success',
             self::Refusee => 'gray',
             self::Annulee => 'warning',
+            self::Echec => 'danger',
         };
     }
 }

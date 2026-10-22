@@ -39,9 +39,9 @@ class EtatIaCommande extends Command
         }
 
         $modele = (string) Parametre::valeur('ia_modele');
-        ClientOllama::estCloud($modele)
+        ($erreur = $client->verifierModele($modele)) === null
             ? $this->info("Modèle : {$modele}.")
-            : $this->error("Modèle : {$modele} n’est pas un modèle cloud : il sera refusé.");
+            : $this->error("Modèle : {$erreur}");
 
         $this->table(['File', 'Mode'], collect(self::MODES)
             ->map(fn (string $file, string $cle) => [$file, ModeIa::tryFrom((string) Parametre::valeur($cle))?->getLabel() ?? '?'])

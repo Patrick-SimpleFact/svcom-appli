@@ -4,8 +4,11 @@ namespace App\Models;
 
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
+use App\Enums\StatutPropositionIa;
 use App\Models\Concerns\IdentifiantNumerique;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
@@ -35,5 +38,16 @@ class ElementATraiter extends Model
     public function cible(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function propositionsIa(): HasMany
+    {
+        return $this->hasMany(PropositionIa::class);
+    }
+
+    /** La proposition de l'assistant IA qui attend une décision. */
+    public function propositionIa(): HasOne
+    {
+        return $this->hasOne(PropositionIa::class)->ofMany(['id' => 'max'], fn ($q) => $q->where('statut', StatutPropositionIa::Proposee));
     }
 }

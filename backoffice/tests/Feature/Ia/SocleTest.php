@@ -38,6 +38,7 @@ beforeEach(function () {
     $this->seed(ParametresSeeder::class);
     config(['services.ollama.url' => 'http://localhost:11434', 'services.ollama.cle_api' => 'cle-de-test', 'services.ollama.url_compte' => 'https://ollama.com']);
     Cache::forget(Quota::CLE_CACHE);
+    Cache::forget('ia:modeles');
     $this->messages = [['role' => 'user', 'content' => 'Seul en scène']];
 });
 
@@ -61,6 +62,33 @@ it('change le mode d’une file depuis les réglages', function () {
 
     expect(Parametre::valeur('ia_mode_a_classer'))->toBe('observation');
     $this->get('/admin/parametres')->assertOk()->assertSee('Observation (propose seulement)');
+});
+
+it('propose les modèles cloud d’ollama.com sous leur nom local', function () {
+    Http::fake(['ollama.com/api/tags' => Http::response(['models' => [['name' => 'kimi-k3'], ['name' => 'gpt-oss:120b'], ['name' => 'gemma4:31b']]])]);
+
+    expect(app(ClientOllama::class)->modelesCloud())->toBe(['gemma4:31b-cloud', 'gpt-oss:120b-cloud', 'kimi-k3:cloud']);
+    app(ClientOllama::class)->modelesCloud();
+    Http::assertSentCount(1); // gardée en cache
+});
+
+it('choisit le modèle dans la liste et vérifie auprès d’Ollama à l’enregistrement', function () {
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+    Http::fake([
+        'ollama.com/api/tags' => Http::response(['models' => [['name' => 'gpt-oss:120b'], ['name' => 'kimi-k3']]]),
+        'localhost:11434/api/show' => fn ($requete) => $requete['model'] === 'gpt-oss:120b-cloud'
+            ? Http::response(['details' => ['parent_model' => 'gpt-oss:120b']])
+            : Http::response(['error' => "model 'kimi-k3' not found"], 404),
+    ]);
+    $modele = Parametre::firstWhere('cle', 'ia_modele');
+    $formulaire = fn (string $valeur) => Livewire::test(EditParametre::class, ['record' => $modele->id])->fillForm(['valeur' => $valeur])->call('save');
+
+    $formulaire('gpt-oss:cloud')->assertHasFormErrors(['valeur']);  // hors de la liste
+    $formulaire('kimi-k3:cloud')->assertHasFormErrors(['valeur']);  // dans la liste, mais inconnu de cet Ollama
+    expect(Parametre::valeur('ia_modele'))->toBe('gemma4:cloud');
+
+    $formulaire('gpt-oss:120b-cloud')->assertHasNoFormErrors();
+    expect(Parametre::valeur('ia_modele'))->toBe('gpt-oss:120b-cloud');
 });
 
 it('envoie la demande au modèle cloud et journalise l’appel', function () {
@@ -166,11 +194,14 @@ it('lit le solde au plus une fois par minute', function () {
     app(Quota::class)->verifier();
 
     Http::assertSentCount(1);
+    // Un simple tableau en cache : le cache de la base ne restaure pas nos objets (« serializable_classes » à false).
+    expect(Cache::get(Quota::CLE_CACHE))->toBeArray();
 });
 
 it('affiche l’état de l’assistant et fait un essai', function () {
     Http::fake([
         'localhost:11434/api/version' => Http::response(['version' => '0.40.6']),
+        'localhost:11434/api/show' => Http::response(['details' => ['parent_model' => 'gemma4']]),
         ...solde(fenetres(80, 60)),
         ...reponseChat('{"reponse":"ok"}'),
     ]);
