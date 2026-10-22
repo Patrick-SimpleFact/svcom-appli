@@ -14,7 +14,7 @@
         "tinted": "./assets/images/icon-ios-teinte.png"
       },
       "bundleIdentifier": "fr.spettacoli.app",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "appleTeamId": "X4CB98WRUP",
       "usesAppleSignIn": true,
       "supportsTablet": false,
