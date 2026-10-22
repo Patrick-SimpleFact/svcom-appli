@@ -7,6 +7,7 @@ use App\Enums\ModeIa;
 use App\Enums\StatutPropositionIa;
 use App\Ia\Taches\ClasserCategories;
 use App\Ia\Taches\ControlerFusions;
+use App\Ia\Taches\ControlerSpectacles;
 use App\Ia\Taches\DepartagerDoublons;
 use App\Ia\Taches\TacheIa;
 use App\Ia\Taches\TrierAnnonces;
@@ -35,6 +36,7 @@ class Assistant
         'a_trier' => TrierAnnonces::class,
         'doublon_probable' => DepartagerDoublons::class,
         'fusion_a_controler' => ControlerFusions::class,
+        'spectacle_a_controler' => ControlerSpectacles::class,
     ];
 
     public function __construct(private ClientOllama $client, private Quota $quota) {}

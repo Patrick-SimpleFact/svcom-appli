@@ -8,6 +8,7 @@ use App\Enums\StatutElement;
 use App\Filament\Resources\Spectacles\SpectacleResource;
 use App\Filament\Resources\SpectaclesAControler\Pages\ListSpectaclesAControler;
 use App\Filament\Support\OuvertSelonProfil;
+use App\Filament\Support\PropositionsIa;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
@@ -49,7 +50,7 @@ class SpectacleAControlerResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('file', FileATraiter::SpectacleAControler)->with('cible');
+        return parent::getEloquentQuery()->where('file', FileATraiter::SpectacleAControler)->with(['cible', ...PropositionsIa::RELATIONS]);
     }
 
     public static function getNavigationBadge(): ?string
@@ -92,14 +93,17 @@ class SpectacleAControlerResource extends Resource
                 TextColumn::make('lieux')->label('Lieux réunis')->listWithLineBreaks()->wrap()
                     ->state(fn (ElementATraiter $record): array => static::lieux($record->cible)
                         ->map(fn (array $l) => "{$l['lieu']} — {$l['dates']} date(s) — {$l['sources']} — {$l['artistes']}")->values()->all()),
+                PropositionsIa::colonne(),
                 TextColumn::make('statut')->badge()
                     ->color(fn (StatutElement $state): string => $state === StatutElement::EnAttente ? 'warning' : 'gray'),
                 TextColumn::make('created_at')->label('Ajouté le')->dateTime('d/m/Y H:i', 'Europe/Paris'),
             ])
             ->filters([
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
+                PropositionsIa::filtre(),
             ])
             ->recordActions([
+                PropositionsIa::actionAccepter(),
                 static::actionConfirmer(),
                 static::actionSeparer(),
             ])
