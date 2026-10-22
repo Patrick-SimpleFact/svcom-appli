@@ -31,6 +31,9 @@ class DedoublonnerOffre
     /** Deux lieux à moins de cette distance accueillent la même séance (COLLECTE §7.1). */
     private const LIEUX_PROCHES_METRES = 500;
 
+    /** Une billetterie qui joue le même spectacle deux fois à moins de cet écart enchaîne les séances (pas de fusion automatique). */
+    public const SEANCES_ENCHAINEES_MINUTES = 60;
+
     /** @var array<int, list<int>> lieux considérés comme le même, par lieu (calculés une fois par collecte) */
     private array $lieuxProches = [];
 
@@ -138,6 +141,13 @@ class DedoublonnerOffre
             default => self::FUSION,
         };
 
+        // Séances enchaînées (le même spectacle joué plusieurs fois en moins d'une heure par une billetterie, ex. Le Grand
+        // Hôtel des Rêves toutes les 20 min) : deux heures différentes y sont sans doute deux séances → à décider à la main.
+        if ($decision === self::FUSION && $ecart !== null && $ecart > 0
+            && ($this->seancesEnchainees($offre) || $this->seancesEnchainees($candidate))) {
+            $decision = self::PROBABLE;
+        }
+
         return ['candidate' => $candidate, 'decision' => $decision, 'ecart' => $ecart, 'ressemblance' => round($ressemblance, 2)];
     }
 
@@ -179,6 +189,25 @@ class DedoublonnerOffre
         }
 
         return $this->lieuxProches[$lieuId] = $proches->unique()->values()->all();
+    }
+
+    /** La billetterie de cette offre vend-elle le même spectacle, au même lieu, une autre fois à moins d'une heure d'écart ? */
+    private function seancesEnchainees(Offre $offre): bool
+    {
+        if (! $offre->heure_connue || $offre->debut === null || $offre->titre_comparable === null) {
+            return false;
+        }
+
+        return Offre::whereKeyNot($offre->id)
+            ->where('source_id', $offre->source_id)
+            ->where('lieu_id', $offre->lieu_id)
+            ->where('titre_comparable', $offre->titre_comparable)
+            ->whereNull('disparue_le')
+            ->where('heure_connue', true)
+            ->where('debut', '>', $offre->debut->copy()->subMinutes(self::SEANCES_ENCHAINEES_MINUTES))
+            ->where('debut', '<', $offre->debut->copy()->addMinutes(self::SEANCES_ENCHAINEES_MINUTES))
+            ->where('debut', '!=', $offre->debut)
+            ->exists();
     }
 
     private function membresDuGroupe(int $premiereId): Collection
