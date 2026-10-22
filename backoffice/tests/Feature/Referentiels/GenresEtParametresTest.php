@@ -59,6 +59,20 @@ it('modifie une liste de paliers depuis le BO, prise en compte aussitôt et jour
         ->and(JournalAction::sole()->apres)->toBe(['valeur' => '[0,10,20,40]']);
 });
 
+it('règle l’heure de sortie des séances passées au format HH:MM', function () {
+    $this->seed(ParametresSeeder::class);
+    $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
+    $parametre = Parametre::firstWhere('cle', 'boite_heure_sortie_passes');
+
+    Livewire::test(EditParametre::class, ['record' => $parametre->getKey()])
+        ->assertFormSet(['valeur' => '04:00'])
+        ->fillForm(['valeur' => '05:30'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(Parametre::valeur('boite_heure_sortie_passes'))->toBe('05:30');
+});
+
 it('affiche les écrans Villes et Réglages', function () {
     $this->seed(ParametresSeeder::class);
     $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Parametre;
 use App\Web\ListeAttenteBeta;
 use Illuminate\Support\Facades\Schedule;
 
@@ -14,6 +15,11 @@ Schedule::command('catalogue:entretenir')->hourly()->withoutOverlapping();
 
 // Boîte de travail : ordre d'urgence (ce soir, villes pilotes) recalculé avec les nouveaux éléments et le changement de jour (F7.10).
 Schedule::command('boite:prioriser')->everyThirtyMinutes()->withoutOverlapping();
+
+// Chaque jour à l'heure réglée dans les paramètres (4 h par défaut), avant les passages de l'assistant IA :
+// les éléments dont toutes les séances sont passées sortent de la boîte. Réglage lu à chaque minute, pas au démarrage.
+Schedule::command('boite:sortir-passes')->everyMinute()->timezone('Europe/Paris')
+    ->when(fn () => now('Europe/Paris')->format('H:i') === Parametre::valeur('boite_heure_sortie_passes'));
 
 // Assistant IA (plan-module-ia) : propositions dans les files actives, dans la limite du forfait Ollama.
 // En arrière-plan : un passage peut durer quelques minutes sans retarder les autres tâches planifiées.

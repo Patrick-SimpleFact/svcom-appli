@@ -13,7 +13,7 @@ class SortirElementsPassesCommande extends Command
 {
     protected $signature = 'boite:sortir-passes {--simulation : compte seulement, ne modifie rien}';
 
-    protected $description = 'Sort de la boîte de travail (À trier, À classer, Doublons, Fusions) les éléments dont toutes les séances sont passées';
+    protected $description = 'Sort de la boîte de travail (À trier, À classer, Doublons, Fusions, Spectacles à contrôler) les éléments dont toutes les séances sont passées';
 
     public function handle(SortirElementsPasses $sortir): int
     {
