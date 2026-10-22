@@ -85,7 +85,7 @@ class MesActions
     /**
      * Ce qu'affiche la carte : question, faits, avis de l'IA, boutons (clé => [libellé, conséquence, couleur]).
      *
-     * @return array{file: string, urgence: ?string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
+     * @return array{file: string, urgence: ?string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, billetteries: list<array{0: string, 1: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
      */
     public function carte(ElementATraiter $element): array
     {
@@ -93,7 +93,7 @@ class MesActions
         $carte = [
             'file' => $element->file->getLabel(),
             'urgence' => $element->urgence >= 2 ? Urgence::LIBELLES[$element->urgence] : null,
-            'faits' => [], 'comparaison' => null, 'lieux' => null, 'boutons' => [],
+            'faits' => [], 'comparaison' => null, 'lieux' => null, 'boutons' => [], 'billetteries' => [],
             'avis' => $element->douteIa?->justification,
             'proposition' => $element->propositionIa
                 ? $this->assistant->tache($element->file)->libelle($element->propositionIa)." ({$element->propositionIa->confiance} %) — ".$element->propositionIa->justification
@@ -105,12 +105,13 @@ class MesActions
             FileATraiter::ATrier => [...$carte,
                 'question' => 'Faut-il publier cette annonce dans l’agenda ?',
                 'faits' => [
-                    ['Titre', $d['titre'] ?? '', $d['lien'] ?? null],
+                    ['Titre', $d['titre'] ?? ''],
                     ['Billetterie', $element->cible?->nom],
                     ['Catégories', implode(' › ', (array) ($d['categories_source'] ?? [])) ?: null],
                     ['Lieu', collect([$d['lieu'] ?? null, $d['ville'] ?? null])->filter()->implode(', ') ?: null],
                     ['Description', Str::limit(strip_tags((string) ($d['description'] ?? '')), 300) ?: null],
                 ],
+                'billetteries' => array_filter([filled($d['lien'] ?? null) ? [$element->cible?->nom ?? 'Billetterie', $d['lien']] : null]),
                 'boutons' => [
                     'garder' => ['Garder', 'Publiée à la prochaine collecte de sa billetterie.', 'success'],
                     'exclure' => ['Exclure', 'N’apparaîtra jamais dans l’app.', 'danger'],
@@ -121,6 +122,9 @@ class MesActions
                     ['Annonces dans cette catégorie', isset($d['nb_annonces']) ? (string) $d['nb_annonces'] : null],
                     ['Exemples de titres', implode(' · ', array_slice((array) ($d['exemples'] ?? []), 0, 6)) ?: null],
                 ],
+                'billetteries' => Offre::where('source_id', $element->cible_id)->whereNull('disparue_le')->whereNotNull('lien')
+                    ->whereJsonContains('donnees_normalisees->categories_source', $d['categorie'] ?? '')->latest('id')->limit(5)->get()
+                    ->map(fn (Offre $o) => [Str::limit((string) ($o->donnees_normalisees['titre'] ?? 'Annonce'), 60), $o->lien])->all(),
                 'boutons' => Genre::orderBy('ordre')->get()
                     ->mapWithKeys(fn (Genre $g) => ["genre:{$g->slug}" => [$g->libelle, "Toutes les annonces de cette catégorie iront en « {$g->libelle} ».", 'primary']])
                     ->put('ignorer', ['Ignorer (trop large)', 'La catégorie ne décidera plus du genre ; les mots du titre décideront.', 'gray'])
@@ -145,7 +149,8 @@ class MesActions
                 ]],
             default => [...$carte,
                 'question' => ($d['motif'] ?? 'À vérifier').(isset($d['annonce']) ? " : {$d['annonce']}" : ''),
-                'faits' => collect($d)->except(['identifiants'])->filter(fn ($v) => is_scalar($v))->map(fn ($v, $k) => [Str::ucfirst(str_replace('_', ' ', $k)), (string) $v])->values()->all()],
+                'faits' => collect($d)->except(['identifiants', 'lien'])->filter(fn ($v) => is_scalar($v))->map(fn ($v, $k) => [Str::ucfirst(str_replace('_', ' ', $k)), (string) $v])->values()->all(),
+                'billetteries' => array_filter([filled($d['lien'] ?? null) ? ['Annonce d’origine', $d['lien']] : null])],
         };
     }
 
@@ -208,7 +213,7 @@ class MesActions
         ];
     }
 
-    /** @return list<array{id: int, nom: string, dates: int, billetteries: string, titres: string}> */
+    /** @return list<array{id: int, nom: string, dates: int, billetteries: string, titres: string, liens: list<array{0: string, 1: string}>}> */
     private function lieux(ElementATraiter $element): array
     {
         return Offre::with(['source', 'lieu.ville'])->where('spectacle_id', $element->cible_id)->whereNull('disparue_le')->get()
@@ -219,6 +224,7 @@ class MesActions
                 'dates' => $offres->count(),
                 'billetteries' => $offres->pluck('source.nom')->unique()->implode(', '),
                 'titres' => $offres->map(fn (Offre $o) => $o->donnees_normalisees['titre'] ?? null)->filter()->unique()->take(2)->implode(' · '),
+                'liens' => $offres->filter(fn (Offre $o) => filled($o->lien))->unique('source_id')->map(fn (Offre $o) => [$o->source?->nom ?? 'Billetterie', $o->lien])->values()->all(),
             ])->sortByDesc('dates')->values()->all();
     }
 }

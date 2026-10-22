@@ -34,7 +34,8 @@ beforeEach(function () {
     $this->billetreduc = Source::firstWhere('code', 'billetreduc');
     $this->aTrier = fn (string $titre, int $urgence = 0) => ElementATraiter::create([
         'file' => FileATraiter::ATrier, 'cible_type' => $this->billetreduc->getMorphClass(), 'cible_id' => $this->billetreduc->id, 'urgence' => $urgence,
-        'donnees' => ['identifiant_externe' => 'BR-'.md5($titre), 'titre' => $titre, 'categories_source' => ['Loisirs'], 'lieu' => 'La Relève', 'ville' => 'Lyon'],
+        'donnees' => ['identifiant_externe' => 'BR-'.md5($titre), 'titre' => $titre, 'categories_source' => ['Loisirs'], 'lieu' => 'La Relève', 'ville' => 'Lyon',
+            'lien' => 'https://www.billetreduc.com/'.md5($titre).'/evt.htm'],
     ]);
 });
 
@@ -46,6 +47,8 @@ it('montre la décision la plus urgente, l’applique d’un clic et passe à la
         ->assertSee('Faut-il publier cette annonce dans l’agenda ?')
         ->assertSee('Edmond')
         ->assertSee('Publiée à la prochaine collecte de sa billetterie.')
+        ->assertSee('Voir chez la billetterie')
+        ->assertSee('https://www.billetreduc.com/'.md5('Edmond').'/evt.htm')
         ->assertSee('Carte 1 sur 2')
         ->call('decider', $urgent->id, 'garder')
         ->assertSee('Soirée contes')

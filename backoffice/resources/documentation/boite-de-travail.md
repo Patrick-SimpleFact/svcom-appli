@@ -4,7 +4,8 @@ La page d'accueil du back-office, **Mes actions du jour**. Elle réunit tout ce 
 
 Une **carte à la fois**, la plus urgente d'abord (« Carte 1 sur 12 ») :
 - **la question en clair** : « Faut-il publier cette annonce dans l'agenda ? », « Ces deux séances sont-elles la même ? », « Est-ce le même spectacle dans tous ces lieux ? », « Quel genre pour cette catégorie ? » ;
-- **les faits utiles** : titres, billetteries, dates et heures, lieux, prix, liens vers la billetterie. Deux séances à comparer sont présentées côte à côte (Séance A, Séance B) ;
+- **les faits utiles** : titres, billetteries, dates et heures, lieux, prix. Deux séances à comparer sont présentées côte à côte (Séance A, Séance B) ;
+- **toujours un lien « Voir chez la billetterie »** : l'annonce à trier, chacune des deux séances, chaque lieu d'un spectacle à contrôler, des exemples d'annonces d'une catégorie à classer ;
 - **l'avis de l'IA** : sa proposition (en observation), ou pourquoi elle n'a pas tranché (l'avis de chaque modèle, ou le garde-fou qui l'a arrêtée) ;
 - **des boutons dont la conséquence est écrite dessous** (« Une seule date dans l'app », « N'apparaîtra jamais dans l'app »…). Le clic décide tout de suite, comme dans la file, et passe à la carte suivante. **Appliquer la proposition de l'IA** reprend sa proposition telle quelle.
 - **Plus tard** : passe à la carte suivante ; la carte revient quand vous cliquez **Les reprendre**, ou le lendemain.

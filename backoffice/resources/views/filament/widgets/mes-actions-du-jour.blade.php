@@ -63,6 +63,15 @@
                     </table>
                 @endif
 
+                @if ($carte['billetteries'])
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                        <span style="font-size:13px;opacity:.65">Voir chez la billetterie :</span>
+                        @foreach ($carte['billetteries'] as [$nom, $url])
+                            <x-filament::link :href="$url" target="_blank" rel="noopener" icon="heroicon-o-arrow-top-right-on-square" size="sm">{{ $nom }}</x-filament::link>
+                        @endforeach
+                    </div>
+                @endif
+
                 @if ($carte['lieux'])
                     <div style="display:flex;flex-direction:column;gap:6px">
                         <div style="font-size:13px;opacity:.65">Cochez les lieux qui jouent un AUTRE spectacle, si besoin :</div>
@@ -70,7 +79,11 @@
                             <label style="display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer">
                                 <input type="checkbox" wire:model="lieux" value="{{ $lieu['id'] }}" style="margin-top:3px">
                                 <span><strong>{{ $lieu['nom'] }}</strong> — {{ $lieu['dates'] }} date(s), {{ $lieu['billetteries'] }}
-                                    @if ($lieu['titres'])<br><span style="opacity:.7">{{ $lieu['titres'] }}</span>@endif</span>
+                                    @if ($lieu['titres'])<br><span style="opacity:.7">{{ $lieu['titres'] }}</span>@endif
+                                    @foreach ($lieu['liens'] as [$nom, $url])
+                                        <br><a href="{{ $url }}" target="_blank" rel="noopener" style="font-size:13px;text-decoration:underline">Voir chez {{ $nom }}</a>
+                                    @endforeach
+                                </span>
                             </label>
                         @endforeach
                     </div>

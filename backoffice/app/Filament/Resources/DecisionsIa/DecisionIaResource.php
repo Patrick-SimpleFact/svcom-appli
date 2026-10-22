@@ -60,7 +60,9 @@ class DecisionIaResource extends Resource
                 TextColumn::make('updated_at')->label('Le')->dateTime('d/m H:i', 'Europe/Paris')->sortable(),
                 TextColumn::make('file')->label('File')->badge()->color('gray'),
                 TextColumn::make('element')->label('Élément')->wrap()
-                    ->state(fn (PropositionIa $record): ?string => self::element($record)),
+                    ->state(fn (PropositionIa $record): ?string => self::element($record))
+                    ->url(fn (PropositionIa $record): ?string => self::lienBilletterie($record), shouldOpenInNewTab: true)
+                    ->tooltip('Voir chez la billetterie'),
                 TextColumn::make('decision')->label('Décision')->wrap()
                     ->state(fn (PropositionIa $record): string => app(Assistant::class)->tache($record->file)->libelle($record))
                     ->description(fn (PropositionIa $record): ?string => $record->justification),
@@ -108,6 +110,22 @@ class DecisionIaResource extends Resource
                 ->map(fn (?Offre $o) => $o ? ($o->donnees_normalisees['titre'] ?? '?').' ('.$o->source?->nom.', '.$o->debut?->setTimezone('Europe/Paris')->format('d/m H:i').')' : '?')
                 ->implode(' / '),
             default => $d['titre'] ?? null,
+        };
+    }
+
+    /** L'annonce chez la billetterie, pour vérifier la décision d'un clic. */
+    private static function lienBilletterie(PropositionIa $record): ?string
+    {
+        $element = $record->element;
+        $d = $element?->donnees ?? [];
+
+        return match ($record->file) {
+            FileATraiter::ATrier => $d['lien'] ?? null,
+            FileATraiter::DoublonProbable, FileATraiter::FusionAControler => Offre::find($d['offre_a_id'] ?? 0)?->lien,
+            FileATraiter::SpectacleAControler => Offre::where('spectacle_id', $element?->cible_id)->whereNotNull('lien')->value('lien'),
+            FileATraiter::AClasser => Offre::where('source_id', $element?->cible_id)->whereNotNull('lien')
+                ->whereJsonContains('donnees_normalisees->categories_source', $d['categorie'] ?? '')->latest('id')->value('lien'),
+            default => null,
         };
     }
 

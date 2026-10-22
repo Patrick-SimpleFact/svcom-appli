@@ -2,7 +2,7 @@ Ce que l'**assistant IA** a décidé dans les files de la boîte de travail (À 
 
 ### Ce que vous voyez
 
-Une ligne par décision, la plus récente d'abord : la file, l'élément (titre, catégorie ou les deux séances comparées), la décision et sa justification, le **niveau** qui l'a prise (1er : deux modèles d'accord ; 2e : un modèle plus solide, quand le 1er n'a pas tranché), la confiance et le statut.
+Une ligne par décision, la plus récente d'abord : la file, l'élément (titre, catégorie ou les deux séances comparées), la décision et sa justification, le **niveau** qui l'a prise (1er : deux modèles d'accord ; 2e : un modèle plus solide, quand le 1er n'a pas tranché), la confiance et le statut. Un clic sur l'élément ouvre l'annonce chez la billetterie.
 
 Filtres : **statut** (appliquées par défaut ; proposées en observation ; annulées) et **file**.
 
