@@ -13,6 +13,10 @@ Une **carte à la fois**, la plus urgente d'abord (« Carte 1 sur 12 ») :
 
 Pour une file confiée à l'assistant IA (Réglages › Assistant IA), seuls apparaissent les éléments qu'il a examinés sans trancher, ou ce qu'il propose en observation ; ceux qu'il n'a pas encore examinés sont comptés à part (« en cours d'examen par l'IA »). Pour les autres files, tous les éléments en attente apparaissent.
 
+### Les séances passées
+
+Chaque jour à l'heure réglée dans **Paramètres → Assistant IA → Heure de sortie des séances passées** (4 h par défaut), avant que l'assistant IA ne reprenne, les éléments dont toutes les séances sont passées sortent de la boîte de travail (« sans objet ») : annonces à trier, catégories sans séance à venir, paires de séances, spectacles à contrôler. Ce n'est pas une décision : une annonce encore au programme revient d'elle-même à la collecte suivante de sa billetterie.
+
 ### Toutes les files
 
 - **Un compteur par file** (À trier, À classer, Doublons probables…) : le nombre d'éléments en attente, dont les urgents. Un clic ouvre la file. Seules les files de votre compte apparaissent.

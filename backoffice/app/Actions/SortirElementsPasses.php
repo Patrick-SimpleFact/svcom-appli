@@ -5,17 +5,19 @@ namespace App\Actions;
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Models\Source;
+use App\Models\Spectacle;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Sort de la boîte de travail les éléments dont toutes les séances sont passées (« sans objet ») :
  * - À trier : la 1re séance de l'annonce est passée ;
  * - À classer : la source n'a plus aucune séance à venir dans cette catégorie ;
- * - Doublons probables, Fusions à contrôler : les deux séances sont passées.
+ * - Doublons probables, Fusions à contrôler : les deux séances sont passées ;
+ * - Spectacles à contrôler : le spectacle n'a plus aucune séance à venir.
  * Rien d'autre n'est touché. Une annonce encore au programme revient d'elle-même à la collecte suivante de sa source
  * (« sans objet » n'est pas une décision : ni garder, ni exclure, ni genre, ni fusion).
- * Lancé à la main sur le stock (`boite:sortir-passes`), pas à chaque entretien : pour une annonce sur une période,
- * la 1re séance gardée dans l'élément peut être passée alors que le spectacle se joue encore.
+ * Chaque nuit à 4 h (`boite:sortir-passes`), avant les passages de l'assistant IA de la journée (demande de Patrick,
+ * 22/10/2026). Pour une annonce sur une période dont la 1re séance est passée, l'élément revient à la collecte suivante.
  */
 class SortirElementsPasses
 {
@@ -70,6 +72,13 @@ class SortirElementsPasses
             ],
             FileATraiter::DoublonProbable->value => [$paire, []],
             FileATraiter::FusionAControler->value => [$paire, []],
+            FileATraiter::SpectacleAControler->value => [
+                <<<SQL
+                    e.cible_type = :spectacle and not exists (
+                        select 1 from offres o where o.spectacle_id = e.cible_id and o.disparue_le is null and ({$aVenir}))
+                    SQL,
+                ['spectacle' => (new Spectacle)->getMorphClass()],
+            ],
         ];
     }
 }

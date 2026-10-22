@@ -11,6 +11,7 @@ use Closure;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
@@ -55,6 +56,11 @@ class ParametreForm
                 ->helperText('Modèles « cloud » proposés par ollama.com (liste mise à jour toutes les 6 heures). Les modèles facturés en plus du forfait n’apparaissent pas.')
                 ->rules([$verifier])
                 ->dehydrateStateUsing(fn ($state): string => implode(', ', array_map('trim', (array) $state)));
+        }
+
+        // Heure lue chaque minute par la tâche planifiée : toujours au format HH:MM.
+        if ($cle === 'boite_heure_sortie_passes') {
+            return TimePicker::make('valeur')->seconds(false)->required()->helperText('Heure de Paris.');
         }
 
         return self::champSelonType($type);

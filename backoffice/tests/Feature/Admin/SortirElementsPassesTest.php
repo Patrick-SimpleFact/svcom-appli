@@ -8,6 +8,7 @@ use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
+use App\Models\Parametre;
 use App\Models\Source;
 use App\Models\Ville;
 use App\Support\Point;
@@ -17,6 +18,7 @@ use Database\Seeders\MotsGenresSeeder;
 use Database\Seeders\ParametresSeeder;
 use Database\Seeders\ReglesFiltrageSeeder;
 use Database\Seeders\SourceFacticeSeeder;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
@@ -108,6 +110,40 @@ it('sort les catégories à classer sans séance à venir chez leur source', fun
         ->and($vivante->fresh()->statut)->toBe(StatutElement::EnAttente)
         ->and($eteinte->fresh()->statut)->toBe(StatutElement::Traite)
         ->and($sansOffre->fresh()->statut)->toBe(StatutElement::Traite);
+});
+
+it('sort les spectacles à contrôler sans séance à venir, garde ceux qui se jouent encore', function () {
+    [$a, $b] = [($this->offre)('F-1'), ($this->offre)('F-6')];
+    $controle = fn (Offre $o) => ElementATraiter::create(['file' => FileATraiter::SpectacleAControler, 'cible_type' => $o->spectacle->getMorphClass(),
+        'cible_id' => $o->spectacle_id, 'donnees' => ['titre' => $o->spectacle->titre, 'motif' => 'titre seul']]);
+    Offre::where('spectacle_id', $a->spectacle_id)->get()->each(fn (Offre $o) => ($this->passee)($o));
+    [$fini, $enCours] = [$controle($a), $controle($b)];
+
+    app(SortirElementsPasses::class)->handle();
+
+    expect($fini->fresh()->statut)->toBe(StatutElement::Traite)
+        ->and($fini->fresh()->decision)->toBe(['sans_objet' => 'séances passées'])
+        ->and($enCours->fresh()->statut)->toBe(StatutElement::EnAttente);
+});
+
+it('est planifiée chaque jour à l’heure réglée (4 h de Paris par défaut)', function () {
+    $evenement = collect(app(Schedule::class)->events())
+        ->first(fn ($e) => str_contains($e->command, 'boite:sortir-passes'));
+    $passeA = function (string $heure) use ($evenement): bool {
+        $this->travelTo(CarbonImmutable::parse("2026-10-23 {$heure}", 'Europe/Paris'));
+
+        return $evenement->isDue(app()) && $evenement->filtersPass(app());
+    };
+
+    expect($evenement)->not->toBeNull()
+        ->and($passeA('04:00'))->toBeTrue()
+        ->and($passeA('04:01'))->toBeFalse()
+        ->and($passeA('05:30'))->toBeFalse();
+
+    Parametre::firstWhere('cle', 'boite_heure_sortie_passes')->update(['valeur' => '05:30']);
+
+    expect($passeA('05:30'))->toBeTrue()
+        ->and($passeA('04:00'))->toBeFalse();
 });
 
 it('ne touche ni aux autres files ni aux éléments déjà traités', function () {
