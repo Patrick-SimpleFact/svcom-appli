@@ -15,6 +15,13 @@ Schedule::command('catalogue:entretenir')->hourly()->withoutOverlapping();
 // Boîte de travail : ordre d'urgence (ce soir, villes pilotes) recalculé avec les nouveaux éléments et le changement de jour (F7.10).
 Schedule::command('boite:prioriser')->everyThirtyMinutes()->withoutOverlapping();
 
+// Assistant IA (plan-module-ia) : propositions dans les files actives, dans la limite du forfait Ollama.
+// En arrière-plan : un passage peut durer quelques minutes sans retarder les autres tâches planifiées.
+Schedule::command('ia:traiter')->everyFifteenMinutes()->withoutOverlapping(30)->runInBackground();
+
+// E-mail du matin à Patrick : « Mes actions du jour », ce que l'assistant IA a fait depuis hier, forfait Ollama.
+Schedule::command('ia:recapitulatif')->dailyAt('08:00')->timezone('Europe/Paris');
+
 // Supervision des sources : alertes e-mail (échec, publication manquante à 7 h, chute de volume, données périmées, F7.9).
 Schedule::command('supervision:verifier')->everyFifteenMinutes()->withoutOverlapping();
 

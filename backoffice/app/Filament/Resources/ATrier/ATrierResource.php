@@ -9,6 +9,7 @@ use App\Enums\StatutElement;
 use App\Filament\Resources\ATrier\Pages\ListATrier;
 use App\Filament\Resources\ReglesFiltrage\RegleFiltrageResource;
 use App\Filament\Support\OuvertSelonProfil;
+use App\Filament\Support\PropositionsIa;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\RegleFiltrage;
@@ -53,7 +54,7 @@ class ATrierResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('file', FileATraiter::ATrier)->with('cible');
+        return parent::getEloquentQuery()->where('file', FileATraiter::ATrier)->with(['cible', ...PropositionsIa::RELATIONS]);
     }
 
     public static function getNavigationBadge(): ?string
@@ -82,6 +83,7 @@ class ATrierResource extends Resource
                 TextColumn::make('donnees.motifs')->label('Mots trouvés')->listWithLineBreaks()->placeholder('Aucun mot connu'),
                 TextColumn::make('decision.issue')->label('Décision')->badge()->placeholder('—')
                     ->formatStateUsing(fn (?string $state): ?string => $state ? IssueFiltrage::from($state)->getLabel() : null),
+                PropositionsIa::colonne(),
                 TextColumn::make('statut')->badge()
                     ->color(fn (StatutElement $state): string => $state === StatutElement::EnAttente ? 'warning' : 'gray'),
                 TextColumn::make('created_at')->label('Mis de côté le')->dateTime('d/m/Y H:i', 'Europe/Paris')->sortable(),
@@ -103,13 +105,16 @@ class ATrierResource extends Resource
                     ->schema([TextInput::make('categorie')->label('Catégorie de la source contient')])
                     ->query(fn (Builder $query, array $data): Builder => filled($data['categorie'] ?? null)
                         ? $query->whereRaw("donnees->>'categories_source' ilike ?", ['%'.$data['categorie'].'%']) : $query),
+                PropositionsIa::filtre(),
             ])
             ->recordActions([
+                PropositionsIa::actionAccepter(),
                 static::decision('garder', 'Garder', IssueFiltrage::Garde, 'success', Heroicon::OutlinedCheck),
                 static::decision('exclure', 'Exclure', IssueFiltrage::Exclu, 'danger', Heroicon::OutlinedXMark),
                 static::actionAjouterMot(),
             ])
             ->toolbarActions([
+                PropositionsIa::actionAccepterSelection(),
                 BulkAction::make('garderSelection')->label('Garder la sélection')->icon(Heroicon::OutlinedCheck)->color('success')
                     ->requiresConfirmation()->modalDescription('Ces spectacles seront publiés à la prochaine collecte de leur source.')
                     ->action(fn (Collection $records) => static::notifier(app(DeciderTri::class)->handle($records, IssueFiltrage::Garde), 'gardée(s)')),

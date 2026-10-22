@@ -28,6 +28,8 @@ class CompteursFiles extends StatsOverviewWidget
 
     protected ?string $pollingInterval = null;
 
+    protected ?string $heading = 'Toutes les files';
+
     /** Redessiné quand la page relance le calcul (bouton de l'en-tête). */
     #[On('boite-reclassee')]
     public function rafraichir(): void {}

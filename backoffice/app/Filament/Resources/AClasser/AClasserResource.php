@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\AClasser;
 
 use App\Actions\EnregistrerCorrespondanceGenre;
+use App\Actions\IgnorerCategorie;
 use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Filament\Resources\AClasser\Pages\ListAClasser;
 use App\Filament\Support\OuvertSelonProfil;
+use App\Filament\Support\PropositionsIa;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Genre;
@@ -48,7 +50,7 @@ class AClasserResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('file', FileATraiter::AClasser)->with('cible');
+        return parent::getEloquentQuery()->where('file', FileATraiter::AClasser)->with(['cible', ...PropositionsIa::RELATIONS]);
     }
 
     public static function getNavigationBadge(): ?string
@@ -69,17 +71,28 @@ class AClasserResource extends Resource
                 TextColumn::make('donnees.nb_annonces')->label('Annonces')
                     ->formatStateUsing(fn ($state): string => $state >= 1000 ? '1000 et plus' : (string) $state),
                 TextColumn::make('donnees.exemples')->label('Exemples')->listWithLineBreaks()->placeholder('—'),
-                TextColumn::make('decision.genre')->label('Classée en')->placeholder('—')
-                    ->formatStateUsing(fn (?string $state): ?string => $state ? Genre::firstWhere('slug', $state)?->libelle : null),
+                PropositionsIa::colonne(),
+                TextColumn::make('decision')->label('Classée en')->placeholder('—')
+                    ->state(fn (ElementATraiter $record): ?string => match (true) {
+                        ! empty($record->decision[IgnorerCategorie::DECISION]) => 'Ignorée (trop large)',
+                        isset($record->decision['genre']) => Genre::firstWhere('slug', $record->decision['genre'])?->libelle,
+                        default => null,
+                    }),
                 TextColumn::make('statut')->badge()
                     ->color(fn (StatutElement $state): string => $state === StatutElement::EnAttente ? 'warning' : 'gray'),
                 TextColumn::make('created_at')->label('Vue le')->dateTime('d/m/Y H:i', 'Europe/Paris'),
             ])
             ->filters([
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
+                PropositionsIa::filtre(),
             ])
             ->recordActions([
+                PropositionsIa::actionAccepter(),
                 static::actionClasser(),
+                static::actionIgnorer(),
+            ])
+            ->toolbarActions([
+                PropositionsIa::actionAccepterSelection(),
             ])
             ->recordUrl(null);
     }
@@ -102,6 +115,20 @@ class AClasserResource extends Resource
 
                 Notification::make()->success()->title('Catégorie classée')
                     ->body($nombre > 0 ? "{$nombre} spectacle(s) reclassé(s)." : null)->send();
+            });
+    }
+
+    /** Catégorie trop large pour un genre : ses annonces gardent le genre trouvé par les mots, et elle ne revient plus. */
+    public static function actionIgnorer(): Action
+    {
+        return Action::make('ignorer')->label('Ignorer')->icon(Heroicon::OutlinedEyeSlash)->color('gray')
+            ->visible(fn (ElementATraiter $record): bool => $record->file === FileATraiter::AClasser && $record->statut === StatutElement::EnAttente)
+            ->requiresConfirmation()
+            ->modalHeading(fn (ElementATraiter $record): string => "Ignorer « {$record->donnees['categorie']} »")
+            ->modalDescription('Catégorie trop large pour un seul genre : aucune correspondance n’est enregistrée, ses annonces gardent le genre trouvé par les mots du titre (sinon « Autres »), et elle ne reviendra plus dans cette file.')
+            ->action(function (ElementATraiter $record): void {
+                app(IgnorerCategorie::class)->handle($record);
+                Notification::make()->success()->title('Catégorie ignorée')->send();
             });
     }
 

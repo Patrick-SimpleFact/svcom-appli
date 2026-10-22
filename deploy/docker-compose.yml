@@ -98,6 +98,11 @@ services:
     <<: *backoffice
     pull_policy: never
     command: ["php", "/var/www/html/artisan", "schedule:work"]
+    # « proxy » en plus : l'assistant IA joint l'Ollama de l'hôte par la passerelle de ce réseau (OLLAMA_URL),
+    # le pare-feu n'ouvrant le port 11434 qu'aux réseaux Docker 172.17/172.18.
+    networks:
+      - interne
+      - proxy
     depends_on:
       # Démarre après app, qui joue les migrations au démarrage.
       app:

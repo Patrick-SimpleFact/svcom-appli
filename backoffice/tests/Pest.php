@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /*
@@ -44,7 +46,23 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Faux Ollama pour toutes les files : $repondre(élément envoyé, modèle) donne le résultat (sans id), ou null pour ne rien répondre.
+ */
+function ollamaRepond(Closure $repondre): void
 {
-    // ..
+    Http::fake([
+        'ollama.com/api/balance' => Http::response(['included' => [
+            'session' => ['remaining_percent' => 90, 'resets_at' => now()->addHours(2)->toIso8601String()],
+            'weekly' => ['remaining_percent' => 90, 'resets_at' => now()->addDays(3)->toIso8601String()],
+        ], 'purchased' => ['balance_usd' => 0]]),
+        'localhost:11434/api/chat' => function (Request $requete) use ($repondre) {
+            $elements = collect(json_decode($requete['messages'][1]['content'], true))->first();
+            $resultats = collect($elements)
+                ->map(fn (array $e) => ($r = $repondre($e, $requete['model'])) === null ? null : ['id' => $e['id'], 'justification' => 'Indice décisif.', ...$r])
+                ->filter()->values()->all();
+
+            return Http::response(['message' => ['content' => json_encode(['resultats' => $resultats])], 'prompt_eval_count' => 500, 'eval_count' => 80]);
+        },
+    ]);
 }

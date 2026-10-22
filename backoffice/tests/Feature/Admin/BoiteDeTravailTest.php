@@ -104,9 +104,10 @@ it('affiche la boîte de travail en page d’accueil, avec les compteurs et les 
     app(PrioriserBoiteDeTravail::class)->handle();
     $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
 
-    $this->get('/admin')->assertOk()->assertSee('Boîte de travail');
+    $this->get('/admin')->assertOk()->assertSee('Mes actions du jour');
 
     Livewire::test(CompteursFiles::class)
+        ->assertSee('Toutes les files')
         ->assertSee('Lieux à vérifier')
         ->assertSee('1 urgent(s), dont 1 ce soir en ville pilote')
         ->assertSee('À trier');

@@ -281,3 +281,32 @@ it('regroupe les séances de deux sources factices lors de vraies collectes', fu
     app(ExecuterCollecte::class)->handle(Source::firstWhere('code', 'factice_bis'));
     expect(elementsDeLaFile(FileATraiter::FusionAControler)->count() + elementsDeLaFile(FileATraiter::DoublonProbable)->count())->toBe(2);
 });
+
+it('ne fusionne pas automatiquement deux heures différentes quand une billetterie enchaîne les séances', function () {
+    // Le Grand Hôtel des Rêves : la Fnac vend le spectacle toutes les 20 min, Ticketmaster à 15:00.
+    $fnac1520 = ($this->offre)($this->fnac, 'FN-1', 'Jules Verne, le voyage extraordinaire', '2026-10-17 15:20');
+    ($this->offre)($this->fnac, 'FN-2', 'Jules Verne, le voyage extraordinaire', '2026-10-17 15:40');
+    $ticketmaster = ($this->offre)(Source::firstWhere('code', 'ticketmaster'), 'TM-1', 'JULES VERNE, LE VOYAGE EXTRAORDINAIRE', '2026-10-17 15:00');
+
+    expect($ticketmaster->meme_seance_que_id)->toBeNull()
+        ->and($fnac1520->fresh()->meme_seance_que_id)->toBeNull()
+        ->and(elementsDeLaFile(FileATraiter::FusionAControler)->count())->toBe(0)
+        ->and(elementsDeLaFile(FileATraiter::DoublonProbable)->count())->toBeGreaterThan(0);
+});
+
+it('fusionne toujours deux heures proches quand les séances sont espacées d’au moins une heure', function () {
+    $fnac = ($this->offre)($this->fnac, 'FN-1', 'Jules Verne, le voyage extraordinaire', '2026-10-17 15:20');
+    ($this->offre)($this->fnac, 'FN-2', 'Jules Verne, le voyage extraordinaire', '2026-10-17 17:20');
+    $ticketmaster = ($this->offre)(Source::firstWhere('code', 'ticketmaster'), 'TM-1', 'JULES VERNE, LE VOYAGE EXTRAORDINAIRE', '2026-10-17 15:00');
+
+    expect($ticketmaster->meme_seance_que_id)->toBe($fnac->id)
+        ->and(elementsDeLaFile(FileATraiter::FusionAControler)->count())->toBe(1);
+});
+
+it('fusionne la même heure même quand une billetterie enchaîne les séances', function () {
+    $fnac = ($this->offre)($this->fnac, 'FN-1', 'Jules Verne, le voyage extraordinaire', '2026-10-17 15:20');
+    ($this->offre)($this->fnac, 'FN-2', 'Jules Verne, le voyage extraordinaire', '2026-10-17 15:40');
+    $ticketmaster = ($this->offre)(Source::firstWhere('code', 'ticketmaster'), 'TM-1', 'JULES VERNE, LE VOYAGE EXTRAORDINAIRE', '2026-10-17 15:20');
+
+    expect($ticketmaster->meme_seance_que_id)->toBe($fnac->id);
+});
