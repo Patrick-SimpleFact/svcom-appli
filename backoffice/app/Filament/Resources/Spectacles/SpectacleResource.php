@@ -12,8 +12,10 @@ use App\Models\Genre;
 use App\Models\Spectacle;
 use App\Support\Texte;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -25,6 +27,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -120,6 +123,7 @@ class SpectacleResource extends Resource
                 TextColumn::make('a_venir')->label('Représentations à venir')->numeric(),
                 TextColumn::make('seances_collectees')->label('Séances collectées')->numeric()->sortable(),
                 TextColumn::make('prochaine')->label('Prochaine')->date('d/m/Y')->sortable()->placeholder('—'),
+                TextColumn::make('created_at')->label('Ajouté le')->dateTime('d/m/Y H:i', 'Europe/Paris')->sortable()->toggleable(),
                 IconColumn::make('masque')->label('Masqué')->boolean()->trueIcon(Heroicon::OutlinedEyeSlash)->trueColor('danger')->falseIcon('')->toggleable(),
                 TextColumn::make('demo')->label('')->badge()->formatStateUsing(fn (bool $state): string => $state ? 'Démo' : '')->color('gray'),
             ])
@@ -127,6 +131,11 @@ class SpectacleResource extends Resource
                 SelectFilter::make('genre_id')->label('Genre')->options(fn () => Genre::orderBy('ordre')->pluck('libelle', 'id')),
                 TernaryFilter::make('demo')->label('Données de démonstration'),
                 TernaryFilter::make('masque')->label('Masqués'),
+                Filter::make('ajoutes')->schema([DatePicker::make('le')->label('Ajoutés le')])
+                    ->query(fn (Builder $query, array $data): Builder => $query->when($data['le'] ?? null,
+                        fn (Builder $q, string $le) => $q->where('spectacles.created_at', '>=', CarbonImmutable::parse($le, 'Europe/Paris'))
+                            ->where('spectacles.created_at', '<', CarbonImmutable::parse($le, 'Europe/Paris')->addDay())))
+                    ->indicateUsing(fn (array $data): ?string => ($data['le'] ?? null) ? 'Ajoutés le '.CarbonImmutable::parse($data['le'])->format('d/m/Y') : null),
             ])
             ->recordActions([ViewAction::make(), EditAction::make()->label('Corriger')]);
     }
