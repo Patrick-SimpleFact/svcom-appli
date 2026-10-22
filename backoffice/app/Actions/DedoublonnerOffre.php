@@ -167,7 +167,7 @@ class DedoublonnerOffre
     }
 
     /** Même lieu rattaché, lieux à moins de 500 m, ou noms de salle proches dans la même commune (COLLECTE §7.1). */
-    private function lieuxProches(int $lieuId): array
+    public function lieuxProches(int $lieuId): array
     {
         if (isset($this->lieuxProches[$lieuId])) {
             return $this->lieuxProches[$lieuId];
@@ -192,7 +192,7 @@ class DedoublonnerOffre
     }
 
     /** La billetterie de cette offre vend-elle le même spectacle, au même lieu, une autre fois à moins d'une heure d'écart ? */
-    private function seancesEnchainees(Offre $offre): bool
+    public function seancesEnchainees(Offre $offre): bool
     {
         if (! $offre->heure_connue || $offre->debut === null || $offre->titre_comparable === null) {
             return false;

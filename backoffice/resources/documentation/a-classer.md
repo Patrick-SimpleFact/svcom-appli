@@ -15,9 +15,13 @@ Une ligne par catégorie inconnue et par source (ex. « Spectacle vivant / Seul 
 
 ### L'assistant IA
 
-Si la file est en mode **Observation** ou **Actif** (Réglages › Assistant IA), l'assistant examine les catégories en attente, les plus urgentes d'abord, et remplit la colonne **Proposition IA** : le genre proposé (ou « Ignorer »), sa confiance en %, et sa justification en dessous. Le filtre **Proposition IA** montre les lignes avec ou sans proposition.
+Si la file est en mode **Observation** ou **Actif** (Réglages › Assistant IA), l'assistant examine les éléments en attente, les plus urgents d'abord, en cascade :
+- **1er niveau** : deux modèles répondent chacun ; s'ils disent la même chose, tous deux sûrs à au moins 90 %, la décision est retenue ;
+- **2e niveau** : sinon, un troisième modèle tranche s'il est sûr ;
+- sinon, ou si un **garde-fou** s'y oppose (aucun pour cette file), l'élément reste **à décider** par vous.
 
-- En **Observation**, rien n'est modifié : vous acceptez ou décidez autrement.
-- En **Actif**, les propositions au-dessus de la confiance minimale sont appliquées par l'assistant ; les autres attendent votre décision.
+La colonne **Proposition IA** montre la décision retenue (avec sa confiance et sa justification), ou « À décider » avec l'avis de chaque modèle en dessous. Le filtre **Proposition IA** isole les lignes avec ou sans proposition.
+- En **Observation**, rien n'est modifié : vous acceptez (**Accepter**, ou **Accepter les propositions IA** sur une sélection) ou décidez autrement.
+- En **Actif**, l'assistant applique lui-même ce qu'il a décidé, comme si vous aviez cliqué ; le reste attend votre décision.
 
 Les correspondances enregistrées se retrouvent (et se corrigent) dans **Correspondances de genres**.

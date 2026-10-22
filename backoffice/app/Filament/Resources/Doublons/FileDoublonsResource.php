@@ -7,6 +7,7 @@ use App\Enums\FileATraiter;
 use App\Enums\StatutElement;
 use App\Enums\TypeDecisionDedoublonnage;
 use App\Filament\Support\OuvertSelonProfil;
+use App\Filament\Support\PropositionsIa;
 use App\Filament\Support\Urgence;
 use App\Models\ElementATraiter;
 use App\Models\Offre;
@@ -40,7 +41,7 @@ abstract class FileDoublonsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('file', static::file());
+        return parent::getEloquentQuery()->where('file', static::file())->with(PropositionsIa::RELATIONS);
     }
 
     public static function getNavigationBadge(): ?string
@@ -69,13 +70,17 @@ abstract class FileDoublonsResource extends Resource
                     ->formatStateUsing(fn ($state): string => round($state * 100).' %'),
                 TextColumn::make('decision.type')->label('Décision')->placeholder('—')
                     ->formatStateUsing(fn (?string $state): ?string => $state ? TypeDecisionDedoublonnage::from($state)->getLabel() : null),
+                PropositionsIa::colonne(),
                 TextColumn::make('statut')->badge()
                     ->color(fn (StatutElement $state): string => $state === StatutElement::EnAttente ? 'warning' : 'gray'),
             ])
             ->filters([
                 SelectFilter::make('statut')->options(StatutElement::class)->default(StatutElement::EnAttente->value),
+                PropositionsIa::filtre(),
             ])
+            ->toolbarActions([PropositionsIa::actionAccepterSelection()])
             ->recordActions([
+                PropositionsIa::actionAccepter(),
                 static::decision('fusionner', $fusionner, TypeDecisionDedoublonnage::Fusionner, Heroicon::OutlinedLink, 'success'),
                 static::decision('separer', $separer, TypeDecisionDedoublonnage::Separer, Heroicon::OutlinedScissors, 'danger'),
             ])

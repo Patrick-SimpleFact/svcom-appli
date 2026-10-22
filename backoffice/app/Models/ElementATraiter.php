@@ -50,4 +50,10 @@ class ElementATraiter extends Model
     {
         return $this->hasOne(PropositionIa::class)->ofMany(['id' => 'max'], fn ($q) => $q->where('statut', StatutPropositionIa::Proposee));
     }
+
+    /** Le doute de la cascade : l'assistant a examiné l'élément sans trancher, c'est à Patrick de décider. */
+    public function douteIa(): HasOne
+    {
+        return $this->hasOne(PropositionIa::class)->ofMany(['id' => 'max'], fn ($q) => $q->where('statut', StatutPropositionIa::Doute));
+    }
 }

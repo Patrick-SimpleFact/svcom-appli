@@ -50,7 +50,7 @@ class AClasserResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('file', FileATraiter::AClasser)->with(['cible', 'propositionIa']);
+        return parent::getEloquentQuery()->where('file', FileATraiter::AClasser)->with(['cible', ...PropositionsIa::RELATIONS]);
     }
 
     public static function getNavigationBadge(): ?string

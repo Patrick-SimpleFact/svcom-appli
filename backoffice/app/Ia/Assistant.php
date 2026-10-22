@@ -6,7 +6,10 @@ use App\Enums\FileATraiter;
 use App\Enums\ModeIa;
 use App\Enums\StatutPropositionIa;
 use App\Ia\Taches\ClasserCategories;
+use App\Ia\Taches\ControlerFusions;
+use App\Ia\Taches\DepartagerDoublons;
 use App\Ia\Taches\TacheIa;
+use App\Ia\Taches\TrierAnnonces;
 use App\Models\ElementATraiter;
 use App\Models\Parametre;
 use App\Models\PropositionIa;
@@ -29,6 +32,9 @@ class Assistant
     /** @var array<string, class-string<TacheIa>> par file (valeur de FileATraiter) */
     public const TACHES = [
         'a_classer' => ClasserCategories::class,
+        'a_trier' => TrierAnnonces::class,
+        'doublon_probable' => DepartagerDoublons::class,
+        'fusion_a_controler' => ControlerFusions::class,
     ];
 
     public function __construct(private ClientOllama $client, private Quota $quota) {}

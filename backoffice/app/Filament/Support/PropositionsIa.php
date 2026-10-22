@@ -19,21 +19,29 @@ use Throwable;
 
 /**
  * Les propositions de l'assistant IA dans l'écran d'une file (plan-module-ia) : colonne, « Accepter », filtre.
- * L'élément doit être chargé avec sa relation `propositionIa` (la proposition qui attend une décision).
+ * L'élément doit être chargé avec ses relations `propositionIa` (la décision qui attend d'être appliquée) et `douteIa`
+ * (l'assistant n'a pas tranché : ses avis sont montrés pour aider Patrick).
  */
 class PropositionsIa
 {
+    /** Les relations à charger avec les éléments d'une file. */
+    public const RELATIONS = ['propositionIa', 'douteIa'];
+
     public static function colonne(): TextColumn
     {
         return TextColumn::make('proposition_ia')->label('Proposition IA')
-            ->state(fn (ElementATraiter $record): ?string => $record->statut === StatutElement::EnAttente && $record->propositionIa
-                ? app(Assistant::class)->tache($record->file)->libelle($record->propositionIa)." ({$record->propositionIa->confiance} %)"
-                : null)
-            ->description(fn (ElementATraiter $record): ?string => $record->statut === StatutElement::EnAttente ? $record->propositionIa?->justification : null)
+            ->state(fn (ElementATraiter $record): ?string => match (true) {
+                $record->statut !== StatutElement::EnAttente => null,
+                $record->propositionIa !== null => app(Assistant::class)->tache($record->file)->libelle($record->propositionIa)." ({$record->propositionIa->confiance} %)",
+                $record->douteIa !== null => 'À décider',
+                default => null,
+            })
+            ->description(fn (ElementATraiter $record): ?string => $record->statut === StatutElement::EnAttente
+                ? ($record->propositionIa?->justification ?? $record->douteIa?->justification) : null)
             ->badge()
             ->color(fn (ElementATraiter $record): string => match (true) {
-                ($record->propositionIa?->confiance ?? 0) >= 90 => 'success',
-                ($record->propositionIa?->confiance ?? 0) >= 70 => 'warning',
+                $record->propositionIa === null => 'warning',
+                $record->propositionIa->confiance >= 90 => 'success',
                 default => 'gray',
             })
             ->placeholder('—')
