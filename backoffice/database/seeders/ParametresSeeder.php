@@ -19,6 +19,7 @@ class ParametresSeeder extends Seeder
         $t = TypeParametre::Texte;
         $l = TypeParametre::ListeEntiers;
         $d = TypeParametre::Decimal;
+        $m = TypeParametre::ModeIa;
 
         return [
             // Autour de moi (F2)
@@ -53,6 +54,16 @@ class ParametresSeeder extends Seeder
             ['cle' => 'dedoublonnage_ecart_minutes', 'groupe' => 'Collecte', 'libelle' => 'Écart d’heure maximal pour fusionner deux séances (min)', 'description' => 'Deux billetteries annoncent la même séance à des heures un peu différentes : en deçà, fusion automatique (COLLECTE §7.1).', 'type' => $e, 'valeur' => 30],
             ['cle' => 'dedoublonnage_ecart_probable_minutes', 'groupe' => 'Collecte', 'libelle' => 'Écart d’heure maximal pour un doublon probable (min)', 'description' => 'Au-delà de l’écart de fusion et jusqu’à cette valeur, les deux séances vont dans « Doublons probables » (COLLECTE §7.2). Jamais entre deux séances d’une même billetterie.', 'type' => $e, 'valeur' => 60],
             ['cle' => 'controle_fusions_actif', 'groupe' => 'Collecte', 'libelle' => 'File « Fusions à contrôler » active', 'description' => 'À désactiver quand la règle aura fait ses preuves (COLLECTE §7.2).', 'type' => $b, 'valeur' => true],
+
+            // Assistant IA de la boîte de travail (plan-module-ia) : modèles « :cloud » d'Ollama, dans le forfait.
+            ['cle' => 'ia_mode_a_classer', 'groupe' => 'Assistant IA', 'libelle' => 'File « À classer »', 'description' => 'Désactivé : rien ne change. Observation : l’assistant propose un genre, sans rien modifier. Actif : il applique les propositions au-dessus de la confiance minimale.', 'type' => $m, 'valeur' => 'desactive'],
+            ['cle' => 'ia_mode_a_trier', 'groupe' => 'Assistant IA', 'libelle' => 'File « À trier »', 'description' => 'Désactivé : rien ne change. Observation : l’assistant propose garder ou exclure, sans rien modifier. Actif : il applique les propositions au-dessus de la confiance minimale.', 'type' => $m, 'valeur' => 'desactive'],
+            ['cle' => 'ia_mode_doublons', 'groupe' => 'Assistant IA', 'libelle' => 'File « Doublons probables »', 'description' => 'Désactivé : rien ne change. Observation : l’assistant propose même séance ou séances différentes, sans rien modifier. Actif : il applique les propositions au-dessus de la confiance minimale.', 'type' => $m, 'valeur' => 'desactive'],
+            ['cle' => 'ia_mode_fusions', 'groupe' => 'Assistant IA', 'libelle' => 'File « Fusions à contrôler »', 'description' => 'Désactivé : rien ne change. Observation : l’assistant propose confirmer ou séparer, sans rien modifier. Actif : il applique les propositions au-dessus de la confiance minimale.', 'type' => $m, 'valeur' => 'desactive'],
+            ['cle' => 'ia_modele', 'groupe' => 'Assistant IA', 'libelle' => 'Modèle utilisé', 'description' => 'Nom d’un modèle Ollama « cloud » (ex. gemma4:cloud, gpt-oss:120b-cloud). Un modèle qui n’est pas « cloud » est refusé : il tournerait sur le serveur.', 'type' => $t, 'valeur' => 'gemma4:cloud'],
+            ['cle' => 'ia_quota_reserve_pct', 'groupe' => 'Assistant IA', 'libelle' => 'Part du forfait Ollama gardée pour les autres usages (%)', 'description' => 'L’assistant s’arrête quand il reste moins que ce pourcentage du forfait (sur 5 h ou sur la semaine), et reprend après la remise à zéro. Le forfait est partagé avec Open WebUI, n8n et les sessions de Patrick.', 'type' => $e, 'valeur' => 50],
+            ['cle' => 'ia_confiance_min_pct', 'groupe' => 'Assistant IA', 'libelle' => 'Confiance minimale pour appliquer (%)', 'description' => 'En mode Actif, une proposition n’est appliquée que si l’assistant est au moins aussi sûr ; sinon elle reste à décider.', 'type' => $e, 'valeur' => 90],
+            ['cle' => 'ia_taille_lot', 'groupe' => 'Assistant IA', 'libelle' => 'Éléments par demande', 'description' => 'Nombre d’éléments envoyés ensemble au modèle. Plus il est grand, moins on fait d’appels, mais une erreur fait reprendre tout le lot.', 'type' => $e, 'valeur' => 10],
 
             // App
             ['cle' => 'alertes_destinataires', 'groupe' => 'Supervision', 'libelle' => 'Destinataires des alertes', 'description' => 'Adresses e-mail séparées par des virgules. Vide : tous les admins actifs (F7.9).', 'type' => $t, 'valeur' => ''],

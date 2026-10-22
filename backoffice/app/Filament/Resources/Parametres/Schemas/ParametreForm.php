@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Parametres\Schemas;
 
+use App\Enums\ModeIa;
 use App\Enums\TypeParametre;
 use App\Models\Parametre;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -35,6 +37,7 @@ class ParametreForm
                 ->separator(',')
                 ->helperText('Saisir chaque nombre puis Entrée.')
                 ->dehydrateStateUsing(fn ($state): array => array_values(array_map('intval', (array) $state))),
+            TypeParametre::ModeIa => Select::make('valeur')->options(ModeIa::class)->required()->native(false),
             default => TextInput::make('valeur')->required(),
         };
     }
