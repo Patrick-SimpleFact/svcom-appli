@@ -47,6 +47,16 @@ class ClasserAnnonce
             ->where('donnees->categorie', $categorie)
             ->first();
 
+        // Catégorie ignorée (trop large pour un genre, IgnorerCategorie) : elle ne revient pas dans la file.
+        if ($element === null && ElementATraiter::where('file', FileATraiter::AClasser)
+            ->where('cible_type', $source->getMorphClass())
+            ->where('cible_id', $source->id)
+            ->where('donnees->categorie', $categorie)
+            ->whereNotNull('decision->'.IgnorerCategorie::DECISION)
+            ->exists()) {
+            return;
+        }
+
         $donnees = $element?->donnees ?? ['categorie' => $categorie, 'nb_annonces' => 0, 'exemples' => [], 'identifiants' => []];
 
         // Une même annonce (ou un même spectacle, pour une source qui publie par séance) n'est comptée qu'une fois.

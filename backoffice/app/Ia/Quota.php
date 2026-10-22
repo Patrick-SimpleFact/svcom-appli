@@ -30,7 +30,8 @@ class Quota
             throw new ErreurIa('Clé API ollama.com absente (OLLAMA_API_KEY) : le quota ne peut pas être vérifié.');
         }
 
-        return Cache::remember(self::CLE_CACHE, self::CACHE_S, function () use ($cle) {
+        // On garde en cache la réponse brute (un tableau) : le cache ne restaure pas nos objets (classes non autorisées).
+        return EtatQuota::depuisReponse(Cache::remember(self::CLE_CACHE, self::CACHE_S, function () use ($cle) {
             try {
                 $reponse = Http::timeout(10)->withToken($cle)->acceptJson()
                     ->get(rtrim((string) config('services.ollama.url_compte'), '/').'/api/balance');
@@ -49,8 +50,8 @@ class Quota
                 throw new ErreurIa("Solde Ollama illisible : {$motif}.");
             }
 
-            return EtatQuota::depuisReponse((array) $reponse->json());
-        });
+            return (array) $reponse->json();
+        }));
     }
 
     /** L'assistant peut-il envoyer une demande maintenant ? */

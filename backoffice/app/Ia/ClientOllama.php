@@ -6,6 +6,7 @@ use App\Models\AppelIa;
 use App\Models\Parametre;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -22,9 +23,42 @@ class ClientOllama
 
     public const TENTATIVES = 3;
 
+    /** Liste des modèles cloud gardée en cache (elle change rarement). */
+    public const CACHE_MODELES_S = 6 * 3600;
+
     public function url(): string
     {
         return rtrim((string) config('services.ollama.url'), '/');
+    }
+
+    /**
+     * Modèles cloud proposés par ollama.com, sous le nom à donner à l'Ollama local
+     * (« gpt-oss:120b » → « gpt-oss:120b-cloud », « kimi-k3 » → « kimi-k3:cloud »). Liste vide si ollama.com ne répond pas.
+     *
+     * @return list<string>
+     */
+    public function modelesCloud(): array
+    {
+        $modeles = Cache::get('ia:modeles');
+
+        if ($modeles === null) {
+            try {
+                $requete = Http::timeout(15)->acceptJson();
+                if (filled($cle = config('services.ollama.cle_api'))) {
+                    $requete = $requete->withToken($cle);
+                }
+                $modeles = collect($requete->get(rtrim((string) config('services.ollama.url_compte'), '/').'/api/tags')->throw()->json('models', []))
+                    ->pluck('name')->filter(fn ($nom) => is_string($nom) && $nom !== '')
+                    ->map(fn (string $nom) => str_contains($nom, ':') ? "{$nom}-cloud" : "{$nom}:cloud")
+                    ->unique()->sort()->values()->all();
+            } catch (Throwable) {
+                return [];
+            }
+
+            Cache::put('ia:modeles', $modeles, self::CACHE_MODELES_S);
+        }
+
+        return $modeles;
     }
 
     /** Version de l'Ollama joint (vérifie que le serveur répond). */
@@ -40,6 +74,26 @@ class ClientOllama
     public static function estCloud(string $modele): bool
     {
         return (bool) preg_match('/[:-]cloud$/', $modele);
+    }
+
+    /** Le modèle est-il utilisable ? null si oui, sinon la raison. Ne consomme pas de forfait (`/api/show` : description du modèle). */
+    public function verifierModele(string $modele): ?string
+    {
+        if (! self::estCloud($modele)) {
+            return "« {$modele} » n’est pas un modèle cloud (son nom doit finir par :cloud ou -cloud) : il tournerait sur le serveur.";
+        }
+
+        try {
+            $reponse = Http::timeout(15)->post($this->url().'/api/show', ['model' => $modele]);
+        } catch (Throwable) {
+            return "Ollama injoignable à {$this->url()} : impossible de vérifier le modèle.";
+        }
+
+        return match (true) {
+            $reponse->successful() => null,
+            $reponse->status() === 404 => "Ollama ne connaît pas « {$modele} » (".mb_strimwidth((string) $reponse->json('error'), 0, 150, '…').').',
+            default => "Ollama a répondu {$reponse->status()} : impossible de vérifier le modèle.",
+        };
     }
 
     /**
@@ -104,7 +158,7 @@ class ClientOllama
         }
 
         if (! is_array($donnees) || array_is_list($donnees)) {
-            throw new ErreurIa('Réponse du modèle illisible (objet JSON attendu) : '.mb_strimwidth($texte, 0, 200, '…'));
+            throw new ErreurReponseIa('Réponse du modèle illisible (objet JSON attendu) : '.mb_strimwidth($texte, 0, 200, '…'));
         }
 
         return $donnees;
@@ -119,13 +173,13 @@ class ClientOllama
     {
         foreach ($schema['required'] ?? [] as $cle) {
             if (! array_key_exists($cle, $donnees)) {
-                throw new ErreurIa("Réponse du modèle incomplète : « {$cle} » manquant.");
+                throw new ErreurReponseIa("Réponse du modèle incomplète : « {$cle} » manquant.");
             }
         }
 
         foreach ($schema['properties'] ?? [] as $cle => $propriete) {
             if (isset($propriete['enum']) && array_key_exists($cle, $donnees) && ! in_array($donnees[$cle], $propriete['enum'], true)) {
-                throw new ErreurIa("Réponse du modèle hors des choix permis pour « {$cle} » : ".json_encode($donnees[$cle], JSON_UNESCAPED_UNICODE));
+                throw new ErreurReponseIa("Réponse du modèle hors des choix permis pour « {$cle} » : ".json_encode($donnees[$cle], JSON_UNESCAPED_UNICODE));
             }
         }
 
