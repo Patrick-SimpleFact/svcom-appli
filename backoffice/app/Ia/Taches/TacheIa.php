@@ -50,6 +50,29 @@ abstract class TacheIa
     /** L'élément a été décidé sans l'assistant : même décision que proposée ? null si l'élément est sorti sans décision. */
     abstract public function concorde(PropositionIa $proposition, ElementATraiter $element): ?bool;
 
+    /**
+     * Ce qui doit être identique entre deux modèles pour qu'ils soient « d'accord » (par défaut : toute la proposition).
+     *
+     * @param  array<string, mixed>  $proposition
+     */
+    public function cle(array $proposition): string
+    {
+        ksort($proposition);
+
+        return json_encode($proposition, JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Garde-fou propre à la file, vérifié avant d'appliquer une décision de la cascade, même sûre.
+     *
+     * @param  array<string, mixed>  $proposition
+     * @return string|null la raison de laisser l'élément à Patrick, ou null si rien ne s'y oppose
+     */
+    public function gardeFou(ElementATraiter $element, array $proposition): ?string
+    {
+        return null;
+    }
+
     public function mode(): ModeIa
     {
         return ModeIa::tryFrom((string) Parametre::valeur($this->cleMode())) ?? ModeIa::Desactive;
@@ -61,14 +84,17 @@ abstract class TacheIa
         return $requete;
     }
 
-    /** Les prochains éléments à soumettre : en attente, sans proposition en cours ni échec récent, les plus urgents d'abord. */
+    /**
+     * Les prochains éléments à soumettre : en attente, jamais examinés par la cascade (ni avis, ni décision, ni doute),
+     * sans échec récent, les plus urgents d'abord.
+     */
     public function aTraiter(int $limite): Collection
     {
         return $this->filtrer(ElementATraiter::query())
             ->where('file', $this->file())
             ->where('statut', StatutElement::EnAttente)
             ->whereDoesntHave('propositionsIa', fn (Builder $q) => $q->where(fn (Builder $q) => $q
-                ->whereIn('statut', [StatutPropositionIa::Proposee, StatutPropositionIa::Appliquee])
+                ->whereIn('statut', [StatutPropositionIa::Proposee, StatutPropositionIa::Appliquee, StatutPropositionIa::Avis, StatutPropositionIa::Doute])
                 ->orWhere(fn (Builder $q) => $q->where('statut', StatutPropositionIa::Echec)->where('created_at', '>', now()->subHours(self::ATTENTE_APRES_ECHEC_H)))))
             ->orderByDesc('urgence')
             ->orderBy('id')

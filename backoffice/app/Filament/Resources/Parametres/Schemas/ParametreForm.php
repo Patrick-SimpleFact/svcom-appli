@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Parametres\Schemas;
 
 use App\Enums\ModeIa;
 use App\Enums\TypeParametre;
+use App\Ia\Assistant;
 use App\Ia\ClientOllama;
 use App\Models\Parametre;
 use Closure;
@@ -29,20 +30,31 @@ class ParametreForm
 
     private static function champValeur(?TypeParametre $type, ?string $cle)
     {
-        // Modèle de l'assistant IA : choisi dans la liste des modèles cloud d'ollama.com (plus la valeur actuelle),
-        // et vérifié auprès d'Ollama à l'enregistrement (modèle retiré entre-temps, Ollama trop ancien…).
-        if ($cle === 'ia_modele') {
-            return Select::make('valeur')->required()->searchable()->native(false)
-                ->options(fn (?Parametre $record): array => collect(app(ClientOllama::class)->modelesCloud())
-                    ->push((string) $record?->valeur)->filter()->unique()->sort()->mapWithKeys(fn (string $m) => [$m => $m])->all())
-                ->helperText('Modèles « cloud » proposés par ollama.com (liste mise à jour toutes les 6 heures).')
-                ->rules([
-                    fn () => function (string $attribut, mixed $valeur, Closure $echec): void {
-                        if ($erreur = app(ClientOllama::class)->verifierModele(trim((string) $valeur))) {
-                            $echec($erreur);
-                        }
-                    },
-                ])->dehydrateStateUsing(fn ($state): string => trim((string) $state));
+        // Modèles de l'assistant IA : choisis dans la liste des modèles cloud d'ollama.com (plus les valeurs actuelles),
+        // et vérifiés auprès d'Ollama à l'enregistrement (modèle retiré entre-temps, hors forfait, Ollama trop ancien…).
+        if (in_array($cle, ['ia_modeles_niveau1', 'ia_modele_niveau2'], true)) {
+            $plusieurs = $cle === 'ia_modeles_niveau1';
+            $options = fn (?Parametre $record): array => collect(app(ClientOllama::class)->modelesCloud())
+                ->merge(Assistant::liste((string) $record?->valeur))->filter()->unique()->sort()->mapWithKeys(fn (string $m) => [$m => $m])->all();
+            $verifier = fn () => function (string $attribut, mixed $valeur, Closure $echec): void {
+                foreach ((array) $valeur as $modele) {
+                    if ($erreur = app(ClientOllama::class)->verifierModele(trim((string) $modele))) {
+                        $echec($erreur);
+                    }
+                }
+            };
+
+            return Select::make('valeur')->searchable()->native(false)->multiple($plusieurs)->required($plusieurs)
+                ->options($options)
+                ->maxItems($plusieurs ? 3 : null)
+                ->formatStateUsing(fn ($state) => match (true) {
+                    is_array($state) => $state,
+                    $plusieurs => Assistant::liste((string) $state),
+                    default => $state ?: null,
+                })
+                ->helperText('Modèles « cloud » proposés par ollama.com (liste mise à jour toutes les 6 heures). Les modèles facturés en plus du forfait n’apparaissent pas.')
+                ->rules([$verifier])
+                ->dehydrateStateUsing(fn ($state): string => implode(', ', array_map('trim', (array) $state)));
         }
 
         return self::champSelonType($type);

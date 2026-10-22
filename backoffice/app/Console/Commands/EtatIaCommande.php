@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\ModeIa;
+use App\Ia\Assistant;
 use App\Ia\ClientOllama;
 use App\Ia\ErreurIa;
 use App\Ia\Quota;
@@ -25,6 +26,7 @@ class EtatIaCommande extends Command
         'ia_mode_a_classer' => 'À classer',
         'ia_mode_doublons' => 'Doublons probables',
         'ia_mode_fusions' => 'Fusions à contrôler',
+        'ia_mode_spectacles_a_controler' => 'Spectacles à contrôler',
     ];
 
     public function handle(ClientOllama $client, Quota $quota): int
@@ -38,10 +40,13 @@ class EtatIaCommande extends Command
             $succes = false;
         }
 
-        $modele = (string) Parametre::valeur('ia_modele');
-        ($erreur = $client->verifierModele($modele)) === null
-            ? $this->info("Modèle : {$modele}.")
-            : $this->error("Modèle : {$erreur}");
+        foreach ([1 => Assistant::modelesNiveau1(), 2 => array_filter([Assistant::modeleNiveau2()])] as $niveau => $modeles) {
+            foreach ($modeles as $modele) {
+                ($erreur = $client->verifierModele($modele)) === null
+                    ? $this->info("Modèle du niveau {$niveau} : {$modele}.")
+                    : $this->error("Modèle du niveau {$niveau} : {$erreur}");
+            }
+        }
 
         $this->table(['File', 'Mode'], collect(self::MODES)
             ->map(fn (string $file, string $cle) => [$file, ModeIa::tryFrom((string) Parametre::valeur($cle))?->getLabel() ?? '?'])

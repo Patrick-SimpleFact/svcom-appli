@@ -3,7 +3,6 @@
 namespace App\Ia;
 
 use App\Models\AppelIa;
-use App\Models\Parametre;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
@@ -19,6 +18,9 @@ use Throwable;
  */
 class ClientOllama
 {
+    /** Modèles hors forfait (facturés en supplément) : jamais utilisés, même s'ils sont proposés par ollama.com. */
+    public const INTERDITS = ['kimi-k3', 'deepseek-v4-pro'];
+
     public const DELAI_S = 180;
 
     public const TENTATIVES = 3;
@@ -58,7 +60,7 @@ class ClientOllama
             Cache::put('ia:modeles', $modeles, self::CACHE_MODELES_S);
         }
 
-        return $modeles;
+        return array_values(array_filter($modeles, fn (string $m) => self::refus($m) === null));
     }
 
     /** Version de l'Ollama joint (vérifie que le serveur répond). */
@@ -76,11 +78,27 @@ class ClientOllama
         return (bool) preg_match('/[:-]cloud$/', $modele);
     }
 
-    /** Le modèle est-il utilisable ? null si oui, sinon la raison. Ne consomme pas de forfait (`/api/show` : description du modèle). */
-    public function verifierModele(string $modele): ?string
+    /** Pourquoi ce modèle est refusé d'office (pas cloud, ou hors forfait), ou null. */
+    public static function refus(string $modele): ?string
     {
         if (! self::estCloud($modele)) {
             return "« {$modele} » n’est pas un modèle cloud (son nom doit finir par :cloud ou -cloud) : il tournerait sur le serveur.";
+        }
+
+        foreach (self::INTERDITS as $interdit) {
+            if (str_starts_with($modele, $interdit.':') || str_starts_with($modele, $interdit.'-')) {
+                return "« {$modele} » est facturé en plus du forfait Ollama : il n’est jamais utilisé.";
+            }
+        }
+
+        return null;
+    }
+
+    /** Le modèle est-il utilisable ? null si oui, sinon la raison. Ne consomme pas de forfait (`/api/show` : description du modèle). */
+    public function verifierModele(string $modele): ?string
+    {
+        if ($refus = self::refus($modele)) {
+            return $refus;
         }
 
         try {
@@ -102,10 +120,10 @@ class ClientOllama
      */
     public function demander(string $tache, array $messages, array $schema, int $nbElements = 1, ?string $modele = null): ReponseIa
     {
-        $modele ??= (string) Parametre::valeur('ia_modele');
+        $modele ??= Assistant::modelesNiveau1()[0] ?? '';
 
-        if (! self::estCloud($modele)) {
-            throw new ErreurIa("Modèle refusé : « {$modele} » n’est pas un modèle cloud (il tournerait sur le serveur).");
+        if ($refus = self::refus($modele)) {
+            throw new ErreurIa($refus);
         }
 
         $appel = AppelIa::create(['tache' => $tache, 'modele' => $modele, 'nb_elements' => $nbElements]);

@@ -2,6 +2,7 @@
 
 use App\Enums\TypeParametre;
 use App\Filament\Resources\Parametres\Pages\EditParametre;
+use App\Ia\Assistant;
 use App\Ia\ClientOllama;
 use App\Ia\ErreurIa;
 use App\Ia\Quota;
@@ -43,12 +44,16 @@ beforeEach(function () {
 });
 
 it('crée les réglages de l’assistant, tous les modes désactivés', function () {
-    foreach (['ia_mode_a_classer', 'ia_mode_a_trier', 'ia_mode_doublons', 'ia_mode_fusions'] as $cle) {
+    foreach (['ia_mode_a_classer', 'ia_mode_a_trier', 'ia_mode_doublons', 'ia_mode_fusions', 'ia_mode_spectacles_a_controler'] as $cle) {
         expect(Parametre::valeur($cle))->toBe('desactive')
             ->and(Parametre::firstWhere('cle', $cle)->type)->toBe(TypeParametre::ModeIa);
     }
-    expect(Parametre::valeur('ia_quota_reserve_pct'))->toBe(50)
-        ->and(ClientOllama::estCloud(Parametre::valeur('ia_modele')))->toBeTrue();
+    // Les choix du banc d'essai du 22/10/2026, et les limites du forfait fixées par Patrick (95 % sur 5 h, 80 % sur la semaine).
+    expect(Assistant::modelesNiveau1())->toBe(['gpt-oss:120b-cloud', 'deepseek-v4.1-flash:cloud'])
+        ->and(Assistant::modeleNiveau2())->toBe('glm-5.3-flash:cloud')
+        ->and(Parametre::valeur('ia_quota_reserve_5h_pct'))->toBe(5)
+        ->and(Parametre::valeur('ia_quota_reserve_semaine_pct'))->toBe(20)
+        ->and(Parametre::valeur('ia_confiance_min_pct'))->toBe(90);
 });
 
 it('change le mode d’une file depuis les réglages', function () {
@@ -64,31 +69,33 @@ it('change le mode d’une file depuis les réglages', function () {
     $this->get('/admin/parametres')->assertOk()->assertSee('Observation (propose seulement)');
 });
 
-it('propose les modèles cloud d’ollama.com sous leur nom local', function () {
-    Http::fake(['ollama.com/api/tags' => Http::response(['models' => [['name' => 'kimi-k3'], ['name' => 'gpt-oss:120b'], ['name' => 'gemma4:31b']]])]);
+it('propose les modèles cloud d’ollama.com sous leur nom local, sauf ceux facturés en plus du forfait', function () {
+    Http::fake(['ollama.com/api/tags' => Http::response(['models' => [['name' => 'kimi-k3'], ['name' => 'gpt-oss:120b'], ['name' => 'gemma4:31b'], ['name' => 'deepseek-v4-pro:0813']]])]);
 
-    expect(app(ClientOllama::class)->modelesCloud())->toBe(['gemma4:31b-cloud', 'gpt-oss:120b-cloud', 'kimi-k3:cloud']);
+    expect(app(ClientOllama::class)->modelesCloud())->toBe(['gemma4:31b-cloud', 'gpt-oss:120b-cloud']);
     app(ClientOllama::class)->modelesCloud();
     Http::assertSentCount(1); // gardée en cache
 });
 
-it('choisit le modèle dans la liste et vérifie auprès d’Ollama à l’enregistrement', function () {
+it('choisit les modèles de chaque niveau dans la liste et les vérifie auprès d’Ollama à l’enregistrement', function () {
     $this->actingAs(Admin::factory()->avecDoubleAuthentification()->create());
     Http::fake([
-        'ollama.com/api/tags' => Http::response(['models' => [['name' => 'gpt-oss:120b'], ['name' => 'kimi-k3']]]),
-        'localhost:11434/api/show' => fn ($requete) => $requete['model'] === 'gpt-oss:120b-cloud'
-            ? Http::response(['details' => ['parent_model' => 'gpt-oss:120b']])
-            : Http::response(['error' => "model 'kimi-k3' not found"], 404),
+        'ollama.com/api/tags' => Http::response(['models' => [['name' => 'gpt-oss:120b'], ['name' => 'deepseek-v4.1-flash'], ['name' => 'mistral-large-3:675b'], ['name' => 'kimi-k3']]]),
+        'localhost:11434/api/show' => fn ($requete) => $requete['model'] === 'mistral-large-3:675b-cloud'
+            ? Http::response(['error' => "model 'mistral-large-3:675b' not found"], 404)
+            : Http::response(['details' => []]),
     ]);
-    $modele = Parametre::firstWhere('cle', 'ia_modele');
-    $formulaire = fn (string $valeur) => Livewire::test(EditParametre::class, ['record' => $modele->id])->fillForm(['valeur' => $valeur])->call('save');
+    $formulaire = fn (string $cle, mixed $valeur) => Livewire::test(EditParametre::class, ['record' => Parametre::firstWhere('cle', $cle)->id])->fillForm(['valeur' => $valeur])->call('save');
 
-    $formulaire('gpt-oss:cloud')->assertHasFormErrors(['valeur']);  // hors de la liste
-    $formulaire('kimi-k3:cloud')->assertHasFormErrors(['valeur']);  // dans la liste, mais inconnu de cet Ollama
-    expect(Parametre::valeur('ia_modele'))->toBe('gemma4:cloud');
+    $formulaire('ia_modele_niveau2', 'gpt-oss:cloud')->assertHasFormErrors(['valeur']);  // hors de la liste
+    $formulaire('ia_modele_niveau2', 'kimi-k3:cloud')->assertHasFormErrors(['valeur']);  // facturé en plus : absent de la liste
+    $formulaire('ia_modele_niveau2', 'mistral-large-3:675b-cloud')->assertHasFormErrors(['valeur']);  // inconnu de cet Ollama
+    expect(Assistant::modeleNiveau2())->toBe('glm-5.3-flash:cloud');
 
-    $formulaire('gpt-oss:120b-cloud')->assertHasNoFormErrors();
-    expect(Parametre::valeur('ia_modele'))->toBe('gpt-oss:120b-cloud');
+    $formulaire('ia_modele_niveau2', 'gpt-oss:120b-cloud')->assertHasNoFormErrors();
+    $formulaire('ia_modeles_niveau1', ['deepseek-v4.1-flash:cloud', 'gpt-oss:120b-cloud'])->assertHasNoFormErrors();
+    expect(Assistant::modeleNiveau2())->toBe('gpt-oss:120b-cloud')
+        ->and(Parametre::valeur('ia_modeles_niveau1'))->toBe('deepseek-v4.1-flash:cloud, gpt-oss:120b-cloud');
 });
 
 it('envoie la demande au modèle cloud et journalise l’appel', function () {
@@ -98,8 +105,8 @@ it('envoie la demande au modèle cloud et journalise l’appel', function () {
 
     expect($reponse->contenu)->toBe(['genre' => 'humour', 'confiance' => 85])
         ->and($reponse->appel->only(['tache', 'modele', 'nb_elements', 'jetons_entree', 'jetons_sortie', 'erreur']))
-        ->toBe(['tache' => 'a_classer', 'modele' => 'gemma4:cloud', 'nb_elements' => 10, 'jetons_entree' => 120, 'jetons_sortie' => 15, 'erreur' => null]);
-    Http::assertSent(fn ($requete) => $requete['model'] === 'gemma4:cloud' && $requete['stream'] === false && $requete['format'] === SCHEMA_ESSAI);
+        ->toBe(['tache' => 'a_classer', 'modele' => 'gpt-oss:120b-cloud', 'nb_elements' => 10, 'jetons_entree' => 120, 'jetons_sortie' => 15, 'erreur' => null]);
+    Http::assertSent(fn ($requete) => $requete['model'] === 'gpt-oss:120b-cloud' && $requete['stream'] === false && $requete['format'] === SCHEMA_ESSAI);
 });
 
 it('accepte un objet JSON entouré de texte', function () {
@@ -119,13 +126,16 @@ it('rejette une réponse hors cadre et garde l’erreur au journal', function (s
     'valeur non permise' => ['{"genre":"opera","confiance":90}', 'hors des choix permis'],
 ]);
 
-it('refuse un modèle qui n’est pas cloud, sans rien envoyer', function () {
+it('refuse un modèle qui n’est pas cloud ou qui est facturé en plus du forfait, sans rien envoyer', function (string $modele, string $motif) {
     Http::fake();
-    Parametre::firstWhere('cle', 'ia_modele')->update(['valeur' => 'llama3:8b']);
 
-    expect(fn () => app(ClientOllama::class)->demander('a_classer', $this->messages, SCHEMA_ESSAI))->toThrow(ErreurIa::class, 'pas un modèle cloud');
+    expect(fn () => app(ClientOllama::class)->demander('a_classer', $this->messages, SCHEMA_ESSAI, 1, $modele))->toThrow(ErreurIa::class, $motif);
     Http::assertNothingSent();
-});
+})->with([
+    'local' => ['llama3:8b', 'pas un modèle cloud'],
+    'kimi-k3' => ['kimi-k3:cloud', 'facturé en plus du forfait'],
+    'deepseek-v4-pro' => ['deepseek-v4-pro:0813-cloud', 'facturé en plus du forfait'],
+]);
 
 it('signale une erreur d’Ollama', function () {
     Http::fake(['localhost:11434/api/chat' => Http::response(['error' => 'model not found'], 404)]);
@@ -144,7 +154,7 @@ it('autorise l’assistant tant que le forfait dépasse la part réservée', fun
 });
 
 it('arrête l’assistant sous la part réservée, jusqu’à la remise à zéro', function () {
-    Http::fake(solde(fenetres(40, 70)));
+    Http::fake(solde(fenetres(4, 70)));
 
     $decision = app(Quota::class)->verifier();
 
@@ -164,12 +174,12 @@ it('arrête l’assistant si des crédits achetés pourraient être facturés', 
 });
 
 it('comprend aussi la formule au crédit mensuel', function () {
-    Http::fake(solde(['balance_usd' => 15, 'allowance_usd' => 60, 'period' => ['from' => now()->subDays(10)->toIso8601String(), 'until' => now()->addDays(20)->toIso8601String()]]));
+    Http::fake(solde(['balance_usd' => 9, 'allowance_usd' => 60, 'period' => ['from' => now()->subDays(10)->toIso8601String(), 'until' => now()->addDays(20)->toIso8601String()]]));
 
     $decision = app(Quota::class)->verifier();
 
     expect($decision->autorise)->toBeFalse()
-        ->and($decision->motif)->toContain('25 % sur la fenêtre mois');
+        ->and($decision->motif)->toContain('15 % sur la fenêtre mois, réserve 20 %');
 });
 
 it('ne consomme pas sans pouvoir lire le solde', function (string $cle, int $statut, string $motif) {
@@ -208,7 +218,8 @@ it('affiche l’état de l’assistant et fait un essai', function () {
 
     $this->artisan('ia:etat', ['--essai' => true])
         ->expectsOutputToContain('version 0.40.6')
-        ->expectsOutputToContain('Modèle : gemma4:cloud')
+        ->expectsOutputToContain('Modèle du niveau 1 : gpt-oss:120b-cloud')
+        ->expectsOutputToContain('Modèle du niveau 2 : glm-5.3-flash:cloud')
         ->expectsOutputToContain('fenêtre semaine : 60 % restant')
         ->expectsOutputToContain('Essai réussi')
         ->assertSuccessful();

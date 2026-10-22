@@ -15,7 +15,7 @@ class PropositionIa extends Model
 
     protected $table = 'propositions_ia';
 
-    protected $fillable = ['element_a_traiter_id', 'appel_ia_id', 'file', 'proposition', 'confiance', 'justification', 'modele', 'statut', 'decidee_le'];
+    protected $fillable = ['element_a_traiter_id', 'appel_ia_id', 'file', 'proposition', 'confiance', 'justification', 'modele', 'niveau', 'statut', 'decidee_le'];
 
     protected function casts(): array
     {

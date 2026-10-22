@@ -30,18 +30,21 @@ use Livewire\Livewire;
 
 /**
  * Faux Ollama : répond pour chaque catégorie reçue selon $reponses (catégorie → résultat sans id) ; absente = pas de résultat.
+ * $parModele remplace la réponse d'un modèle donné (modèle → catégorie → résultat), pour faire diverger la cascade.
  *
  * @param  array<string, array<string, mixed>>  $reponses
+ * @param  array<string, array<string, array<string, mixed>>>  $parModele
  */
-function ollamaClasse(array $reponses, float $sessionRestant = 90): void
+function ollamaClasse(array $reponses, float $sessionRestant = 90, array $parModele = []): void
 {
     Http::fake([
         'ollama.com/api/balance' => Http::response(['included' => [
             'session' => ['remaining_percent' => $sessionRestant, 'resets_at' => now()->addHours(2)->toIso8601String()],
             'weekly' => ['remaining_percent' => 95, 'resets_at' => now()->addDays(3)->toIso8601String()],
         ], 'purchased' => ['balance_usd' => 0]]),
-        'localhost:11434/api/chat' => function (Request $requete) use ($reponses) {
+        'localhost:11434/api/chat' => function (Request $requete) use ($reponses, $parModele) {
             $categories = json_decode($requete['messages'][1]['content'], true)['categories'];
+            $reponses = [...$reponses, ...($parModele[$requete['model']] ?? [])];
             $resultats = collect($categories)
                 ->filter(fn ($c) => isset($reponses[$c['categorie']]))
                 ->map(fn ($c) => ['id' => $c['id'], ...$reponses[$c['categorie']]])
@@ -87,49 +90,70 @@ it('ne fait rien, sans aucun appel, tant que la file est désactivée', function
     Http::assertNothingSent();
 });
 
-it('en observation, propose sans rien modifier', function () {
+it('en observation, fait décider la cascade sans rien modifier', function () {
     modeIa('observation');
     $standUp = ($this->categorie)('Stand-up', urgence: 2);
     $large = ($this->categorie)('Spectacles');
-    ollamaClasse(['Stand-up' => classer('humour', 95), 'Spectacles' => ignorer(88)]);
+    ollamaClasse(['Stand-up' => classer('humour', 95), 'Spectacles' => ignorer(92)]);
 
-    $this->artisan('ia:traiter')->expectsOutputToContain('À classer : 2 proposition(s)')->assertSuccessful();
+    $this->artisan('ia:traiter')->expectsOutputToContain('À classer : 2 élément(s), 2 décidé(s) (observation), 0 à décider par Patrick.')->assertSuccessful();
 
     expect($standUp->fresh()->statut)->toBe(StatutElement::EnAttente)
         ->and(CorrespondanceGenre::count())->toBe(0)
+        ->and($standUp->propositionIa->only(['modele', 'niveau', 'confiance']))->toBe(['modele' => 'cascade', 'niveau' => 1, 'confiance' => 95])
         ->and($standUp->propositionIa->proposition)->toEqual(['decision' => 'classer', 'genre' => 'humour', 'jeune_public' => false])
-        ->and($standUp->propositionIa->confiance)->toBe(95)
         ->and($large->propositionIa->proposition)->toBe(['decision' => 'ignorer'])
-        ->and(AppelIa::sole()->only(['tache', 'nb_elements', 'jetons_entree']))->toBe(['tache' => 'a_classer', 'nb_elements' => 2, 'jetons_entree' => 900]);
+        // Le 1er niveau : deux modèles, deux avis par élément ; le 2e niveau n'a pas servi.
+        ->and($standUp->propositionsIa()->where('statut', StatutPropositionIa::Avis)->pluck('modele')->sort()->values()->all())->toBe(['deepseek-v4.1-flash:cloud', 'gpt-oss:120b-cloud'])
+        ->and(AppelIa::pluck('modele')->sort()->values()->all())->toBe(['deepseek-v4.1-flash:cloud', 'gpt-oss:120b-cloud'])
+        ->and(AppelIa::first()->only(['tache', 'nb_elements', 'jetons_entree']))->toBe(['tache' => 'a_classer', 'nb_elements' => 2, 'jetons_entree' => 900]);
 
     // Le modèle a reçu la catégorie, ses exemples et la liste des genres ; un deuxième passage ne redemande pas.
     Http::assertSent(fn (Request $r) => str_contains((string) $r->url(), '/api/chat')
         && str_contains($r['messages'][1]['content'], 'Exemple Stand-up') && str_contains($r['messages'][0]['content'], 'cirque-magie'));
-    $this->artisan('ia:traiter')->expectsOutputToContain('plus rien à proposer');
-    expect(AppelIa::count())->toBe(1);
+    $this->artisan('ia:traiter')->expectsOutputToContain('plus rien à examiner');
+    expect(AppelIa::count())->toBe(2);
 });
 
-it('en mode actif, applique ce dont il est sûr et laisse le reste à décider', function () {
+it('en mode actif, applique ce que le 1er niveau décide d’accord et sûr, et laisse le doute à Patrick', function () {
     modeIa('actif');
     $standUp = ($this->categorie)('Stand-up');
     $large = ($this->categorie)('Spectacles');
     $douteux = ($this->categorie)('Seul en scène');
     ollamaClasse(['Stand-up' => classer('humour', 95), 'Spectacles' => ignorer(92), 'Seul en scène' => classer('theatre', 60)]);
 
-    $this->artisan('ia:traiter')->expectsOutputToContain('3 proposition(s), 2 appliquée(s)');
+    $this->artisan('ia:traiter')->expectsOutputToContain('3 élément(s), 2 décidé(s) (2 appliqué(s)), 1 à décider par Patrick.');
 
+    $doute = $douteux->propositionsIa()->where('statut', StatutPropositionIa::Doute)->sole();
     expect($standUp->fresh()->statut)->toBe(StatutElement::Traite)
         ->and(CorrespondanceGenre::where('categorie_source', 'Stand-up')->sole()->genre->slug)->toBe('humour')
         ->and($large->fresh()->decision)->toBe(['ignoree' => true])
         ->and($douteux->fresh()->statut)->toBe(StatutElement::EnAttente)
-        ->and($douteux->propositionIa->statut)->toBe(StatutPropositionIa::Proposee)
-        ->and(PropositionIa::where('statut', StatutPropositionIa::Appliquee)->count())->toBe(2);
+        ->and($douteux->fresh()->propositionIa)->toBeNull()
+        ->and($doute->justification)->toBe('gpt-oss : Théâtre (60 %) · deepseek-v4.1-flash : Théâtre (60 %) · glm-5.3-flash : Théâtre (60 %)')
+        ->and(PropositionIa::where('statut', StatutPropositionIa::Appliquee)->count())->toBe(2)
+        // Le 2e niveau n'a reçu que l'élément non tranché.
+        ->and(AppelIa::where('modele', 'glm-5.3-flash:cloud')->sole()->nb_elements)->toBe(1);
+});
+
+it('fait trancher par le 2e niveau quand les modèles du 1er ne sont pas d’accord', function () {
+    modeIa('actif');
+    $element = ($this->categorie)('Stand-up');
+    ollamaClasse(['Stand-up' => classer('humour', 95)], parModele: [
+        'deepseek-v4.1-flash:cloud' => ['Stand-up' => classer('theatre', 95)],
+        'glm-5.3-flash:cloud' => ['Stand-up' => classer('humour', 93)],
+    ]);
+
+    $this->artisan('ia:traiter')->expectsOutputToContain('1 décidé(s) (1 appliqué(s)), 0 à décider');
+
+    expect(CorrespondanceGenre::sole()->genre->slug)->toBe('humour')
+        ->and($element->propositionsIa()->where('modele', 'cascade')->sole()->only(['niveau', 'confiance']))->toBe(['niveau' => 2, 'confiance' => 93]);
 });
 
 it('n’envoie rien quand le forfait est sous la part réservée', function () {
     modeIa('observation');
     ($this->categorie)('Stand-up');
-    ollamaClasse(['Stand-up' => classer('humour', 95)], sessionRestant: 30);
+    ollamaClasse(['Stand-up' => classer('humour', 95)], sessionRestant: 4);
 
     $this->artisan('ia:traiter')->expectsOutputToContain('Arrêt : Forfait sous la part réservée');
 
@@ -143,15 +167,17 @@ it('note « sans réponse » un élément oublié ou hors cadre, et ne le redema
     $horsCadre = ($this->categorie)('Hors cadre');
     ollamaClasse(['Hors cadre' => classer('opera-rock', 90)]);
 
-    $this->artisan('ia:traiter')->expectsOutputToContain('2 sans réponse');
+    $this->artisan('ia:traiter')->expectsOutputToContain('2 élément(s), 0 décidé(s) (observation), 0 à décider');
 
-    expect($oubliee->propositionsIa()->sole()->statut)->toBe(StatutPropositionIa::Echec)
-        ->and($horsCadre->propositionsIa()->sole()->proposition['erreur'])->toContain('hors cadre');
+    // Chaque modèle des deux niveaux a échoué, et rien n'est laissé à Patrick : l'élément sera redemandé.
+    expect($oubliee->propositionsIa()->pluck('statut')->unique()->all())->toBe([StatutPropositionIa::Echec])
+        ->and($oubliee->propositionsIa()->count())->toBe(3)
+        ->and($horsCadre->propositionsIa()->first()->proposition['erreur'])->toContain('hors cadre');
 
-    $this->artisan('ia:traiter')->expectsOutputToContain('plus rien à proposer');
+    $this->artisan('ia:traiter')->expectsOutputToContain('plus rien à examiner');
     $this->travel(25)->hours();
     Cache::forget(Quota::CLE_CACHE);
-    $this->artisan('ia:traiter')->expectsOutputToContain('2 sans réponse');
+    $this->artisan('ia:traiter')->expectsOutputToContain('2 élément(s), 0 décidé(s)');
 });
 
 it('s’arrête sans rien noter si Ollama est injoignable', function () {
@@ -171,7 +197,7 @@ it('rapproche les propositions des décisions prises à la main entre-temps', fu
     modeIa('observation');
     $pareil = ($this->categorie)('Stand-up');
     $autrement = ($this->categorie)('Seul en scène');
-    ollamaClasse(['Stand-up' => classer('humour', 95), 'Seul en scène' => classer('theatre', 80)]);
+    ollamaClasse(['Stand-up' => classer('humour', 95), 'Seul en scène' => classer('theatre', 95)]);
     $this->artisan('ia:traiter');
 
     app(EnregistrerCorrespondanceGenre::class)->handle($this->source, 'Stand-up', Genre::firstWhere('slug', 'humour'));
@@ -179,8 +205,8 @@ it('rapproche les propositions des décisions prises à la main entre-temps', fu
     Cache::forget(Quota::CLE_CACHE);
     $this->artisan('ia:traiter')->expectsOutputToContain('2 proposition(s) rapprochée(s)');
 
-    expect($pareil->propositionsIa()->sole()->statut)->toBe(StatutPropositionIa::Appliquee)
-        ->and($autrement->propositionsIa()->sole()->statut)->toBe(StatutPropositionIa::Refusee);
+    expect($pareil->propositionsIa()->where('modele', 'cascade')->sole()->statut)->toBe(StatutPropositionIa::Appliquee)
+        ->and($autrement->propositionsIa()->where('modele', 'cascade')->sole()->statut)->toBe(StatutPropositionIa::Refusee);
 });
 
 it('ne remet pas dans la file une catégorie ignorée', function () {
@@ -201,13 +227,13 @@ it('affiche la proposition dans la file et l’applique sur « Accepter », une 
     $standUp = ($this->categorie)('Stand-up');
     $enfants = ($this->categorie)('Spectacles enfants');
     $large = ($this->categorie)('Spectacles');
-    ollamaClasse(['Stand-up' => classer('humour', 95), 'Spectacles enfants' => classer('theatre', 85, jeunePublic: true), 'Spectacles' => ignorer(90)]);
+    ollamaClasse(['Stand-up' => classer('humour', 95), 'Spectacles enfants' => classer('theatre', 95, jeunePublic: true), 'Spectacles' => ignorer(90)]);
     $this->artisan('ia:traiter');
     $this->actingAs($admin = Admin::factory()->avecDoubleAuthentification()->create());
 
     Livewire::test(ListAClasser::class)
         ->assertSee('Humour (95 %)')
-        ->assertSee('Théâtre · Jeune public (85 %)')
+        ->assertSee('Théâtre · Jeune public (95 %)')
         ->assertSee('Ignorer (trop large) (90 %)')
         ->callTableAction('accepterIa', $standUp)
         ->callTableBulkAction('accepterIaSelection', [$enfants, $large]);

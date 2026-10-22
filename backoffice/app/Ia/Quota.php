@@ -11,7 +11,8 @@ use Throwable;
 /**
  * Garde-fou du forfait Ollama (plan-module-ia) : avant chaque lot, l'assistant demande s'il peut consommer.
  * Il s'arrête :
- * - s'il reste moins que la part réservée (réglage « ia_quota_reserve_pct ») sur l'une des fenêtres, jusqu'à sa remise à zéro ;
+ * - s'il reste moins que la part réservée sur l'une des fenêtres (réglages « ia_quota_reserve_5h_pct » et « ia_quota_reserve_semaine_pct »),
+ *   jusqu'à sa remise à zéro ;
  * - si des crédits achetés existent (une fois l'inclus épuisé, ils seraient facturés) ;
  * - s'il ne peut pas lire le solde (pas de clé, ollama.com indisponible) : sans certitude, on ne consomme pas.
  * Le solde est lu au plus une fois par minute (ollama.com limite à 10 lectures par minute, partagées avec les autres usages).
@@ -72,8 +73,8 @@ class Quota
             return new DecisionQuota(false, 'Solde Ollama sans aucune fenêtre connue : quota invérifiable.', CarbonImmutable::now()->addMinutes(15), $etat);
         }
 
-        $reserve = (float) Parametre::valeur('ia_quota_reserve_pct');
-        $epuisees = array_filter($fenetres, fn ($f) => $f['restant'] <= $reserve);
+        $reserve = fn (array $f): float => (float) Parametre::valeur($f['nom'] === '5 heures' ? 'ia_quota_reserve_5h_pct' : 'ia_quota_reserve_semaine_pct');
+        $epuisees = array_filter($fenetres, fn ($f) => $f['restant'] <= $reserve($f));
 
         if ($epuisees !== []) {
             // Reprise quand toutes les fenêtres sous la réserve sont remises à zéro.
@@ -81,11 +82,12 @@ class Quota
             $plusBasse = reset($epuisees);
 
             return new DecisionQuota(false, sprintf('Forfait sous la part réservée (%s %% sur la fenêtre %s, réserve %s %%).',
-                self::nombre($plusBasse['restant']), $plusBasse['nom'], self::nombre($reserve)), $reprise, $etat);
+                self::nombre($plusBasse['restant']), $plusBasse['nom'], self::nombre($reserve($plusBasse))), $reprise, $etat);
         }
 
-        return new DecisionQuota(true, sprintf('Forfait disponible (%s %% sur la fenêtre la plus basse, réserve %s %%).',
-            self::nombre($fenetres[0]['restant']), self::nombre($reserve)), null, $etat);
+        return new DecisionQuota(true, 'Forfait disponible ('.collect($fenetres)
+            ->map(fn ($f) => sprintf('%s : %s %% restant, réserve %s %%', $f['nom'], self::nombre($f['restant']), self::nombre($reserve($f))))
+            ->implode(' ; ').').', null, $etat);
     }
 
     private static function nombre(float $valeur): string
