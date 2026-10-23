@@ -5,7 +5,7 @@
             @if ($total === 0)
                 Rien à décider pour l’instant.
             @else
-                {{ $total }} décision(s) à prendre, la plus urgente d’abord.
+                {{ $total }} décision(s) à prendre, dont {{ $nouvelles }} ajoutée(s) aujourd’hui. Les plus récentes d’abord, puis la plus urgente.
             @endif
             @if ($enExamen > 0)
                 {{ $enExamen }} autre(s) élément(s) en cours d’examen par l’IA.
@@ -16,6 +16,7 @@
             <div wire:key="carte-{{ $element->id }}" style="display:flex;flex-direction:column;gap:14px">
                 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
                     <x-filament::badge color="gray">{{ $carte['file'] }}</x-filament::badge>
+                    <x-filament::badge color="info" icon="heroicon-o-calendar">{{ $carte['ajoutee'] }}</x-filament::badge>
                     @if ($carte['urgence'])
                         <x-filament::badge color="danger">{{ $carte['urgence'] }}</x-filament::badge>
                     @endif

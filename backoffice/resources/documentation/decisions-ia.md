@@ -14,4 +14,4 @@ Le bouton **Annuler** défait une décision appliquée par l'assistant :
 
 ### Chaque matin
 
-À 8 h, un e-mail vous donne le nombre de décisions qui vous attendent (avec le lien vers **Mes actions du jour**), ce que l'assistant a fait depuis la veille, file par file, et l'état du forfait Ollama. Destinataires : réglage « Destinataires des alertes » (Supervision).
+À 8 h, un e-mail vous donne le nombre de décisions qui vous attendent, dont celles ajoutées pendant la nuit (dans l'objet et en tête du message), avec le lien vers **Mes actions du jour**, ce que l'assistant a fait depuis la veille, file par file, et l'état du forfait Ollama. Destinataires : réglage « Destinataires des alertes » (Supervision).

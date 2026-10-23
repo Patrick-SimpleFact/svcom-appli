@@ -19,6 +19,7 @@ use App\Models\ElementATraiter;
 use App\Models\Genre;
 use App\Models\Offre;
 use App\Models\Spectacle;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -32,9 +33,16 @@ use InvalidArgumentException;
  *   en observation ; le reste sera examiné à son prochain passage.
  * Chaque carte pose la question en clair, montre les faits utiles et l'avis de l'IA, et propose des boutons dont la
  * conséquence est écrite. Le clic passe par l'action habituelle de la file, au nom de l'admin connecté.
+ * Les cartes arrivées le plus récemment passent en premier (jour par jour), la plus urgente d'abord dans un même jour :
+ * l'app sort dans quelques semaines, les anciennes annonces auront disparu d'ici là.
  */
 class MesActions
 {
+    /** Arrivée dans « Mes actions » : le dernier examen de l'IA (doute ou proposition), sinon l'entrée dans la file. */
+    private const ARRIVEE = "coalesce((select max(p.created_at) from propositions_ia p where p.element_a_traiter_id = elements_a_traiter.id and p.statut in ('doute', 'proposee')), elements_a_traiter.created_at)";
+
+    private const JOUR_ARRIVEE = '(('.self::ARRIVEE.") at time zone 'Europe/Paris')::date";
+
     public function __construct(private Assistant $assistant) {}
 
     /** Les files ouvertes à l'admin connecté (modèle de profil), ou toutes hors connexion (e-mail du matin). @return list<FileATraiter> */
@@ -51,6 +59,7 @@ class MesActions
         $sansIa = collect($this->files())->reject(fn (FileATraiter $f) => $avecIa->contains($f));
 
         return ElementATraiter::query()
+            ->select('elements_a_traiter.*')->selectRaw(self::ARRIVEE.' as arrivee')
             ->where('statut', StatutElement::EnAttente)
             ->where(fn (Builder $q) => $q
                 ->whereIn('file', $sansIa->all())
@@ -61,6 +70,12 @@ class MesActions
     public function nombre(): int
     {
         return $this->requete()->count();
+    }
+
+    /** Les cartes arrivées aujourd'hui (heure de Paris) : au minimum, ce que la nuit a ajouté. */
+    public function nouvelles(): int
+    {
+        return $this->requete()->whereRaw(self::JOUR_ARRIVEE.' = ?', [now('Europe/Paris')->toDateString()])->count();
     }
 
     /** Les éléments en attente que l'assistant n'a pas encore examinés (ils ne sont pas encore dans « Mes actions »). */
@@ -79,13 +94,13 @@ class MesActions
      */
     public function suivante(array $passes = []): ?ElementATraiter
     {
-        return Urgence::trier($this->requete()->whereKeyNot($passes))->first();
+        return Urgence::trier($this->requete()->whereKeyNot($passes)->orderByRaw(self::JOUR_ARRIVEE.' desc'))->first();
     }
 
     /**
      * Ce qu'affiche la carte : question, faits, avis de l'IA, boutons (clé => [libellé, conséquence, couleur]).
      *
-     * @return array{file: string, urgence: ?string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, billetteries: list<array{0: string, 1: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
+     * @return array{file: string, urgence: ?string, ajoutee: string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, billetteries: list<array{0: string, 1: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
      */
     public function carte(ElementATraiter $element): array
     {
@@ -93,6 +108,7 @@ class MesActions
         $carte = [
             'file' => $element->file->getLabel(),
             'urgence' => $element->urgence >= 2 ? Urgence::LIBELLES[$element->urgence] : null,
+            'ajoutee' => $this->ajoutee($element),
             'faits' => [], 'comparaison' => null, 'lieux' => null, 'boutons' => [], 'billetteries' => [],
             'avis' => $element->douteIa?->justification,
             'proposition' => $element->propositionIa
@@ -189,6 +205,20 @@ class MesActions
         };
 
         return 'Décision enregistrée.';
+    }
+
+    /** « Ajoutée aujourd'hui (ven. 23 oct.) », « Ajoutée hier (jeu. 22 oct.) », « Ajoutée le lun. 19 oct. ». */
+    private function ajoutee(ElementATraiter $element): string
+    {
+        $jour = CarbonImmutable::parse($element->getAttribute('arrivee') ?? $element->created_at)->setTimezone('Europe/Paris')->locale('fr');
+        $date = $jour->translatedFormat('D j M');
+        $aujourdhui = CarbonImmutable::now('Europe/Paris');
+
+        return match (true) {
+            $jour->isSameDay($aujourdhui) => "Ajoutée aujourd’hui ({$date})",
+            $jour->isSameDay($aujourdhui->subDay()) => "Ajoutée hier ({$date})",
+            default => "Ajoutée le {$date}",
+        };
     }
 
     /** @return array<string, ?string>|null */

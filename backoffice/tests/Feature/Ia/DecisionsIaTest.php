@@ -71,10 +71,11 @@ it('envoie l’e-mail du matin : actions du jour, travail de l’IA depuis hier,
     ollamaRepond(fn () => ['decision' => 'garder', 'confiance' => 96]);
     $this->artisan('ia:traiter', ['--file' => 'a_trier']); // Edmond appliqué, l'atelier laissé à Patrick (garde-fou)
 
-    $this->artisan('ia:recapitulatif')->expectsOutputToContain('Spettacoli : 1 action(s) à faire aujourd’hui')->assertSuccessful();
+    $this->artisan('ia:recapitulatif')->expectsOutputToContain('Spettacoli : 1 action(s) à faire aujourd’hui, dont 1 ajoutée(s) cette nuit')->assertSuccessful();
 
     Mail::assertSent(RecapitulatifIa::class, function (RecapitulatifIa $mail) {
         $mail->assertSeeInHtml('1 décision(s) vous attendent');
+        $mail->assertSeeInHtml('Dont 1 ajoutée(s) cette nuit');
         $mail->assertSeeInHtml('Ouvrir Mes actions du jour');
         $mail->assertSeeInHtml('5 heures : 90 % restant');
 

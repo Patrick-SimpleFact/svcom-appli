@@ -10,7 +10,7 @@ use Livewire\Attributes\Session;
 use Throwable;
 
 /**
- * « Mes actions du jour » en tête de la page d'accueil : une carte à la fois, la plus urgente d'abord (plan-module-ia v2).
+ * « Mes actions du jour » en tête de la page d'accueil : une carte à la fois, les plus récentes d'abord puis la plus urgente (plan-module-ia v2).
  * Un clic décide et passe à la suivante ; « Plus tard » la remet en fin de journée (pour cet admin, dans cette session).
  */
 class MesActionsDuJour extends Widget
@@ -72,6 +72,7 @@ class MesActionsDuJour extends Widget
 
         return [
             'total' => $total = $mesActions->nombre(),
+            'nouvelles' => $mesActions->nouvelles(),
             'rang' => $total - $mesActions->requete()->whereKeyNot($this->passes)->count() + 1,
             'remises' => count($this->passes),
             'enExamen' => $mesActions->enExamen(),

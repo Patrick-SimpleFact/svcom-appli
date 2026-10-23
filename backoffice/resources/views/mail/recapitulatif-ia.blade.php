@@ -2,7 +2,9 @@
 # {{ $actions > 0 ? $actions.' décision(s) vous attendent' : 'Rien à décider aujourd’hui' }}
 
 @if ($actions > 0)
-Elles sont rangées de la plus urgente à la moins urgente, une carte à la fois, avec la question en clair et l’avis de l’IA.
+## Dont {{ $nouvelles }} ajoutée(s) cette nuit
+
+Celles de la nuit passent en premier, puis celles des jours précédents (la plus urgente d’abord dans un même jour). Une carte à la fois, avec sa date, la question en clair et l’avis de l’IA.
 @endif
 
 <x-mail::button :url="$lienActions">
