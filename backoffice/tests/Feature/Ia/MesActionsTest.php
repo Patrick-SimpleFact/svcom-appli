@@ -2,6 +2,7 @@
 
 use App\Actions\DedoublonnerOffre;
 use App\Actions\EnregistrerOffre;
+use App\Actions\RattacherLieu;
 use App\Collecte\AnnonceNormalisee;
 use App\Collecte\ResultatGenre;
 use App\Enums\FileATraiter;
@@ -20,6 +21,7 @@ use App\Models\Offre;
 use App\Models\Parametre;
 use App\Models\PropositionIa;
 use App\Models\Source;
+use App\Models\Ville;
 use App\Support\Point;
 use Carbon\CarbonImmutable;
 use Database\Seeders\GenresSeeder;
@@ -166,6 +168,68 @@ it('compare deux séances côte à côte et les fusionne d’un clic', function 
 
     expect($b->fresh()->meme_seance_que_id)->toBe($a->id)
         ->and($element->fresh()->statut)->toBe(StatutElement::Traite);
+});
+
+describe('lieu à vérifier', function () {
+    beforeEach(function () {
+        $this->paris = Ville::create(['nom' => 'Paris', 'nom_normalise' => 'paris', 'code_insee' => '75056', 'departement' => '75', 'codes_postaux' => [], 'population' => 1,
+            'position' => new Point(48.8566, 2.3522), 'fuseau_horaire' => 'Europe/Paris', 'est_pilote' => true]);
+        $this->lieu = fn (string $nom, float $lat, float $lon, string $adresse) => Lieu::create(['nom' => $nom, 'adresse' => $adresse, 'ville_id' => $this->paris->id,
+            'type' => TypeLieu::Autre, 'position' => new Point($lat, $lon), 'precision_position' => PrecisionPosition::Adresse, 'fuseau_horaire' => 'Europe/Paris']);
+        $this->imprecis = ($this->lieu)('Paris', 48.8688, 2.3780, '103 Rue Oberkampf, 75011 Paris');
+        $this->connu = ($this->lieu)('Le Nouveau Casino', 48.8689, 2.3782, '109 Rue Oberkampf');
+        ($this->lieu)('Théâtre lointain', 48.80, 2.30, '1 rue Loin');
+        $this->element = ElementATraiter::create(['file' => FileATraiter::LieuAVerifier, 'cible_type' => $this->imprecis->getMorphClass(), 'cible_id' => $this->imprecis->id,
+            'priorite' => 1, 'donnees' => ['motif' => RattacherLieu::MOTIF_NOM_IMPRECIS, 'source' => 'Fnac Spectacles', 'nom_source' => 'Paris',
+                'adresse_source' => '103 Rue Oberkampf', 'ville_source' => '75011 Paris', 'annonce' => 'Concert du soir']]);
+    });
+
+    it('demande le vrai nom, montre ce qu’a écrit la billetterie et les lieux connus tout près', function () {
+        Livewire::test(MesActionsDuJour::class)
+            ->assertSee('Quel est le vrai nom de ce lieu ?')
+            ->assertSee('Paris · 103 Rue Oberkampf · 75011 Paris')
+            ->assertSee('Concert du soir')
+            ->assertSee('https://www.google.com/maps/search/?api=1&amp;query=', false)
+            ->assertSee('Le Nouveau Casino — 109 Rue Oberkampf')
+            ->assertDontSee('Théâtre lointain')
+            ->assertSee('Corriger le nom')->assertSee('Rattacher au lieu choisi')->assertSee('Le lieu est bon');
+    });
+
+    it('corrige le nom, le verrouille et sort le lieu de la liste', function () {
+        Livewire::test(MesActionsDuJour::class)
+            ->set('nouveauNom', '  Le Café de la Danse ')
+            ->call('decider', $this->element->id, 'renommer')
+            ->assertSee('Rien à faire aujourd’hui');
+
+        expect($this->imprecis->fresh()->nom)->toBe('Le Café de la Danse')
+            ->and($this->imprecis->fresh()->estVerrouille('nom'))->toBeTrue()
+            ->and($this->element->fresh()->statut)->toBe(StatutElement::Traite);
+    });
+
+    it('refuse un nom vide sans rien changer', function () {
+        Livewire::test(MesActionsDuJour::class)->set('nouveauNom', ' ')->call('decider', $this->element->id, 'renommer')
+            ->assertSee('Quel est le vrai nom de ce lieu ?');
+
+        expect($this->imprecis->fresh()->nom)->toBe('Paris')->and($this->element->fresh()->statut)->toBe(StatutElement::EnAttente);
+    });
+
+    it('rattache à un lieu connu trouvé par la recherche', function () {
+        Livewire::test(MesActionsDuJour::class)
+            ->set('rechercheLieu', 'casino')
+            ->assertSee('Le Nouveau Casino — 109 Rue Oberkampf — Paris')
+            ->set('lieuChoisi', $this->connu->id)
+            ->call('decider', $this->element->id, 'rattacher')
+            ->assertSee('Rien à faire aujourd’hui');
+
+        expect($this->imprecis->fresh()->fusionne_dans_id)->toBe($this->connu->id)
+            ->and($this->element->fresh()->statut)->not->toBe(StatutElement::EnAttente);
+    });
+
+    it('garde le lieu tel quel', function () {
+        Livewire::test(MesActionsDuJour::class)->call('decider', $this->element->id, 'verifie')->assertSee('Rien à faire aujourd’hui');
+
+        expect($this->element->fresh()->decision)->toBe(['verifie' => true])->and($this->imprecis->fresh()->nom)->toBe('Paris');
+    });
 });
 
 it('refuse une décision qui ne correspond pas à la file, sans rien modifier', function () {

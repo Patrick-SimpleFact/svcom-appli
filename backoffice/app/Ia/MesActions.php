@@ -5,20 +5,27 @@ namespace App\Ia;
 use App\Actions\DeciderDoublon;
 use App\Actions\DeciderTri;
 use App\Actions\EnregistrerCorrespondanceGenre;
+use App\Actions\FusionnerLieux;
 use App\Actions\IgnorerCategorie;
+use App\Actions\RattacherLieu;
 use App\Actions\SeparerSpectacle;
 use App\Enums\FileATraiter;
 use App\Enums\IssueFiltrage;
 use App\Enums\ModeIa;
+use App\Enums\PrecisionPosition;
 use App\Enums\StatutElement;
 use App\Enums\TypeDecisionDedoublonnage;
 use App\Filament\Pages\BoiteDeTravail;
+use App\Filament\Resources\Lieux\LieuResource;
+use App\Filament\Resources\LieuxAVerifier\LieuAVerifierResource;
 use App\Filament\Support\Urgence;
 use App\Models\Admin;
 use App\Models\ElementATraiter;
 use App\Models\Genre;
+use App\Models\Lieu;
 use App\Models\Offre;
 use App\Models\Spectacle;
+use App\Support\Texte;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,6 +47,9 @@ class MesActions
 {
     /** Arrivée dans « Mes actions » : le dernier examen de l'IA (doute ou proposition), sinon l'entrée dans la file. */
     private const ARRIVEE = "coalesce((select max(p.created_at) from propositions_ia p where p.element_a_traiter_id = elements_a_traiter.id and p.statut in ('doute', 'proposee')), elements_a_traiter.created_at)";
+
+    /** Lieux connus proposés pour un rattachement : à moins de cette distance du lieu à vérifier (m). */
+    public const RAYON_LIEUX_PROCHES = 300;
 
     private const JOUR_ARRIVEE = '(('.self::ARRIVEE.") at time zone 'Europe/Paris')::date";
 
@@ -100,7 +110,7 @@ class MesActions
     /**
      * Ce qu'affiche la carte : question, faits, avis de l'IA, boutons (clé => [libellé, conséquence, couleur]).
      *
-     * @return array{file: string, urgence: ?string, ajoutee: string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, billetteries: list<array{0: string, 1: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
+     * @return array{file: string, urgence: ?string, ajoutee: string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, lieuAVerifier: ?array, billetteries: list<array{0: string, 1: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
      */
     public function carte(ElementATraiter $element): array
     {
@@ -109,7 +119,7 @@ class MesActions
             'file' => $element->file->getLabel(),
             'urgence' => $element->urgence >= 2 ? Urgence::LIBELLES[$element->urgence] : null,
             'ajoutee' => $this->ajoutee($element),
-            'faits' => [], 'comparaison' => null, 'lieux' => null, 'boutons' => [], 'billetteries' => [],
+            'faits' => [], 'comparaison' => null, 'lieux' => null, 'lieuAVerifier' => null, 'boutons' => [], 'billetteries' => [],
             'avis' => $element->douteIa?->justification,
             'proposition' => $element->propositionIa
                 ? $this->assistant->tache($element->file)->libelle($element->propositionIa)." ({$element->propositionIa->confiance} %) — ".$element->propositionIa->justification
@@ -163,6 +173,7 @@ class MesActions
                     'confirmer' => ['Même spectacle partout', 'Le regroupement est gardé tel quel.', 'success'],
                     'detacher' => ['Détacher les lieux cochés', 'Leurs dates passent dans un nouveau spectacle.', 'danger'],
                 ]],
+            FileATraiter::LieuAVerifier => [...$carte, ...$this->carteLieu($element)],
             default => [...$carte,
                 'question' => ($d['motif'] ?? 'À vérifier').(isset($d['annonce']) ? " : {$d['annonce']}" : ''),
                 'faits' => collect($d)->except(['identifiants', 'lien'])->filter(fn ($v) => is_scalar($v))->map(fn ($v, $k) => [Str::ucfirst(str_replace('_', ' ', $k)), (string) $v])->values()->all(),
@@ -174,8 +185,10 @@ class MesActions
      * Applique la décision choisie sur la carte.
      *
      * @param  list<int>  $lieux  pour « detacher » : les lieux cochés
+     * @param  ?string  $nom  pour « renommer » (lieu à vérifier) : le vrai nom
+     * @param  ?int  $lieuId  pour « rattacher » (lieu à vérifier) : le lieu connu qui le remplace
      */
-    public function decider(ElementATraiter $element, string $choix, array $lieux = []): string
+    public function decider(ElementATraiter $element, string $choix, array $lieux = [], ?string $nom = null, ?int $lieuId = null): string
     {
         if ($element->statut !== StatutElement::EnAttente) {
             throw new InvalidArgumentException('Cet élément a déjà été décidé.');
@@ -199,12 +212,94 @@ class MesActions
                 $choix === 'fusionner' ? TypeDecisionDedoublonnage::Fusionner : TypeDecisionDedoublonnage::Separer),
             [FileATraiter::SpectacleAControler, 'confirmer'] => app(SeparerSpectacle::class)->confirmer(Spectacle::findOrFail($element->cible_id)),
             [FileATraiter::SpectacleAControler, 'detacher'] => app(SeparerSpectacle::class)->handle(Spectacle::findOrFail($element->cible_id), $lieux),
+            [FileATraiter::LieuAVerifier, 'verifie'] => LieuAVerifierResource::marquerVerifies($element->newCollection([$element])),
+            [FileATraiter::LieuAVerifier, 'renommer'] => $this->renommerLieu($element, (string) $nom),
+            [FileATraiter::LieuAVerifier, 'rattacher'] => app(FusionnerLieux::class)->handle(
+                Lieu::findOrFail($element->cible_id), Lieu::actifs()->findOrFail($lieuId ?? throw new InvalidArgumentException('Choisir le lieu connu.'))),
             default => str_starts_with($choix, 'genre:') && $element->file === FileATraiter::AClasser
                 ? app(EnregistrerCorrespondanceGenre::class)->handle($element->cible, $d['categorie'], Genre::where('slug', Str::after($choix, 'genre:'))->firstOrFail())
                 : throw new InvalidArgumentException("Décision inconnue : {$choix}."),
         };
 
         return 'Décision enregistrée.';
+    }
+
+    /** Lieu à vérifier : ce qu'a écrit la billetterie, l'adresse sur une carte, les lieux connus tout près. @return array<string, mixed> */
+    private function carteLieu(ElementATraiter $element): array
+    {
+        $d = $element->donnees ?? [];
+        $lieu = $element->cible instanceof Lieu ? $element->cible->loadMissing('ville') : null;
+        $adresse = collect([$lieu?->adresse, $lieu?->ville?->nom])->filter()->unique()->implode(', ');
+        $offres = $lieu ? Offre::where('lieu_id', $lieu->id)->whereNull('disparue_le') : null;
+
+        return [
+            'question' => ($d['motif'] ?? null) === RattacherLieu::MOTIF_NOM_IMPRECIS
+                ? 'Quel est le vrai nom de ce lieu ?'
+                : 'Ce lieu est-il bien identifié ?',
+            'faits' => [
+                ['Nom affiché dans l’app', $lieu?->nom],
+                ['Adresse', $adresse ?: null, $adresse ? 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($adresse) : null],
+                ['Pourquoi', $d['motif'] ?? null],
+                ['Écrit par la billetterie', collect([$d['nom_source'] ?? null, $d['adresse_source'] ?? null, $d['ville_source'] ?? null])->filter()->implode(' · ') ?: null],
+                ['Billetterie', $d['source'] ?? null],
+                ['Vu dans', $d['annonce'] ?? null],
+                ['Séances à venir', $offres ? (string) (clone $offres)->where('debut', '>=', now())->count() : null],
+            ],
+            'billetteries' => $offres ? (clone $offres)->whereNotNull('lien')->with('source')->latest('id')->limit(3)->get()
+                ->map(fn (Offre $o) => [Str::limit((string) ($o->donnees_normalisees['titre'] ?? $o->source?->nom ?? 'Annonce'), 50), $o->lien])->all() : [],
+            'lieuAVerifier' => $lieu ? [
+                'proches' => $this->lieuxProches($lieu),
+                'fiche' => LieuResource::getUrl('edit', ['record' => $lieu]),
+            ] : null,
+            'boutons' => ['verifie' => ['Le lieu est bon', 'Il est gardé tel quel et sort de la liste.', 'success']],
+        ];
+    }
+
+    /** @return list<array{id: int, nom: string, distance: int}> */
+    private function lieuxProches(Lieu $lieu): array
+    {
+        if ($lieu->position === null || $lieu->precision_position === PrecisionPosition::Commune) {
+            return [];
+        }
+        $point = $lieu->position->versEwkt();
+
+        return Lieu::actifs()->with('ville')->whereKeyNot($lieu->id)->whereNotNull('position')
+            ->whereRaw('ST_DWithin(position, ?::geography, ?)', [$point, self::RAYON_LIEUX_PROCHES])
+            ->selectRaw('lieux.*, round(ST_Distance(position, ?::geography)) as distance', [$point])
+            ->orderBy('distance')->limit(6)->get()
+            ->map(fn (Lieu $l) => ['id' => $l->id, 'nom' => collect([$l->nom, $l->adresse])->filter()->unique()->implode(' — '), 'distance' => (int) $l->getAttribute('distance')])
+            ->all();
+    }
+
+    /**
+     * Lieux connus dont le nom ou l'adresse contient la recherche, ceux de la même commune d'abord.
+     *
+     * @return list<array{id: int, nom: string}>
+     */
+    public function chercherLieux(ElementATraiter $element, string $recherche): array
+    {
+        $texte = Texte::normaliser($recherche);
+        if (mb_strlen($texte) < 2 || ! $element->cible instanceof Lieu) {
+            return [];
+        }
+
+        return Lieu::actifs()->with('ville')->whereKeyNot($element->cible_id)
+            ->where(fn (Builder $q) => $q->where('nom_normalise', 'like', "%{$texte}%")->orWhere('adresse', 'ilike', '%'.trim($recherche).'%'))
+            ->orderByRaw('ville_id is not distinct from ? desc', [$element->cible->ville_id])->orderBy('nom')->limit(8)->get()
+            ->map(fn (Lieu $l) => ['id' => $l->id, 'nom' => collect([$l->nom, $l->adresse, $l->ville?->nom])->filter()->unique()->implode(' — ')])
+            ->all();
+    }
+
+    private function renommerLieu(ElementATraiter $element, string $nom): void
+    {
+        $nom = trim($nom);
+        if ($nom === '' || mb_strlen($nom) > 255) {
+            throw new InvalidArgumentException('Écrire le vrai nom du lieu (255 caractères au plus).');
+        }
+
+        // Corrigé par un admin : le nom est verrouillé, la collecte ne l'écrasera plus.
+        Lieu::findOrFail($element->cible_id)->update(['nom' => $nom]);
+        LieuAVerifierResource::marquerVerifies($element->newCollection([$element]));
     }
 
     /** « Ajoutée aujourd'hui (ven. 23 oct.) », « Ajoutée hier (jeu. 22 oct.) », « Ajoutée le lun. 19 oct. ». */

@@ -90,6 +90,50 @@
                     </div>
                 @endif
 
+                @if ($carte['lieuAVerifier'])
+                    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+                        <div style="border:1px solid rgba(127,127,127,.25);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                            <div style="font-weight:600">Corriger le nom</div>
+                            <x-filament::input.wrapper>
+                                <x-filament::input type="text" wire:model="nouveauNom" placeholder="Le vrai nom de la salle" maxlength="255" />
+                            </x-filament::input.wrapper>
+                            <div>
+                                <x-filament::button color="primary" wire:click="decider({{ $element->id }}, 'renommer')" wire:loading.attr="disabled">Enregistrer ce nom</x-filament::button>
+                                <div style="font-size:12px;opacity:.65;margin-top:4px">Affiché dans l’app ; les collectes ne le changeront plus.</div>
+                            </div>
+                        </div>
+                        <div style="border:1px solid rgba(127,127,127,.25);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                            <div style="font-weight:600">Rattacher à un lieu connu</div>
+                            @if ($carte['lieuAVerifier']['proches'])
+                                <div style="font-size:13px;opacity:.65">Lieux connus à moins de {{ \App\Ia\MesActions::RAYON_LIEUX_PROCHES }} m :</div>
+                                @foreach ($carte['lieuAVerifier']['proches'] as $proche)
+                                    <label style="display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer">
+                                        <input type="radio" wire:model.live="lieuChoisi" value="{{ $proche['id'] }}" style="margin-top:3px">
+                                        <span>{{ $proche['nom'] }} <span style="opacity:.6">({{ $proche['distance'] }} m)</span></span>
+                                    </label>
+                                @endforeach
+                            @endif
+                            <x-filament::input.wrapper>
+                                <x-filament::input type="search" wire:model.live.debounce.400ms="rechercheLieu" placeholder="Chercher un lieu par son nom ou son adresse" />
+                            </x-filament::input.wrapper>
+                            @foreach ($lieuxTrouves as $trouve)
+                                <label style="display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer">
+                                    <input type="radio" wire:model.live="lieuChoisi" value="{{ $trouve['id'] }}" style="margin-top:3px">
+                                    <span>{{ $trouve['nom'] }}</span>
+                                </label>
+                            @endforeach
+                            @if (strlen($rechercheLieu) >= 2 && ! $lieuxTrouves)
+                                <div style="font-size:13px;opacity:.65">Aucun lieu connu ne correspond.</div>
+                            @endif
+                            <div>
+                                <x-filament::button color="primary" wire:click="decider({{ $element->id }}, 'rattacher')" wire:loading.attr="disabled" :disabled="! $lieuChoisi">Rattacher au lieu choisi</x-filament::button>
+                                <div style="font-size:12px;opacity:.65;margin-top:4px">Ses séances passent au lieu choisi ; les collectes suivantes y iront directement.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ $carte['lieuAVerifier']['fiche'] }}" style="font-size:13px;text-decoration:underline;opacity:.75">Ouvrir la fiche du lieu (adresse, position sur la carte)</a>
+                @endif
+
                 @if ($carte['proposition'])
                     <div style="border-radius:10px;padding:10px 12px;background:rgba(34,197,94,.10)">
                         <strong>L’IA propose :</strong> {{ $carte['proposition'] }}
