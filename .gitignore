@@ -16,7 +16,5 @@ Icon?
 
 # Secrets du serveur de production (L01)
 deploy/.env
-deploy/sauvegarde/sauvegarde.log
-deploy/sauvegarde/venv/
 deploy/.surveillance-etat
 deploy/surveillance.log
