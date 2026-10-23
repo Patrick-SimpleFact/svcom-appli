@@ -8,6 +8,9 @@ return [
     'app_store' => env('APP_STORE_URL'),
     'google_play' => env('GOOGLE_PLAY_URL'),
 
+    // Identifiant de fournisseur Apple (App Store Connect › Analyses › Campagnes) : sans lui, l'App Store ignore la provenance de /app?c=….
+    'app_store_pt' => env('APP_STORE_PT'),
+
     // Ouvre l'app quand elle est installée (spettacoli://spectacle/12).
     'schema' => env('APP_SCHEMA', 'spettacoli'),
 
