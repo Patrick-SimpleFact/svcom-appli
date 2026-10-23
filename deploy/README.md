@@ -38,17 +38,15 @@ docker compose exec -it app php artisan admin:creer <email> "<nom>"
 
 ## Sauvegardes (L01d)
 
-Par le système existant de Patrick (`/root/appli-backup/twenty-backup/backup_multi.py` : archive chiffrée AES-256 vers OVH S3, alertes Telegram), avec une configuration à part (`sauvegarde/config.json`) : **une par jour à 2 h 30, 30 jours de rétention**, préfixe `spettacoli-backups/`. Contenu : la base et les visuels des campagnes (`storage/app/public`).
+Assurées par le système commun du serveur, hors de ce dépôt (`/opt/sauvegardes/`, voir son `README.md`) : restic vers OVH S3 (bucket `sauvegardes-vps`, verrouillage 30 jours), timers systemd `sauvegarde-*`, alertes Telegram, signal de vie healthchecks.io.
+
+- `spettacoli/base-de-donnees` : `pg_dump` de la base, toutes les heures (:10) ;
+- `spettacoli/fichiers` : volume `spettacoli_fichiers`, à 3 h 15 et 13 h 15 (Paris) ;
+- contrôle le dimanche à 5 h : intégrité, purge et vraie restauration de la base dans un conteneur jetable.
 
 ```bash
-# Une seule fois : venv propre à Spettacoli (paquet python3-venv requis)
-cd /opt/docker/spettacoli/deploy/sauvegarde
-python3 -m venv venv && venv/bin/pip install -r /root/appli-backup/twenty-backup/requirements.txt
-# Cron de root
-30 2 * * * /opt/docker/spettacoli/deploy/sauvegarde/sauvegarde.sh
+systemctl start sauvegarde-quotidienne   # sauvegarde manuelle avant une intervention
 ```
-
-Sauvegarde immédiate : `./sauvegarde/sauvegarde.sh` (journal détaillé dans `/root/appli-backup/twenty-backup/backup_multi.log`). Restauration vérifiée le 12/10/2026 dans un conteneur PostGIS jetable. Ne pas utiliser `restore_multi.py` à l'aveugle : il remplace la base de production.
 
 ## Surveillance (L01e)
 
