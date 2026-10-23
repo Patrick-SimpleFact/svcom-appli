@@ -2,7 +2,9 @@ La page d'accueil du back-office, **Mes actions du jour**. Elle réunit tout ce 
 
 ### Mes actions du jour
 
-Une **carte à la fois**, la plus urgente d'abord (« Carte 1 sur 12 ») :
+Une **carte à la fois** (« Carte 1 sur 12 »). **Les plus récentes passent en premier** : d'abord les cartes arrivées aujourd'hui (en général, ce que la nuit a ajouté), puis celles d'hier, et ainsi de suite ; dans un même jour, la plus urgente d'abord. En haut, le nombre de cartes « ajoutées aujourd'hui » : au minimum, traitez celles-là chaque jour. Chaque carte porte sa date d'arrivée (« Ajoutée aujourd'hui (ven. 23 oct.) », « Ajoutée hier », « Ajoutée le lun. 19 oct. ») : pour une file confiée à l'assistant IA, c'est le jour où l'IA l'a examinée ; pour les autres, le jour où l'élément est entré dans la file.
+
+Sur chaque carte :
 - **la question en clair** : « Faut-il publier cette annonce dans l'agenda ? », « Ces deux séances sont-elles la même ? », « Est-ce le même spectacle dans tous ces lieux ? », « Quel genre pour cette catégorie ? » ;
 - **les faits utiles** : titres, billetteries, dates et heures, lieux, prix. Deux séances à comparer sont présentées côte à côte (Séance A, Séance B) ;
 - **toujours un lien « Voir chez la billetterie »** : l'annonce à trier, chacune des deux séances, chaque lieu d'un spectacle à contrôler, des exemples d'annonces d'une catégorie à classer ;

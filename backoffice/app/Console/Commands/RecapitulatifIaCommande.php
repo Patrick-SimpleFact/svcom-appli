@@ -37,7 +37,7 @@ class RecapitulatifIaCommande extends Command
             $forfait = [];
         }
 
-        $mail = new RecapitulatifIa($mesActions->nombre(), $mesActions->enExamen(), $activite, $forfait);
+        $mail = new RecapitulatifIa($mesActions->nombre(), $mesActions->nouvelles(), $mesActions->enExamen(), $activite, $forfait);
         Mail::to(SuperviserSources::destinataires())->send($mail);
         $this->info($mail->envelope()->subject);
 

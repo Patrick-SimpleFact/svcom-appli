@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
 /**
- * E-mail de 8 h (plan-module-ia v2) : le nombre de décisions qui attendent Patrick, avec le lien direct,
+ * E-mail de 8 h (plan-module-ia v2) : le nombre de décisions qui attendent Patrick (dont celles de la nuit), avec le lien direct,
  * ce que l'assistant IA a fait depuis la veille, et l'état du forfait Ollama.
  */
 class RecapitulatifIa extends Mailable
@@ -23,6 +23,7 @@ class RecapitulatifIa extends Mailable
      */
     public function __construct(
         public int $actions,
+        public int $nouvelles,
         public int $enExamen,
         public array $activite,
         public array $forfait,
@@ -31,7 +32,7 @@ class RecapitulatifIa extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(subject: $this->actions > 0
-            ? "Spettacoli : {$this->actions} action(s) à faire aujourd’hui"
+            ? "Spettacoli : {$this->actions} action(s) à faire aujourd’hui, dont {$this->nouvelles} ajoutée(s) cette nuit"
             : 'Spettacoli : rien à faire aujourd’hui');
     }
 

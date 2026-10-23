@@ -60,6 +60,40 @@ it('montre la décision la plus urgente, l’applique d’un clic et passe à la
         ->and($plusTard->fresh()->decision)->toBe(['issue' => 'exclu']);
 });
 
+it('montre d’abord les cartes arrivées le plus récemment, la plus urgente d’abord dans un même jour, avec leur date', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-10-23 07:30', 'Europe/Paris'));
+    $ancienneUrgente = ($this->aTrier)('Edmond', urgence: 3);
+    $ancienneUrgente->forceFill(['created_at' => now()->subDays(2)])->save();
+    $hier = ($this->aTrier)('Soirée contes', urgence: 3);
+    $hier->forceFill(['created_at' => now()->subDay()])->save();
+    $nuit = ($this->aTrier)('Le Misanthrope', urgence: 0);
+    $nuitUrgente = ($this->aTrier)('Cyrano', urgence: 2);
+
+    expect(app(MesActions::class)->nouvelles())->toBe(2);
+
+    Livewire::test(MesActionsDuJour::class)
+        ->assertSee('4 décision(s) à prendre, dont 2 ajoutée(s) aujourd’hui.')
+        ->assertSee('Cyrano')->assertSee('Ajoutée aujourd’hui (ven. 23 oct.)')
+        ->call('decider', $nuitUrgente->id, 'garder')
+        ->assertSee('Le Misanthrope')
+        ->call('decider', $nuit->id, 'garder')
+        ->assertSee('Soirée contes')->assertSee('Ajoutée hier (jeu. 22 oct.)')
+        ->call('decider', $hier->id, 'garder')
+        ->assertSee('Edmond')->assertSee('Ajoutée le mer. 21 oct.');
+});
+
+it('date une carte d’une file confiée à l’IA du jour où l’IA l’a examinée', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-10-23 07:30', 'Europe/Paris'));
+    Parametre::firstWhere('cle', 'ia_mode_a_trier')->update(['valeur' => 'actif']);
+    $vieille = ($this->aTrier)('Atelier théâtre');
+    $vieille->forceFill(['created_at' => now()->subDays(10)])->save();
+    PropositionIa::create(['element_a_traiter_id' => $vieille->id, 'file' => FileATraiter::ATrier, 'proposition' => [], 'confiance' => 0,
+        'justification' => 'Les modèles ne sont pas d’accord.', 'modele' => 'cascade', 'statut' => StatutPropositionIa::Doute]);
+
+    expect(app(MesActions::class)->nouvelles())->toBe(1);
+    Livewire::test(MesActionsDuJour::class)->assertSee('Ajoutée aujourd’hui (ven. 23 oct.)');
+});
+
 it('remet une carte à plus tard, puis la reprend', function () {
     $a = ($this->aTrier)('Edmond', urgence: 3);
     ($this->aTrier)('Soirée contes');
