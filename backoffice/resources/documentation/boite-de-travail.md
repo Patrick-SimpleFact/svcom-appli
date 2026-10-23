@@ -12,6 +12,7 @@ Sur chaque carte :
 - **des boutons dont la conséquence est écrite dessous** (« Une seule date dans l'app », « N'apparaîtra jamais dans l'app »…). Le clic décide tout de suite, comme dans la file, et passe à la carte suivante. **Appliquer la proposition de l'IA** reprend sa proposition telle quelle.
 - **Plus tard** : passe à la carte suivante ; la carte revient quand vous cliquez **Les reprendre**, ou le lendemain.
 - Pour un spectacle à contrôler, cochez les lieux qui jouent un autre spectacle, puis **Détacher les lieux cochés**.
+- Pour un **lieu à vérifier** (nom imprécis comme « Paris » ou « Salle des fêtes », position approximative, commune introuvable) : la carte montre ce qu'a écrit la billetterie, l'adresse (lien vers la carte) et les lieux connus à moins de 300 m. Trois réponses : **Enregistrer ce nom** (le vrai nom, que les collectes ne changeront plus), **Rattacher au lieu choisi** (un lieu proche, ou trouvé par la recherche : ses séances y passent et les collectes suivantes y vont directement) ou **Le lieu est bon**. Pour corriger l'adresse ou la position, le lien ouvre la fiche du lieu.
 
 Pour une file confiée à l'assistant IA (Réglages › Assistant IA), seuls apparaissent les éléments qu'il a examinés sans trancher, ou ce qu'il propose en observation ; ceux qu'il n'a pas encore examinés sont comptés à part (« en cours d'examen par l'IA »). Pour les autres files, tous les éléments en attente apparaissent.
 

@@ -31,6 +31,13 @@ class MesActionsDuJour extends Widget
     /** @var list<int> lieux cochés pour « Détacher » */
     public array $lieux = [];
 
+    /** Lieu à vérifier : le vrai nom saisi, la recherche d'un lieu connu et le lieu choisi pour le rattachement. */
+    public string $nouveauNom = '';
+
+    public string $rechercheLieu = '';
+
+    public ?int $lieuChoisi = null;
+
     public function mount(): void
     {
         if ($this->jour !== today()->toDateString()) {
@@ -43,21 +50,26 @@ class MesActionsDuJour extends Widget
         $element = ElementATraiter::with(['cible', 'propositionIa'])->findOrFail($id);
 
         try {
-            $message = app(MesActions::class)->decider($element, $choix, array_map('intval', $this->lieux));
+            $message = app(MesActions::class)->decider($element, $choix, array_map('intval', $this->lieux), $this->nouveauNom, $this->lieuChoisi);
             Notification::make()->success()->title($message)->send();
         } catch (Throwable $e) {
             report($e);
             Notification::make()->danger()->title('Décision impossible')->body($e->getMessage())->send();
         }
 
-        $this->lieux = [];
+        $this->reinitialiserCarte();
         $this->dispatch('boite-reclassee');
     }
 
     public function plusTard(int $id): void
     {
         $this->passes[] = $id;
-        $this->lieux = [];
+        $this->reinitialiserCarte();
+    }
+
+    private function reinitialiserCarte(): void
+    {
+        [$this->lieux, $this->nouveauNom, $this->rechercheLieu, $this->lieuChoisi] = [[], '', '', null];
     }
 
     public function toutReprendre(): void
@@ -78,6 +90,7 @@ class MesActionsDuJour extends Widget
             'enExamen' => $mesActions->enExamen(),
             'element' => $element,
             'carte' => $element ? $mesActions->carte($element) : null,
+            'lieuxTrouves' => $element ? $mesActions->chercherLieux($element, $this->rechercheLieu) : [],
         ];
     }
 }
