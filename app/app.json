@@ -14,7 +14,7 @@
         "tinted": "./assets/images/icon-ios-teinte.png"
       },
       "bundleIdentifier": "fr.spettacoli.app",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "appleTeamId": "X4CB98WRUP",
       "usesAppleSignIn": true,
       "supportsTablet": false,
@@ -49,6 +49,7 @@
       "expo-router",
       "./plugins/with-scene-lifecycle",
       "./plugins/with-signature-play",
+      "./plugins/with-obscurcissement",
       [
         "expo-splash-screen",
         {
