@@ -52,10 +52,26 @@ it('lit chaque horaire à venir comme une séance, avec son lieu, son lien et so
         ->and($seance->debut->timezoneName)->toBe('Europe/Paris')
         ->and($seance->lieuNom)->toBe($premier['location']['name'])
         ->and($seance->lieuCodePostal)->toBe('84000')
-        ->and($seance->lien)->toBe("https://openagenda.com/fr/avignon/events/{$premier['slug']}");
+        ->and($seance->lien)->toBe("https://openagenda.com/fr/avignon/events/{$premier['uid']}_{$premier['slug']}");
 
     expect($annonces->pluck('titre'))->not->toContain('Concert annulé (test)')          // statut 6 : pas publié
         ->and($annonces->firstWhere('titre', 'Spectacle complet (test)')->complet)->toBeTrue(); // statut 5
+});
+
+it('écarte les lieux hors de France, garde l’outre-mer, et fait un lien valable même avec un slug en chiffres', function () {
+    $evenement = $this->evenements['events'][0];
+    $ailleurs = fn (string $uid, ?string $pays, array $autres = []) => [...$evenement, 'uid' => $uid, ...$autres,
+        'location' => [...$evenement['location'], 'countryCode' => $pays]];
+
+    $annonces = ($this->lire)(($this->brut)([['uid' => '1', 'slug' => 'shotgun', 'events' => [
+        $ailleurs('1001', 'AT'),                    // Kunsthaus Graz
+        $ailleurs('1002', 'BE'),
+        $ailleurs('1003', 'GP'),                    // Guadeloupe : en France
+        $ailleurs('1004', null, ['slug' => '2120']), // pays absent : gardé
+    ]]]));
+
+    expect($annonces->pluck('identifiantSpectacle')->unique()->values()->all())->toBe(['1003', '1004'])
+        ->and($annonces->firstWhere('identifiantSpectacle', '1004')->lien)->toBe('https://openagenda.com/fr/shotgun/events/1004_2120');
 });
 
 it('ne lit qu’une fois un événement relayé par plusieurs agendas', function () {

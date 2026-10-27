@@ -20,7 +20,9 @@ use Throwable;
  * « Agendas OpenAgenda »), toutes les 4 h de 6 h à 22 h. Chaque passage prend tous les événements en cours et à venir
  * (et non les seuls modifiés : le moteur retire ce qu'il ne voit plus). Un agenda abandonné (rien à venir, dernier
  * événement il y a plus d'un an) n'est interrogé qu'une fois par semaine, et redevient normal dès qu'il publie.
- * Chaque horaire est une séance ; un événement relayé par plusieurs agendas n'est lu qu'une fois.
+ * Chaque horaire est une séance ; un événement relayé par plusieurs agendas n'est lu qu'une fois. Les agendas suivis
+ * relaient aussi des dates à l'étranger (Graz, Bruxelles, Brazzaville…) : seuls les lieux en France (outre-mer compris)
+ * sont gardés.
  */
 class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
 {
@@ -32,6 +34,9 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
     private const COMPLET = 5;
 
     private const ANNULE = 6;
+
+    /** Codes pays ISO de la France et de l'outre-mer. */
+    private const PAYS_FRANCE = ['FR', 'GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'BL', 'MF', 'NC', 'PF', 'WF', 'TF'];
 
     public function __construct(private ApiOpenagenda $api) {}
 
@@ -149,6 +154,12 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
         }
 
         $lieu = $evenement['location'] ?? [];
+        $pays = strtoupper(trim((string) ($lieu['countryCode'] ?? '')));
+
+        if ($pays !== '' && ! in_array($pays, self::PAYS_FRANCE, true)) {
+            return;
+        }
+
         $fuseau = $lieu['timezone'] ?? $evenement['timezone'] ?? self::FUSEAU;
         $conditions = mb_strtolower((string) ($evenement['conditions'] ?? ''));
         $image = $evenement['image'] ?? null;
@@ -170,7 +181,7 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
                 titre: trim((string) ($evenement['title'] ?? '')),
                 debut: $debut,
                 heureConnue: $debut->format('H:i') !== '00:00',
-                lien: "https://openagenda.com/fr/{$agendaSlug}/events/".($evenement['slug'] ?? $evenement['uid']),
+                lien: self::lien($evenement, $agendaSlug),
                 lieuNom: trim((string) ($lieu['name'] ?? '')) ?: null,
                 lieuAdresse: trim((string) ($lieu['address'] ?? '')) ?: null,
                 lieuCodePostal: trim((string) ($lieu['postalCode'] ?? '')) ?: null,
@@ -187,6 +198,17 @@ class ConnecteurOpenagenda implements CollecteParIntervalle, Connecteur
                 identifiantSpectacle: (string) $evenement['uid'],
             );
         }
+    }
+
+    /**
+     * Adresse de la fiche, sous la forme « uid_slug » de l'adresse canonique d'OpenAgenda : avec le slug seul, un slug
+     * fait de chiffres (« 2120 ») est pris pour un identifiant et la page affiche « Oups », et un slug renommé casse le lien.
+     */
+    private static function lien(array $evenement, string $agendaSlug): string
+    {
+        $slug = trim((string) ($evenement['slug'] ?? ''));
+
+        return "https://openagenda.com/fr/{$agendaSlug}/events/".$evenement['uid'].($slug === '' ? '' : "_{$slug}");
     }
 
     /** Met à jour le suivi de l'agenda : dernier événement, nombre à venir, fréquence d'interrogation. */
