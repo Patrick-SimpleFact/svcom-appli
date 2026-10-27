@@ -80,7 +80,7 @@ export default function AutourDeMoi() {
         <Text style={styles.titre} accessibilityRole="header">{titreAccueil(new Date())}</Text>
         <MessagesService />
         {position.etat === 'a_expliquer' ? (
-          <Explication texte="Pour vous montrer les spectacles autour de vous, Spettacoli a besoin de votre position. Elle n’est jamais enregistrée." action="Autoriser la localisation" onPress={position.autoriser} />
+          <Explication texte="Pour vous montrer les spectacles autour de vous, Spettacoli a besoin de votre position. Elle n’est jamais enregistrée." action="Continuer" onPress={position.autoriser} />
         ) : (
           <Chargement texte="Recherche de votre position…" />
         )}
