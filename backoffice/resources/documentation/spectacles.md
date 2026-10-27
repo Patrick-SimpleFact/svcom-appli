@@ -11,7 +11,7 @@ Les onglets **Nouveaux aujourd'hui** et **Nouveaux hier** listent les spectacles
 ### La fiche d'un spectacle
 
 - **Représentations** : les séances à venir publiées dans l'app.
-- **Séances collectées** : une ligne par annonce de billetterie. Deux billetteries qui vendent la même séance donnent deux lignes avec le même numéro de séance. Un filtre isole les annonces actives ou celles disparues des flux.
+- **Séances collectées** : une ligne par annonce de billetterie. Deux billetteries qui vendent la même séance donnent deux lignes avec le même numéro de séance. Un filtre isole les annonces actives ou celles disparues des flux. Un lien retiré depuis « Mes actions du jour » est marqué « Lien retiré à la main » ; **Remettre le lien** le rend de nouveau visible dans l'app (si la billetterie ne vend plus la séance, la collecte suivante le retirera).
 
 ### Les actions
 

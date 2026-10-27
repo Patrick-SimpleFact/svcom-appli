@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\StatutElement;
 use App\Ia\MesActions;
 use App\Models\ElementATraiter;
 use Filament\Notifications\Notification;
@@ -31,6 +32,9 @@ class MesActionsDuJour extends Widget
     /** @var list<int> lieux cochés pour « Détacher » */
     public array $lieux = [];
 
+    /** @var array<int|string, int|string> spectacle à contrôler : numéro de spectacle choisi pour chaque lieu (1 par défaut) */
+    public array $groupes = [];
+
     /** Lieu à vérifier : le vrai nom saisi, la recherche d'un lieu connu et le lieu choisi pour le rattachement. */
     public string $nouveauNom = '';
 
@@ -50,7 +54,8 @@ class MesActionsDuJour extends Widget
         $element = ElementATraiter::with(['cible', 'propositionIa'])->findOrFail($id);
 
         try {
-            $message = app(MesActions::class)->decider($element, $choix, array_map('intval', $this->lieux), $this->nouveauNom, $this->lieuChoisi);
+            $message = app(MesActions::class)->decider($element, $choix, array_map('intval', $this->lieux), $this->nouveauNom, $this->lieuChoisi,
+                collect($this->groupes)->mapWithKeys(fn ($numero, $lieu) => [(int) $lieu => max(1, (int) $numero)])->all());
             Notification::make()->success()->title($message)->send();
         } catch (Throwable $e) {
             report($e);
@@ -61,6 +66,24 @@ class MesActionsDuJour extends Widget
         $this->dispatch('boite-reclassee');
     }
 
+    /** « Supprimer » un spectacle, un lieu, une séance ou un lien de billetterie montré sur la carte : il est masqué. */
+    public function masquer(int $id, string $quoi, int $cible): void
+    {
+        $element = ElementATraiter::with('cible')->findOrFail($id);
+
+        try {
+            Notification::make()->success()->title(app(MesActions::class)->masquer($element, $quoi, $cible))->send();
+        } catch (Throwable $e) {
+            report($e);
+            Notification::make()->danger()->title('Masquage impossible')->body($e->getMessage())->send();
+        }
+
+        if ($element->fresh()->statut !== StatutElement::EnAttente) {
+            $this->reinitialiserCarte();
+            $this->dispatch('boite-reclassee');
+        }
+    }
+
     public function plusTard(int $id): void
     {
         $this->passes[] = $id;
@@ -69,7 +92,7 @@ class MesActionsDuJour extends Widget
 
     private function reinitialiserCarte(): void
     {
-        [$this->lieux, $this->nouveauNom, $this->rechercheLieu, $this->lieuChoisi] = [[], '', '', null];
+        [$this->lieux, $this->groupes, $this->nouveauNom, $this->rechercheLieu, $this->lieuChoisi] = [[], [], '', '', null];
     }
 
     public function toutReprendre(): void

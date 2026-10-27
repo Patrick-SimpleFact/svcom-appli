@@ -2,8 +2,12 @@
 
 namespace App\Filament\Resources\Spectacles\RelationManagers;
 
+use App\Actions\PublierSource;
 use App\Models\Offre;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -13,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
  * Séances collectées rattachées au spectacle (K07), en attendant leur publication en représentations (K08).
  * Une ligne par annonce de billetterie : deux billetteries qui vendent la même séance donnent deux lignes du même groupe.
  * Toutes les annonces par défaut (demande de Patrick) ; un filtre isole les actives ou celles disparues des flux
- * (gardées 30 jours après la séance, K08b).
+ * (gardées 30 jours après la séance, K08b). Un lien retiré à la main (« Mes actions du jour ») se remet d'ici.
  */
 class OffresRelationManager extends RelationManager
 {
@@ -47,10 +51,21 @@ class OffresRelationManager extends RelationManager
                     ->url(fn (Offre $o): ?string => $o->lien, shouldOpenInNewTab: true)
                     ->color('primary'),
                 TextColumn::make('donnees_normalisees.titre')->label('Titre chez la source')->wrap(),
-                TextColumn::make('disparue_le')->label('Disparue le')->dateTime('d/m/Y H:i', 'Europe/Paris')->placeholder('—'),
+                TextColumn::make('disparue_le')->label('Disparue le')->dateTime('d/m/Y H:i', 'Europe/Paris')->placeholder('—')
+                    ->description(fn (Offre $o): ?string => $o->masquee ? 'Lien retiré à la main' : null),
                 TextColumn::make('seance')->label('Séance')
                     ->state(fn (Offre $o): string => 'n° '.($o->meme_seance_que_id ?? $o->id))
                     ->tooltip('Les lignes avec le même numéro sont la même séance, vendue par plusieurs billetteries.'),
+            ])
+            ->recordActions([
+                Action::make('remettreLien')->label('Remettre le lien')->icon(Heroicon::OutlinedEye)->color('success')
+                    ->visible(fn (Offre $o): bool => $o->masquee)
+                    ->action(function (Offre $o): void {
+                        // De nouveau en vente ; si la billetterie ne la vend plus, la collecte suivante la retirera.
+                        $o->update(['masquee' => false, 'disparue_le' => null]);
+                        app(PublierSource::class)->publierGroupes($o->newCollection([$o]));
+                        Notification::make()->success()->title('Lien remis sur la séance')->send();
+                    }),
             ])
             ->filters([
                 SelectFilter::make('etat')->label('Annonces')

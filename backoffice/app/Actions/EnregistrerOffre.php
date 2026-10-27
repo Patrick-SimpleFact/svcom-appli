@@ -55,7 +55,8 @@ class EnregistrerOffre
             'empreinte' => $annonce->empreinte(),
             'vue_le' => now(),
             'derniere_collecte_id' => $collecte?->id,
-            'disparue_le' => null,
+            // Lien retiré à la main : l'offre reste disparue, la collecte ne la remet jamais en vente.
+            'disparue_le' => $offre->masquee ? ($offre->disparue_le ?? now()) : null,
         ])->save();
 
         return [$offre, $avant !== $this->cleSeance($offre), $empreinteAvant !== $offre->empreinte];

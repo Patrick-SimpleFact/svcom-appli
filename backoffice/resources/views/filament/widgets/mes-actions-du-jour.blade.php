@@ -38,6 +38,7 @@
                                     @if ($seance['lien'])
                                         <a href="{{ $seance['lien'] }}" target="_blank" rel="noopener" style="font-size:13px;text-decoration:underline">Voir chez la billetterie</a>
                                     @endif
+                                    @include('filament.widgets.mes-actions-masquer', ['actions' => $seance['masquer']])
                                 @else
                                     <div style="font-size:14px;opacity:.7">Cette annonce n’existe plus.</div>
                                 @endif
@@ -74,18 +75,24 @@
                 @endif
 
                 @if ($carte['lieux'])
-                    <div style="display:flex;flex-direction:column;gap:6px">
-                        <div style="font-size:13px;opacity:.65">Cochez les lieux qui jouent un AUTRE spectacle, si besoin :</div>
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                        <div style="font-size:13px;opacity:.65">Donnez le même numéro aux lieux qui jouent le même spectacle (tous en 1 si c’est le même partout) :</div>
                         @foreach ($carte['lieux'] as $lieu)
-                            <label style="display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer">
-                                <input type="checkbox" wire:model="lieux" value="{{ $lieu['id'] }}" style="margin-top:3px">
+                            <div wire:key="lieu-{{ $element->id }}-{{ $lieu['id'] }}" style="display:flex;gap:10px;align-items:flex-start;font-size:14px">
+                                <select wire:model="groupes.{{ $lieu['id'] }}" aria-label="Numéro de spectacle" style="border:1px solid rgba(127,127,127,.4);border-radius:6px;padding:2px 6px;background:transparent;min-width:120px">
+                                    @foreach (range(1, count($carte['lieux'])) as $numero)
+                                        <option value="{{ $numero }}">Spectacle {{ $numero }}</option>
+                                    @endforeach
+                                </select>
                                 <span><strong>{{ $lieu['nom'] }}</strong> — {{ $lieu['dates'] }} date(s), {{ $lieu['billetteries'] }}
+                                    @if ($lieu['masque'])<x-filament::badge color="danger" size="sm" style="display:inline-flex">Lieu masqué</x-filament::badge>@endif
                                     @if ($lieu['titres'])<br><span style="opacity:.7">{{ $lieu['titres'] }}</span>@endif
                                     @foreach ($lieu['liens'] as [$nom, $url])
                                         <br><a href="{{ $url }}" target="_blank" rel="noopener" style="font-size:13px;text-decoration:underline">Voir chez {{ $nom }}</a>
                                     @endforeach
+                                    @include('filament.widgets.mes-actions-masquer', ['actions' => $lieu['masquer']])
                                 </span>
-                            </label>
+                            </div>
                         @endforeach
                     </div>
                 @endif
@@ -165,6 +172,10 @@
                         <div style="font-size:12px;opacity:.65;margin-top:4px">Passe à la carte suivante.</div>
                     </div>
                 </div>
+
+                @if ($carte['masquer'])
+                    @include('filament.widgets.mes-actions-masquer', ['actions' => $carte['masquer']])
+                @endif
 
                 @if ($carte['lien'])
                     <a href="{{ $carte['lien'] }}" style="font-size:13px;text-decoration:underline;opacity:.75">Ouvrir la file « {{ $carte['file'] }} » pour plus de détails</a>

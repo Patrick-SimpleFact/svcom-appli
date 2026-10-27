@@ -7,6 +7,8 @@ use App\Actions\DeciderTri;
 use App\Actions\EnregistrerCorrespondanceGenre;
 use App\Actions\FusionnerLieux;
 use App\Actions\IgnorerCategorie;
+use App\Actions\MasquerRepresentation;
+use App\Actions\PublierSource;
 use App\Actions\RattacherLieu;
 use App\Actions\SeparerSpectacle;
 use App\Enums\FileATraiter;
@@ -24,6 +26,7 @@ use App\Models\ElementATraiter;
 use App\Models\Genre;
 use App\Models\Lieu;
 use App\Models\Offre;
+use App\Models\Representation;
 use App\Models\Spectacle;
 use App\Support\Texte;
 use Carbon\CarbonImmutable;
@@ -110,7 +113,7 @@ class MesActions
     /**
      * Ce qu'affiche la carte : question, faits, avis de l'IA, boutons (clé => [libellé, conséquence, couleur]).
      *
-     * @return array{file: string, urgence: ?string, ajoutee: string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, lieuAVerifier: ?array, billetteries: list<array{0: string, 1: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
+     * @return array{file: string, urgence: ?string, ajoutee: string, question: string, faits: list<array{0: string, 1: ?string, 2?: ?string}>, comparaison: ?array, lieux: ?array, lieuAVerifier: ?array, billetteries: list<array{0: string, 1: string}>, masquer: list<array{0: string, 1: int, 2: string, 3: string}>, avis: ?string, proposition: ?string, boutons: array<string, array{0: string, 1: string, 2: string}>, lien: ?string}
      */
     public function carte(ElementATraiter $element): array
     {
@@ -119,7 +122,7 @@ class MesActions
             'file' => $element->file->getLabel(),
             'urgence' => $element->urgence >= 2 ? Urgence::LIBELLES[$element->urgence] : null,
             'ajoutee' => $this->ajoutee($element),
-            'faits' => [], 'comparaison' => null, 'lieux' => null, 'lieuAVerifier' => null, 'boutons' => [], 'billetteries' => [],
+            'faits' => [], 'comparaison' => null, 'lieux' => null, 'lieuAVerifier' => null, 'boutons' => [], 'billetteries' => [], 'masquer' => [],
             'avis' => $element->douteIa?->justification,
             'proposition' => $element->propositionIa
                 ? $this->assistant->tache($element->file)->libelle($element->propositionIa)." ({$element->propositionIa->confiance} %) — ".$element->propositionIa->justification
@@ -169,9 +172,11 @@ class MesActions
                 'question' => 'Est-ce le même spectacle dans tous ces lieux ?',
                 'faits' => [['Spectacle', $element->cible?->titre ?? ($d['titre'] ?? '')], ['Pourquoi', $d['motif'] ?? null]],
                 'lieux' => $this->lieux($element),
+                'masquer' => $element->cible instanceof Spectacle && ! $element->cible->masque
+                    ? [['spectacle', $element->cible_id, 'Masquer le spectacle', 'Le spectacle et toutes ses dates disparaissent de l’app.']] : [],
                 'boutons' => [
                     'confirmer' => ['Même spectacle partout', 'Le regroupement est gardé tel quel.', 'success'],
-                    'detacher' => ['Détacher les lieux cochés', 'Leurs dates passent dans un nouveau spectacle.', 'danger'],
+                    'repartir' => ['Séparer selon les numéros', 'Le spectacle 1 garde ses dates ; chaque autre numéro devient un nouveau spectacle.', 'danger'],
                 ]],
             FileATraiter::LieuAVerifier => [...$carte, ...$this->carteLieu($element)],
             default => [...$carte,
@@ -187,8 +192,9 @@ class MesActions
      * @param  list<int>  $lieux  pour « detacher » : les lieux cochés
      * @param  ?string  $nom  pour « renommer » (lieu à vérifier) : le vrai nom
      * @param  ?int  $lieuId  pour « rattacher » (lieu à vérifier) : le lieu connu qui le remplace
+     * @param  array<int, int>  $groupes  pour « repartir » : lieu_id => numéro de spectacle
      */
-    public function decider(ElementATraiter $element, string $choix, array $lieux = [], ?string $nom = null, ?int $lieuId = null): string
+    public function decider(ElementATraiter $element, string $choix, array $lieux = [], ?string $nom = null, ?int $lieuId = null, array $groupes = []): string
     {
         if ($element->statut !== StatutElement::EnAttente) {
             throw new InvalidArgumentException('Cet élément a déjà été décidé.');
@@ -212,6 +218,7 @@ class MesActions
                 $choix === 'fusionner' ? TypeDecisionDedoublonnage::Fusionner : TypeDecisionDedoublonnage::Separer),
             [FileATraiter::SpectacleAControler, 'confirmer'] => app(SeparerSpectacle::class)->confirmer(Spectacle::findOrFail($element->cible_id)),
             [FileATraiter::SpectacleAControler, 'detacher'] => app(SeparerSpectacle::class)->handle(Spectacle::findOrFail($element->cible_id), $lieux),
+            [FileATraiter::SpectacleAControler, 'repartir'] => app(SeparerSpectacle::class)->repartir(Spectacle::findOrFail($element->cible_id), $groupes),
             [FileATraiter::LieuAVerifier, 'verifie'] => LieuAVerifierResource::marquerVerifies($element->newCollection([$element])),
             [FileATraiter::LieuAVerifier, 'renommer'] => $this->renommerLieu($element, (string) $nom),
             [FileATraiter::LieuAVerifier, 'rattacher'] => app(FusionnerLieux::class)->handle(
@@ -222,6 +229,84 @@ class MesActions
         };
 
         return 'Décision enregistrée.';
+    }
+
+    /**
+     * « Supprimer » depuis une carte : on masque (immédiat, réversible depuis la fiche, jamais réaffiché par la collecte).
+     * - spectacle, lieu : masqués dans l'app avec toutes leurs dates ;
+     * - seance (une offre) : sa représentation est masquée ; dates (un lieu) : toutes les dates du spectacle de la carte à ce lieu ;
+     * - lien (une offre) : ce lien de billetterie est retiré de sa séance, les autres billetteries restent.
+     * Seul ce que montre la carte peut être masqué. La carte est traitée quand ce qu'elle demande n'a plus d'objet :
+     * le spectacle à contrôler, le lieu à vérifier, ou une des deux séances à comparer.
+     */
+    public function masquer(ElementATraiter $element, string $quoi, int $id): string
+    {
+        if ($element->statut !== StatutElement::EnAttente) {
+            throw new InvalidArgumentException('Cet élément a déjà été décidé.');
+        }
+
+        $d = $element->donnees ?? [];
+        $offresCarte = match ($element->file) {
+            FileATraiter::DoublonProbable, FileATraiter::FusionAControler => Offre::whereKey(array_filter([$d['offre_a_id'] ?? null, $d['offre_b_id'] ?? null])),
+            FileATraiter::SpectacleAControler => Offre::where('spectacle_id', $element->cible_id),
+            FileATraiter::LieuAVerifier => Offre::where('lieu_id', $element->cible_id),
+            default => Offre::whereRaw('false'),
+        };
+        $offre = in_array($quoi, ['seance', 'lien'], true) ? (clone $offresCarte)->findOrFail($id) : null;
+        $surLaCarte = fn (string $colonne, string $classe): int => (clone $offresCarte)->where($colonne, $id)->exists()
+            || ($element->cible instanceof $classe && (int) $element->cible_id === $id) ? $id : throw new InvalidArgumentException('Cet élément n’est pas sur la carte.');
+
+        $message = match ($quoi) {
+            'spectacle' => $this->masquerModele(Spectacle::findOrFail($surLaCarte('spectacle_id', Spectacle::class)), 'Spectacle masqué'),
+            'lieu' => $this->masquerModele(Lieu::findOrFail($surLaCarte('lieu_id', Lieu::class)), 'Lieu masqué'),
+            'seance' => $this->masquerRepresentations([$offre->representation_id], 'Séance masquée'),
+            'dates' => $this->masquerRepresentations((clone $offresCarte)->where('lieu_id', $id)->whereNotNull('representation_id')->distinct()->pluck('representation_id')->all(), 'Dates masquées'),
+            'lien' => $this->retirerLien($offre),
+            default => throw new InvalidArgumentException("Masquage inconnu : {$quoi}."),
+        };
+
+        $sansObjet = match ($element->file) {
+            FileATraiter::DoublonProbable, FileATraiter::FusionAControler => true,
+            FileATraiter::SpectacleAControler => $quoi === 'spectacle',
+            FileATraiter::LieuAVerifier => $quoi === 'lieu',
+            default => false,
+        };
+
+        if ($sansObjet) {
+            $element->update(['statut' => StatutElement::Traite, 'decision' => ['masque' => $quoi, 'id' => $id],
+                'traite_par' => auth()->user() instanceof Admin ? auth()->id() : null, 'traite_le' => now()]);
+        }
+
+        return $message.' (réversible depuis sa fiche).';
+    }
+
+    private function masquerModele(Spectacle|Lieu $modele, string $message): string
+    {
+        $modele->update(['masque' => true]);
+
+        return $message;
+    }
+
+    /** @param  list<?int>  $ids */
+    private function masquerRepresentations(array $ids, string $message): string
+    {
+        $representations = Representation::whereKey(array_filter($ids))->get();
+
+        if ($representations->isEmpty()) {
+            throw new InvalidArgumentException('Pas encore de date publiée à masquer.');
+        }
+
+        $representations->each(fn (Representation $r) => app(MasquerRepresentation::class)->masquer($r));
+
+        return $message;
+    }
+
+    private function retirerLien(Offre $offre): string
+    {
+        $offre->update(['masquee' => true, 'disparue_le' => $offre->disparue_le ?? now()]);
+        app(PublierSource::class)->publierGroupes($offre->newCollection([$offre]));
+
+        return 'Lien retiré de la séance';
     }
 
     /** Lieu à vérifier : ce qu'a écrit la billetterie, l'adresse sur une carte, les lieux connus tout près. @return array<string, mixed> */
@@ -251,6 +336,7 @@ class MesActions
                 'proches' => $this->lieuxProches($lieu),
                 'fiche' => LieuResource::getUrl('edit', ['record' => $lieu]),
             ] : null,
+            'masquer' => $lieu && ! $lieu->masque ? [['lieu', $lieu->id, 'Masquer le lieu', 'Le lieu et toutes ses séances disparaissent de l’app.']] : [],
             'boutons' => ['verifie' => ['Le lieu est bon', 'Il est gardé tel quel et sort de la liste.', 'success']],
         ];
     }
@@ -335,10 +421,16 @@ class MesActions
             'lieu' => collect([$offre->lieu?->nom, $offre->lieu?->ville?->nom])->filter()->implode(', '),
             'prix' => $prix ?: null,
             'lien' => $offre->lien,
+            'masquer' => $offre->masquee ? [] : array_values(array_filter([
+                $offre->representation_id ? ['seance', $offre->id, 'Masquer la séance', 'La date disparaît de l’app, toutes billetteries confondues.'] : null,
+                filled($offre->lien) ? ['lien', $offre->id, 'Retirer ce lien', 'Seul le lien '.($offre->source?->nom ?? 'de cette billetterie').' disparaît de cette séance.'] : null,
+                $offre->lieu && ! $offre->lieu->masque ? ['lieu', $offre->lieu_id, 'Masquer le lieu', 'Le lieu et toutes ses séances disparaissent de l’app.'] : null,
+                $offre->spectacle && ! $offre->spectacle->masque ? ['spectacle', $offre->spectacle_id, 'Masquer le spectacle', 'Le spectacle et toutes ses dates disparaissent de l’app.'] : null,
+            ])),
         ];
     }
 
-    /** @return list<array{id: int, nom: string, dates: int, billetteries: string, titres: string, liens: list<array{0: string, 1: string}>}> */
+    /** @return list<array{id: int, nom: string, dates: int, billetteries: string, titres: string, liens: list<array{0: string, 1: string}>, masque: bool, masquer: list<array{0: string, 1: int, 2: string, 3: string}>}> */
     private function lieux(ElementATraiter $element): array
     {
         return Offre::with(['source', 'lieu.ville'])->where('spectacle_id', $element->cible_id)->whereNull('disparue_le')->get()
@@ -350,6 +442,11 @@ class MesActions
                 'billetteries' => $offres->pluck('source.nom')->unique()->implode(', '),
                 'titres' => $offres->map(fn (Offre $o) => $o->donnees_normalisees['titre'] ?? null)->filter()->unique()->take(2)->implode(' · '),
                 'liens' => $offres->filter(fn (Offre $o) => filled($o->lien))->unique('source_id')->map(fn (Offre $o) => [$o->source?->nom ?? 'Billetterie', $o->lien])->values()->all(),
+                'masque' => (bool) $offres->first()->lieu?->masque,
+                'masquer' => $offres->first()->lieu?->masque ? [] : [
+                    ['dates', (int) $lieuId, 'Masquer ces dates', 'Les dates de ce spectacle dans ce lieu disparaissent de l’app.'],
+                    ['lieu', (int) $lieuId, 'Masquer le lieu', 'Le lieu et toutes ses séances, tous spectacles confondus, disparaissent de l’app.'],
+                ],
             ])->sortByDesc('dates')->values()->all();
     }
 }
