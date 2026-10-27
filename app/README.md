@@ -49,7 +49,7 @@ npx expo run:android                # 1re fois : compile l'app (plusieurs minute
   cd android && NODE_ENV=production ./gradlew bundleRelease   # → android/app/build/outputs/bundle/release/app-release.aab
   ```
 
-- **Obscurcissement Android (R8)** : activé pour la version Release par `plugins/with-obscurcissement.js` (la Play Console demandait une meilleure optimisation du code DEX, à corriger avant février 2027). Le fichier de correspondance est joint au `.aab`, rien à déposer à part. Si une bibliothèque native plante seulement en Release, ajouter une règle `-keep` (plugin ou règles de la bibliothèque) plutôt que de désactiver R8.
+- **Obscurcissement Android (R8)** : activé pour la version Release par `plugins/with-obscurcissement.js` (la Play Console demandait une meilleure optimisation du code DEX, à corriger avant février 2027), avec les optimisations R8 (`proguard-android-optimize.txt`) et la réduction optimisée des ressources (`android.r8.optimizedResourceShrinking`) depuis le build 7. Le passage au plug-in Android Gradle 9, aussi suggéré, attend React Native (8.12 imposé en 0.86). Le fichier de correspondance est joint au `.aab`, rien à déposer à part. Si une bibliothèque native plante seulement en Release, ajouter une règle `-keep` (plugin ou règles de la bibliothèque) plutôt que de désactiver R8.
 
 - **iOS avec Xcode 27.1 (Swift 6.4), constaté le 19/10/2026 au build 4** : l'archive Release échoue (`cannot find type '__ObjC::expo' in scope`, `this SDK is not supported by the compiler`) tant qu'Expo SDK 57 n'est pas corrigé. Avant d'archiver :
   1. modules Expo compilés depuis les sources (les précompilés sont faits avec Swift 6.3.1) : `cd ios && EXPO_USE_PRECOMPILED_MODULES=0 pod install` ;
