@@ -100,8 +100,8 @@ export function signalerOuverture(ouverture: Ouverture): void {
 }
 
 /**
- * Au premier suivi (F3.4) : on explique d'abord, puis le téléphone demande. « Plus tard » laisse la question
- * pour le suivi suivant (iOS ne redemande jamais après un refus dans sa propre fenêtre).
+ * Au premier suivi (F3.4) : on explique d'abord, puis le téléphone demande. Un seul bouton « Continuer » :
+ * Apple (5.1.1(iv)) refuse un « Autoriser » ou un « Plus tard » avant la demande système ; le refus se fait dans celle-ci.
  */
 export async function proposerAlertes(type: 'lieu' | 'artiste'): Promise<void> {
   if ((await etatAutorisation()) !== 'a_demander') {
@@ -110,13 +110,12 @@ export async function proposerAlertes(type: 'lieu' | 'artiste'): Promise<void> {
   const raison = type === 'lieu'
     ? 'Pour vous prévenir quand ce lieu annonce un spectacle.'
     : 'Pour vous prévenir quand cet artiste a une nouvelle date près de chez vous.';
-  const accepte = await new Promise<boolean>((resolve) =>
+  await new Promise<void>((resolve) =>
     Alert.alert('Être prévenu ?', `${raison} Une notification par jour au plus, à 18 h.`, [
-      { text: 'Plus tard', style: 'cancel', onPress: () => resolve(false) },
-      { text: 'Me prévenir', onPress: () => resolve(true) },
-    ], { cancelable: true, onDismiss: () => resolve(false) }),
+      { text: 'Continuer', onPress: () => resolve() },
+    ], { cancelable: false }),
   );
-  if (accepte && (await demanderAutorisation())) {
+  if (await demanderAutorisation()) {
     await transmettreJeton();
   }
 }

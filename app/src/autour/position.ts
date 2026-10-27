@@ -67,7 +67,7 @@ export function usePosition() {
       .catch(() => setEtat({ etat: 'refusee' }));
   }, [chercher]);
 
-  /** Bouton « Autoriser la localisation » : la demande système n'est faite qu'à ce moment. */
+  /** Bouton « Continuer » (Apple 5.1.1(iv) : pas « Autoriser » avant la demande système) : la demande n'est faite qu'à ce moment. */
   const autoriser = useCallback(async () => {
     const permission = await Location.requestForegroundPermissionsAsync().catch(() => null);
     if (permission?.granted) {
