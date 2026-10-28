@@ -58,11 +58,21 @@ systemctl start sauvegarde-quotidienne   # sauvegarde manuelle avant une interve
 
 ## Déployer une nouvelle version
 
+Chaque mise en production est une version : un tag git annoté `bo-AAAA.MM.JJ-N` (N = numéro dans la journée), posé sur `master` et poussé.
+
 ```bash
-cd /opt/docker/spettacoli/deploy && ./deploy.sh
+# Sur le poste : tag puis push
+git tag -a bo-2026.10.28-1 -m "Liens DATAtourisme vers la vraie fiche" master && git push origin master bo-2026.10.28-1
+# Sur le serveur
+cd /opt/docker/spettacoli/deploy && ./deploy.sh bo-2026.10.28-1
 ```
 
-Le script refuse de redémarrer le worker pendant une collecte (`--force` pour passer outre).
+Revenir en arrière : `./deploy.sh <version précédente>` (l'image est reconstruite, quelques minutes). Les migrations ne sont pas défaites :
+avant de revenir sous une version qui a supprimé ou renommé une colonne, il faut la défaire ou repartir d'une sauvegarde.
+`./deploy.sh` sans argument affiche la version en production et les dernières versions ; `git tag -n` sur le poste, le détail.
+
+Le serveur est sur le tag déployé (HEAD détachée), pas sur la branche `master`. Le script refuse de redémarrer le worker pendant une
+collecte (`--force` pour passer outre).
 
 ## Commandes utiles
 
