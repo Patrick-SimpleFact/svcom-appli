@@ -29,14 +29,14 @@ class Audience
                 ->orWhereNotIn('utilisateur_id', fn (Builder $s) => $s->select('id')->from('utilisateurs')->whereRaw('lower(email) = ?', [$examen]))));
     }
 
-    /** Empreintes à écarter des événements et des clics (appareils de test et du compte d'examen). */
-    public function empreintesExclues(): Builder
+    /**
+     * Empreintes comptées dans les événements et les clics : celles des appareils comptés. Les autres sont écartées :
+     * appareils de test et du compte des boutiques, anciennes installations disparues, clics venus du site web
+     * (leur empreinte est celle de l'adresse IP, pas d'un téléphone).
+     */
+    public function empreintesComptees(): Builder
     {
-        $examen = (string) config('app.compte_examen.email');
-
-        return DB::table('appareils')->select('appareil_hash')->whereNotNull('appareil_hash')
-            ->where(fn (Builder $q) => $q->where('est_test', true)
-                ->when($examen !== '', fn (Builder $q) => $q->orWhereIn('utilisateur_id', fn (Builder $s) => $s->select('id')->from('utilisateurs')->whereRaw('lower(email) = ?', [$examen]))));
+        return $this->appareils()->select('appareil_hash')->whereNotNull('appareil_hash');
     }
 
     /**
@@ -61,7 +61,7 @@ class Audience
 
         $ouverts = fn (int $nbJours) => (int) DB::table('evenements_app')->where('type', 'ouverture')
             ->where('horodatage', '>=', $jour->subDays($nbJours - 1)->utc())->where('horodatage', '<', $fin)
-            ->whereNotIn('appareil_hash', $this->empreintesExclues())->distinct()->count('appareil_hash');
+            ->whereIn('appareil_hash', $this->empreintesComptees())->distinct()->count('appareil_hash');
 
         $comptes = $this->utilisateurs()->where('created_at', '<', $fin)
             ->selectRaw('count(*) as total, count(*) filter (where created_at >= ?) as jour', [$jour->utc()])->first();
@@ -135,7 +135,7 @@ class Audience
             ->selectRaw($this->jourSql('horodatage').' as jour, count(distinct appareil_hash) as n')
             ->where('type', 'ouverture')
             ->where('horodatage', '>=', $debut)->where('horodatage', '<', $fin)
-            ->whereNotIn('appareil_hash', $this->empreintesExclues())
+            ->whereIn('appareil_hash', $this->empreintesComptees())
             ->groupBy('jour')->pluck('n', 'jour');
 
         return ['jours' => $jours, 'actifs' => array_map(fn (string $j) => (int) ($lignes[$j] ?? 0), $jours)];
@@ -202,12 +202,12 @@ class Audience
             ->selectRaw($this->jourSql('horodatage').' as jour')
             ->selectRaw("count(distinct appareil_hash) filter (where type = 'ouverture') as actifs, count(distinct appareil_hash) filter (where type = 'fiche_vue') as fiches")
             ->where('horodatage', '>=', $debut)->where('horodatage', '<', $fin)->whereIn('type', ['ouverture', 'fiche_vue'])
-            ->whereNotIn('appareil_hash', $this->empreintesExclues())
+            ->whereIn('appareil_hash', $this->empreintesComptees())
             ->groupBy('jour')->get()->keyBy('jour');
         $clics = DB::table('clics_sortants')
             ->selectRaw($this->jourSql('horodatage').' as jour, count(distinct appareil_hash) as n')
             ->where('horodatage', '>=', $debut)->where('horodatage', '<', $fin)
-            ->whereNotIn('appareil_hash', $this->empreintesExclues())
+            ->whereIn('appareil_hash', $this->empreintesComptees())
             ->groupBy('jour')->pluck('n', 'jour');
 
         return array_reverse(array_map(fn (string $j) => [

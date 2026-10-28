@@ -156,6 +156,10 @@ it('suit le parcours ouverture, fiche, clic, et les actifs par jour, sans les ap
     ($this->evenement)($a, 'fiche_vue', '2026-10-28 09:05');
     ($this->evenement)($test, 'fiche_vue', '2026-10-28 09:05');
     ClicSortant::create(['horodatage' => ($this->paris)('2026-10-28 09:06')->utc(), 'appareil_hash' => $a->appareil_hash, 'source_id' => Source::first()->id, 'compte' => true]);
+    // Écartés : un clic venu du site web (empreinte de l'adresse IP) et les événements d'une installation disparue.
+    ClicSortant::create(['horodatage' => ($this->paris)('2026-10-28 10:00')->utc(), 'appareil_hash' => ClicSortant::empreinte('203.0.113.7'), 'source_id' => Source::first()->id, 'compte' => true]);
+    app(Evenements::class)->assurerPartition(($this->paris)('2026-10-28')->utc()->startOfMonth());
+    DB::table('evenements_app')->insert(['horodatage' => ($this->paris)('2026-10-28 11:00')->toIso8601String(), 'appareil_hash' => ClicSortant::empreinte('installation-disparue'), 'type' => 'ouverture']);
 
     $parcours = app(Audience::class)->parcours(2);
     $actifs = app(Audience::class)->actifsParJour(2);
