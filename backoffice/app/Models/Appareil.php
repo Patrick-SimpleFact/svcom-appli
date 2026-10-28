@@ -17,6 +17,7 @@ class Appareil extends Model
     protected $fillable = [
         'identifiant', 'utilisateur_id', 'plateforme', 'version_app', 'jeton_push', 'nb_ouvertures', 'premiere_ouverture', 'derniere_ouverture',
         'suggestion_choix', 'suggestion_question_le', 'suggestion_repondu_le', 'suggestion_ouvertures_a_la_reponse', 'suggestion_relances', 'derniere_suggestion_le',
+        'est_test',
     ];
 
     protected $attributes = ['nb_ouvertures' => 0, 'suggestion_choix' => 'non_demande', 'suggestion_relances' => 0];
@@ -32,7 +33,18 @@ class Appareil extends Model
             'suggestion_question_le' => 'datetime',
             'suggestion_repondu_le' => 'datetime',
             'derniere_suggestion_le' => 'datetime',
+            'est_test' => 'boolean',
         ];
+    }
+
+    /** L'empreinte des événements et des clics suit l'identifiant : elle relie l'appareil à son usage (page Audience). */
+    protected static function booted(): void
+    {
+        static::saving(function (Appareil $appareil) {
+            if ($appareil->isDirty('identifiant') || $appareil->appareil_hash === null) {
+                $appareil->appareil_hash = ClicSortant::empreinte((string) $appareil->identifiant);
+            }
+        });
     }
 
     /**
