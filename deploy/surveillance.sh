@@ -9,7 +9,9 @@ ETAT="$ICI/.surveillance-etat"
 SEUIL_DISQUE=80
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
-if [ -f /root/appli-perso/monitor-ovh-s3/.env ]; then set -a; source /root/appli-perso/monitor-ovh-s3/.env; set +a; fi
+# Bot Telegram : celui du moniteur de sauvegardes, sinon celui des sauvegardes du serveur (VPS dédié, sans le moniteur).
+if [ -f /root/appli-perso/monitor-ovh-s3/.env ]; then set -a; source /root/appli-perso/monitor-ovh-s3/.env; set +a
+elif [ -f /etc/sauvegardes/.env ]; then set -a; source /etc/sauvegardes/.env; set +a; fi
 
 problemes=()
 cd "$ICI"

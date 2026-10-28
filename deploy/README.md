@@ -74,6 +74,15 @@ avant de revenir sous une version qui a supprimé ou renommé une colonne, il fa
 Le serveur est sur le tag déployé (HEAD détachée), pas sur la branche `master`. Le script refuse de redémarrer le worker pendant une
 collecte (`--force` pour passer outre).
 
+Chaque image est aussi étiquetée par sa version (`spettacoli-backoffice:bo-…`). Si l'image de la version demandée est encore là,
+`./deploy.sh` la remet en service sans reconstruire (retour arrière en moins d'une minute) ; `--reconstruire` force la reconstruction
+(nouvelle image de base PHP). Réglages propres à un serveur dans `deploy/deploy.local` (jamais commité) :
+
+```bash
+IMAGES_GARDEES=3   # images de versions gardées (1 par défaut : la version en service)
+SANS_COLLECTE=1    # serveur pas encore en service : seuls l'app et la base démarrent, jamais worker ni scheduler
+```
+
 ## Commandes utiles
 
 ```bash
