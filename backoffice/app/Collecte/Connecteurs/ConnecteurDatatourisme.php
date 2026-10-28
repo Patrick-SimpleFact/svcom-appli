@@ -33,7 +33,7 @@ class ConnecteurDatatourisme implements CollecteParIntervalle, Connecteur
     private const TYPES_SPECTACLE = ['ShowEvent', 'TheaterEvent', 'Concert', 'DanceEvent', 'CircusEvent', 'Opera', 'ComedyEvent', 'Recital',
         'StreetArtShow', 'PuppetShow', 'Festival', 'MusicEvent'];
 
-    private const CHAMPS = 'uuid,label,type,takesPlaceAt,offers,hasBookingContact,hasContact,isLocatedAt,hasDescription,hasMainRepresentation,lastUpdate';
+    private const CHAMPS = 'uuid,uri,label,type,takesPlaceAt,offers,hasBookingContact,hasContact,isLocatedAt,hasDescription,hasMainRepresentation,lastUpdate';
 
     public function intervalleHeures(): int
     {
@@ -105,7 +105,7 @@ class ConnecteurDatatourisme implements CollecteParIntervalle, Connecteur
         $commun = [
             'identifiantSpectacle' => $uuid,
             'titre' => trim((string) ($evenement['label']['@fr'] ?? reset($evenement['label']) ?: '')),
-            'lien' => $this->lien($evenement) ?? 'https://data.datatourisme.fr/'.$uuid,
+            'lien' => $this->lien($evenement) ?? $this->fiche($evenement),
             ...$this->lieu($evenement),
             'categoriesSource' => $this->types($evenement['type'] ?? []),
             'description' => $this->description($evenement),
@@ -184,6 +184,17 @@ class ConnecteurDatatourisme implements CollecteParIntervalle, Connecteur
         }
 
         return null;
+    }
+
+    /**
+     * Fiche DATAtourisme, faute de site : son adresse (`uri`) porte un numéro de producteur et un identifiant qui
+     * n'est pas le `uuid` ; « data.datatourisme.fr/{uuid} » affiche « La ressource demandée n'existe pas ! ».
+     */
+    private function fiche(array $evenement): string
+    {
+        $uri = $evenement['uri'] ?? null;
+
+        return is_string($uri) && str_starts_with($uri, 'http') ? $uri : 'https://data.datatourisme.fr/'.$evenement['uuid'];
     }
 
     /** @return array{prixMin: ?float, prixMax: ?float, gratuit: bool} */
