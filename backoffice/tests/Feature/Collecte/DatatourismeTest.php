@@ -56,6 +56,19 @@ it('lit une séance à l’heure, avec son prix, son lien de réservation et sa 
         ->and($piece->categoriesSource)->toContain('TheaterEvent');
 });
 
+it('sans site, renvoie vers la fiche DATAtourisme par son uri, dont l’identifiant n’est pas le uuid', function () {
+    // « Conférence - Un air d'Arménie » (28/10) : seulement un téléphone ; data.datatourisme.fr/{uuid} affichait « Oups ».
+    $evenement = [...json_decode(explode("\n", $this->brut)[0], true)[0],
+        'uuid' => '1f60cfaa-24fa-33f4-b7ae-cd2401e84c90',
+        'uri' => 'https://data.datatourisme.fr/10/294f57e4-e8c1-3f95-9556-ed57babf3122',
+        'hasBookingContact' => null,
+        'hasContact' => [['telephone' => ['+33 6 09 18 60 34']]],
+    ];
+    $annonce = collect(app(ConnecteurDatatourisme::class)->lire(json_encode([$evenement]), $this->source))->first();
+
+    expect($annonce->lien)->toBe('https://data.datatourisme.fr/10/294f57e4-e8c1-3f95-9556-ed57babf3122');
+});
+
 it('donne une séance par soir à un spectacle sur plusieurs jours avec heure, et une période sans heure', function () {
     $colocs = ($this->annonces)()->filter(fn (AnnonceNormalisee $a) => $a->titre === 'Les colocs');
     $fete = ($this->annonces)()->filter(fn (AnnonceNormalisee $a) => $a->titre === 'Fête du sol vivant');
