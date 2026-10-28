@@ -80,10 +80,11 @@ return [
         'compte_service' => env('FCM_CREDENTIALS_PATH'), // JSON du compte de service Firebase
     ],
 
-    // Assistant IA (plan-module-ia) : l'Ollama du serveur appelle les modèles « :cloud » du forfait de Patrick.
+    // Assistant IA (plan-module-ia) : modèles « :cloud » du forfait de Patrick, appelés directement sur l'API
+    // d'ollama.com (OLLAMA_URL=https://ollama.com) ou par un Ollama installé sur le serveur (http://…:11434).
     'ollama' => [
         'url' => env('OLLAMA_URL', 'http://localhost:11434'),
-        // Clé créée sur ollama.com : sert seulement à lire le quota restant (GET https://ollama.com/api/balance).
+        // Clé créée sur ollama.com : lit le quota restant (GET https://ollama.com/api/balance) et, en direct, authentifie les appels.
         'cle_api' => env('OLLAMA_API_KEY'),
         'url_compte' => env('OLLAMA_URL_COMPTE', 'https://ollama.com'),
     ],

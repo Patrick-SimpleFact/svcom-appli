@@ -233,3 +233,62 @@ it('échoue si Ollama est injoignable', function () {
 
     $this->artisan('ia:etat')->expectsOutputToContain('Ollama injoignable')->assertFailed();
 });
+
+it('appelle directement l’API d’ollama.com, avec la clé et le nom de modèle sans suffixe', function () {
+    config(['services.ollama.url' => 'https://ollama.com']);
+    Http::fake(['ollama.com/api/chat' => Http::response(['model' => 'gpt-oss:120b', 'message' => ['role' => 'assistant', 'content' => '{"genre":"humour","confiance":85}'], 'done' => true, 'prompt_eval_count' => 120, 'eval_count' => 15])]);
+
+    $reponse = app(ClientOllama::class)->demander('a_classer', $this->messages, SCHEMA_ESSAI);
+
+    // Le journal garde le nom local, celui des réglages.
+    expect($reponse->contenu['genre'])->toBe('humour')
+        ->and($reponse->appel->modele)->toBe('gpt-oss:120b-cloud');
+    Http::assertSent(fn ($requete) => $requete->url() === 'https://ollama.com/api/chat'
+        && $requete['model'] === 'gpt-oss:120b'
+        && $requete->hasHeader('Authorization', 'Bearer cle-de-test'));
+});
+
+it('retire le suffixe des deux formes de noms en direct, et les garde tels quels avec un Ollama local', function () {
+    $client = app(ClientOllama::class);
+    expect($client->direct())->toBeFalse()
+        ->and($client->nomEnvoye('glm-5.3-flash:cloud'))->toBe('glm-5.3-flash:cloud');
+
+    config(['services.ollama.url' => 'https://ollama.com/']);
+    expect($client->direct())->toBeTrue()
+        ->and($client->nomEnvoye('glm-5.3-flash:cloud'))->toBe('glm-5.3-flash')
+        ->and($client->nomEnvoye('gpt-oss:120b-cloud'))->toBe('gpt-oss:120b');
+});
+
+it('refuse l’appel direct sans clé, sans rien envoyer', function () {
+    config(['services.ollama.url' => 'https://ollama.com', 'services.ollama.cle_api' => '']);
+    Http::fake();
+
+    expect(fn () => app(ClientOllama::class)->demander('a_classer', $this->messages, SCHEMA_ESSAI))->toThrow(ErreurIa::class, 'Clé API ollama.com absente')
+        ->and(AppelIa::sole()->erreur)->toContain('Clé API ollama.com absente');
+    Http::assertNothingSent();
+});
+
+it('n’envoie jamais la clé à un Ollama installé sur le serveur', function () {
+    Http::fake(reponseChat('{"genre":"humour","confiance":85}'));
+
+    app(ClientOllama::class)->demander('a_classer', $this->messages, SCHEMA_ESSAI);
+
+    Http::assertSent(fn ($requete) => ! $requete->hasHeader('Authorization'));
+});
+
+it('affiche l’état de l’assistant en appels directs', function () {
+    config(['services.ollama.url' => 'https://ollama.com']);
+    Http::fake([
+        'ollama.com/api/version' => Http::response(['version' => '0.0.0']),
+        'ollama.com/api/show' => fn ($requete) => in_array($requete['model'], ['gpt-oss:120b', 'deepseek-v4.1-flash', 'glm-5.3-flash'], true)
+            ? Http::response(['details' => ['parent_model' => $requete['model']]])
+            : Http::response(['error' => 'model not found'], 404),
+        ...solde(fenetres(80, 60)),
+    ]);
+
+    $this->artisan('ia:etat')
+        ->expectsOutputToContain('appels directs')
+        ->expectsOutputToContain('Modèle du niveau 1 : gpt-oss:120b-cloud')
+        ->expectsOutputToContain('Modèle du niveau 2 : glm-5.3-flash:cloud')
+        ->assertSuccessful();
+});

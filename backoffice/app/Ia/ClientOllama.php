@@ -4,13 +4,17 @@ namespace App\Ia;
 
 use App\Models\AppelIa;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
- * Demandes à l'Ollama du serveur, qui transmet aux modèles « :cloud » du forfait de Patrick (plan-module-ia).
+ * Demandes aux modèles « :cloud » du forfait de Patrick (plan-module-ia), de deux façons selon OLLAMA_URL :
+ * - directement à l'API d'ollama.com (https://ollama.com, avec la clé) : aucun Ollama à installer sur le serveur ;
+ * - par un Ollama installé sur le serveur (http://…:11434), qui transmet à ollama.com.
+ * Les modèles gardent partout leur nom local (« gpt-oss:120b-cloud ») ; l'API d'ollama.com reçoit le nom sans suffixe.
  * - seuls les modèles « cloud » sont acceptés : un modèle local tournerait sur le VPS et l'écraserait ;
  * - la réponse doit être un objet JSON conforme au schéma (clés obligatoires, valeurs permises) : les modèles cloud
  *   ne respectent pas toujours `format`, on vérifie donc nous-mêmes, et toute réponse hors cadre est rejetée ;
@@ -31,6 +35,35 @@ class ClientOllama
     public function url(): string
     {
         return rtrim((string) config('services.ollama.url'), '/');
+    }
+
+    /** Appels directs à l'API d'ollama.com (et non à un Ollama installé sur le serveur). */
+    public function direct(): bool
+    {
+        $hote = (string) parse_url($this->url(), PHP_URL_HOST);
+
+        return $hote === 'ollama.com' || str_ends_with($hote, '.ollama.com');
+    }
+
+    /** Nom à envoyer : l'API d'ollama.com ne connaît pas le suffixe local (« gpt-oss:120b-cloud » → « gpt-oss:120b »). */
+    public function nomEnvoye(string $modele): string
+    {
+        return $this->direct() ? (string) preg_replace('/[:-]cloud$/', '', $modele) : $modele;
+    }
+
+    /** Requête vers l'Ollama joint ; en direct, avec la clé d'ollama.com (jamais envoyée à un autre serveur). */
+    private function requete(int $delai): PendingRequest
+    {
+        $requete = Http::timeout($delai)->acceptJson();
+
+        if ($this->direct()) {
+            if (blank($cle = config('services.ollama.cle_api'))) {
+                throw new ErreurIa('Clé API ollama.com absente (OLLAMA_API_KEY) : obligatoire pour les appels directs à ollama.com.');
+            }
+            $requete = $requete->withToken($cle);
+        }
+
+        return $requete;
     }
 
     /**
@@ -67,7 +100,9 @@ class ClientOllama
     public function version(): string
     {
         try {
-            return (string) Http::timeout(10)->get($this->url().'/api/version')->throw()->json('version');
+            return (string) $this->requete(10)->get($this->url().'/api/version')->throw()->json('version');
+        } catch (ErreurIa $e) {
+            throw $e;
         } catch (Throwable $e) {
             throw new ErreurIa("Ollama injoignable à {$this->url()} : {$e->getMessage()}", previous: $e);
         }
@@ -102,7 +137,9 @@ class ClientOllama
         }
 
         try {
-            $reponse = Http::timeout(15)->post($this->url().'/api/show', ['model' => $modele]);
+            $reponse = $this->requete(15)->post($this->url().'/api/show', ['model' => $this->nomEnvoye($modele)]);
+        } catch (ErreurIa $e) {
+            return $e->getMessage();
         } catch (Throwable) {
             return "Ollama injoignable à {$this->url()} : impossible de vérifier le modèle.";
         }
@@ -130,11 +167,11 @@ class ClientOllama
         $debut = hrtime(true);
 
         try {
-            $reponse = Http::timeout(self::DELAI_S)
+            $reponse = $this->requete(self::DELAI_S)
                 ->retry(self::TENTATIVES, 2000, fn (Throwable $e) => $e instanceof ConnectionException
                     || ($e instanceof RequestException && $e->response->serverError()), throw: false)
                 ->post($this->url().'/api/chat', [
-                    'model' => $modele,
+                    'model' => $this->nomEnvoye($modele),
                     'messages' => $messages,
                     'stream' => false,
                     'format' => $schema,
