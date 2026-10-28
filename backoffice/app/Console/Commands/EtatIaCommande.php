@@ -34,7 +34,10 @@ class EtatIaCommande extends Command
         $succes = true;
 
         try {
-            $this->info("Ollama : joignable à {$client->url()} (version {$client->version()}).");
+            $version = $client->version();
+            $this->info($client->direct()
+                ? "Ollama : appels directs à l’API de {$client->url()} (joignable, clé présente)."
+                : "Ollama : joignable à {$client->url()} (version {$version}).");
         } catch (ErreurIa $e) {
             $this->error($e->getMessage());
             $succes = false;
