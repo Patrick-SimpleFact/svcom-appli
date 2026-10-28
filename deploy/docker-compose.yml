@@ -90,6 +90,9 @@ services:
       PHP_OPCACHE_ENABLE: "1"
       PHP_MEMORY_LIMIT: 1536M
     mem_limit: 2g
+    # Priorité processeur : quand le serveur est saturé, l'app (1024 par défaut) passe avant la collecte.
+    # Sans effet quand les processeurs sont libres : la nuit, la collecte garde toute sa vitesse.
+    cpu_shares: 256
     healthcheck:
       test: ["CMD", "healthcheck-queue"]
       start_period: 10s
@@ -110,6 +113,8 @@ services:
     stop_signal: SIGTERM
     environment:
       PHP_OPCACHE_ENABLE: "1"
+    # Tâches planifiées (entretien, couverture…) : après l'app, avant la collecte (voir worker).
+    cpu_shares: 512
     healthcheck:
       test: ["CMD", "healthcheck-schedule"]
       start_period: 10s
