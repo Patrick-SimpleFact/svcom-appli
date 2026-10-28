@@ -5,6 +5,9 @@ FROM serversideup/php:8.4-fpm-nginx
 
 USER root
 RUN install-php-extensions intl
+# Faille PHP CVE-2026-115560 (alerte Hostinger du 23/10/2026) : pas encore de correctif ; parade recommandée
+# en attendant. Laravel gère ses propres sessions et n'utilise pas cette barre de progression.
+RUN echo "session.upload_progress.enabled = Off" > /usr/local/etc/php/conf.d/zzzz-securite.ini
 USER www-data
 
 # Dépendances d'abord, pour garder ce calque en cache tant que composer.lock ne change pas.
