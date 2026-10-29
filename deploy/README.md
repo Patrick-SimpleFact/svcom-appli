@@ -1,6 +1,6 @@
 # Mise en ligne de Spettacoli (L01)
 
-Le back-office, l'API `/v1` et le site tournent sur le VPS Hostinger de Patrick (`ssh root@72.61.198.22`), en Docker Compose, derrière le Traefik déjà en place (`/opt/docker/traefik`, réseau `proxy`, HTTPS Let's Encrypt).
+Le back-office, l'API `/v1` et le site tournent sur un VPS Hostinger dédié à Spettacoli (`ssh root@2.24.48.231`, srv2104495, depuis le 29/10/2026 ; avant : le VPS partagé `72.61.198.22`), en Docker Compose, derrière Traefik (`/opt/docker/traefik`, réseau `proxy`, HTTPS Let's Encrypt).
 
 Adresse : https://spettacoli.spectacles-vivants.com
 
