@@ -26,6 +26,7 @@ Route::prefix('v1')->middleware([IdentifierAppareil::class, 'throttle:api'])->gr
     // §3 Autour de moi
     Route::get('representations/autour', [AutourController::class, 'representations']);
     Route::get('lieux/carte', [AutourController::class, 'carte']);
+    Route::get('commune', [AutourController::class, 'commune']);
 
     // §4 Recherche
     Route::get('recherche/propositions', [RechercheController::class, 'propositions']);

@@ -1,6 +1,8 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 
+import { appelApi } from '@/api/client';
+
 /** `approximative` : le GPS n'a pas répondu à temps, on part de la dernière position connue (F2.8). */
 export type Position = { lat: number; lon: number; libelle: string | null; pays: string | null; approximative: boolean };
 
@@ -34,6 +36,16 @@ export async function coordonnees(): Promise<{ lat: number; lon: number; approxi
   return coords ? { lat: coords.latitude, lon: coords.longitude, approximative: !actuelle } : null;
 }
 
+/**
+ * Nom de la commune donné par le BO (`GET /v1/commune`), quand le téléphone ne le connaît pas : le géocodage d'Android
+ * reste parfois muet (« Ma position » affiché alors que la position est bonne, 29/10/2026). Réseau ou BO en panne → null.
+ */
+export async function communeDuServeur(point: { lat: number; lon: number }): Promise<string | null> {
+  return appelApi<{ commune: string | null }>('/v1/commune', { parametres: { lat: point.lat, lon: point.lon } })
+    .then((r) => r.commune ?? null)
+    .catch(() => null);
+}
+
 async function localiser(): Promise<Position | null> {
   const point = await coordonnees();
   if (!point) {
@@ -42,7 +54,9 @@ async function localiser(): Promise<Position | null> {
 
   const [adresse] = await Location.reverseGeocodeAsync({ latitude: point.lat, longitude: point.lon }).catch(() => []);
 
-  return { ...point, libelle: libelleLieu(adresse), pays: adresse?.isoCountryCode ?? null };
+  const libelle = libelleLieu(adresse) ?? (await communeDuServeur(point));
+
+  return { ...point, libelle, pays: adresse?.isoCountryCode ?? null };
 }
 
 export function usePosition() {
