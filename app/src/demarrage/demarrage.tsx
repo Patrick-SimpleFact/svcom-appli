@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 
 import { appelApi, BUILD_APP, comparerVersions, quandVersionObsolete, VERSION_APP } from '@/api/client';
 import { jetonNatif } from '@/notifications/notifications';
@@ -55,6 +55,12 @@ export function miseAJourProposee(dernier: Configuration['dernier_build'], plate
   return build > 0 && (dernier?.[plateforme] ?? 0) > build;
 }
 
+/**
+ * Retour au premier plan après ce délai depuis le dernier chargement : la configuration est redemandée. Android garde
+ * l'app vivante des jours en arrière-plan ; sans cela, un message de service saisi entre-temps n'apparaissait pas (29/10/2026).
+ */
+export const DELAI_RECHARGEMENT_MS = 30 * 60 * 1000;
+
 export function messagesAAfficher(messages: MessageService[], fermes: number[]): MessageService[] {
   return messages.filter((m) => !fermes.includes(m.id));
 }
@@ -70,13 +76,10 @@ export function Demarrage({ children }: { children: ReactNode }) {
   const [miseAJourFermee, setMiseAJourFermee] = useState(false);
   const [fermes, setFermes] = useState<number[]>([]);
 
-  useEffect(() => {
-    quandVersionObsolete(() => setVersionObsolete(true));
+  const chargeeLe = useRef(0);
 
-    AsyncStorage.getItem(CLE_FERMES)
-      .then((json) => setFermes(json ? (JSON.parse(json) as number[]) : []))
-      .catch(() => {});
-
+  const charger = useCallback(() => {
+    chargeeLe.current = Date.now();
     // Jeton de notification si l'autorisation est déjà donnée (F3.4, M12b) ; jamais de position à cette étape.
     jetonNatif()
       .catch(() => null)
@@ -95,9 +98,27 @@ export function Demarrage({ children }: { children: ReactNode }) {
       // Réseau ou BO indisponible : l'app continue sans configuration (les écrans d'erreur arrivent en M05).
       .catch(() => {})
       .finally(() => setConfigurationTerminee(true));
-
-    return () => quandVersionObsolete(null);
   }, []);
+
+  useEffect(() => {
+    quandVersionObsolete(() => setVersionObsolete(true));
+
+    AsyncStorage.getItem(CLE_FERMES)
+      .then((json) => setFermes(json ? (JSON.parse(json) as number[]) : []))
+      .catch(() => {});
+
+    charger();
+    const abonnement = AppState.addEventListener('change', (etat) => {
+      if (etat === 'active' && Date.now() - chargeeLe.current > DELAI_RECHARGEMENT_MS) {
+        charger();
+      }
+    });
+
+    return () => {
+      quandVersionObsolete(null);
+      abonnement.remove();
+    };
+  }, [charger]);
 
   const fermerMessage = useCallback((id: number) => {
     setFermes((avant) => {

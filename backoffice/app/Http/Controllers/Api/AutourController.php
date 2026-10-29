@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\ImporterVilles;
 use App\Api\AutourDeMoi;
 use App\Api\Fenetre;
 use App\Comptes\Gouts;
@@ -14,6 +15,8 @@ use App\Models\Ville;
 use App\Support\Point;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * « Autour de moi » (API §3) : la liste (F2.5) et la carte (F2.6). La position n'est jamais enregistrée (F2.11).
@@ -40,6 +43,32 @@ class AutourController extends Controller
             'tri' => $donnees['tri'] ?? 'heure',
             'page' => AutourDeMoi::pageDuCurseur($donnees['suivant'] ?? null),
         ]), options: JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Nom de la commune où se trouve une position (F2.1), quand le téléphone ne le donne pas (géocodage d'Android
+     * parfois muet). Commune qui contient le point, d'après geo.api.gouv.fr : le chef-lieu le plus proche se tromperait
+     * (Porte de Versailles → Vanves). Position arrondie à ~100 m, jamais enregistrée (F2.11) ; service en panne → null.
+     */
+    public function commune(Request $request): JsonResponse
+    {
+        $donnees = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lon' => ['required', 'numeric', 'between:-180,180'],
+        ]);
+
+        try {
+            $nom = Http::timeout(3)->get(ImporterVilles::SOURCE, [
+                'lat' => round((float) $donnees['lat'], 3),
+                'lon' => round((float) $donnees['lon'], 3),
+                'fields' => 'nom',
+                'format' => 'json',
+            ])->json('0.nom');
+        } catch (Throwable) {
+            $nom = null;
+        }
+
+        return response()->json(['commune' => is_string($nom) && $nom !== '' ? $nom : null], options: JSON_UNESCAPED_UNICODE);
     }
 
     /** F2.6 : un repère par lieu dans la zone visible, avec son nombre de spectacles ; lieux à position approximative exclus. */
