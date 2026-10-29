@@ -1,5 +1,7 @@
 La page d'accueil du back-office, **Mes actions du jour**. Elle réunit tout ce qui attend une décision humaine, toutes files confondues. Le nombre de décisions à prendre s'affiche à côté du menu.
 
+Tout en haut du menu, avant « Mes actions du jour », la **version du back-office en service** (par exemple « Version bo-2026.10.29-2 ») : c'est le nom de la dernière mise en ligne, utile pour savoir si une correction est déjà arrivée. « locale » sur un poste de développement.
+
 ### Mes actions du jour
 
 Une **carte à la fois** (« Carte 1 sur 12 »). **Les plus récentes passent en premier** : d'abord les cartes arrivées aujourd'hui (en général, ce que la nuit a ajouté), puis celles d'hier, et ainsi de suite ; dans un même jour, la plus urgente d'abord. En haut, le nombre de cartes « ajoutées aujourd'hui » : au minimum, traitez celles-là chaque jour. Chaque carte porte sa date d'arrivée (« Ajoutée aujourd'hui (ven. 23 oct.) », « Ajoutée hier », « Ajoutée le lun. 19 oct. ») : pour une file confiée à l'assistant IA, c'est le jour où l'IA l'a examinée ; pour les autres, le jour où l'élément est entré dans la file.

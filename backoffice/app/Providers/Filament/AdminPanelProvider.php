@@ -55,6 +55,8 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE, fn (array $scopes): ?HtmlString => ($url = Documentation::lienAide($scopes))
                 ? new HtmlString(view('filament.lien-aide', ['url' => $url])->render())
                 : null)
+            // Version du B.O. en service, tout en haut du menu, avant « Mes actions du jour ».
+            ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn (): HtmlString => new HtmlString(view('filament.version-bo')->render()))
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->middleware([
                 EncryptCookies::class,
