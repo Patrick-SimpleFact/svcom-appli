@@ -20,3 +20,7 @@ COPY --chown=www-data:www-data . .
 RUN composer dump-autoload --optimize --no-dev --no-interaction \
     && mkdir -p storage/app/public storage/app/collecte storage/app/geoip storage/app/private \
         storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+
+# Version déployée (tag bo-…), passée par deploy.sh ; en dernier pour ne pas invalider le cache des calques précédents.
+ARG APP_VERSION=""
+ENV APP_VERSION=${APP_VERSION}

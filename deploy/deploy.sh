@@ -62,21 +62,25 @@ main() {
         docker tag "$IMAGE:$version" "$IMAGE:latest"
     else
         # --pull : récupère la dernière image de base PHP 8.4 (correctifs de sécurité) ; sans lui, Docker réutilise sa copie locale indéfiniment.
-        docker compose build --pull app
+        # APP_VERSION : la version est gravée dans l'image et affichée en haut du menu du BO.
+        docker compose build --pull --build-arg APP_VERSION="$version" app
         docker tag "$IMAGE:latest" "$IMAGE:$version"
     fi
 
     # Les migrations et les caches sont faits au démarrage du conteneur app (AUTORUN_ENABLED).
+    # --force-recreate : le compose désigne toujours « :latest », Compose ne verrait pas que l'image a changé.
+    docker compose up -d --remove-orphans db
     if [[ -n "$SANS_COLLECTE" ]]; then
         echo "SANS_COLLECTE (deploy.local) : seuls l'app et la base sont démarrés."
         docker compose stop worker scheduler 2>/dev/null || true
-        docker compose up -d app
+        docker compose up -d --no-deps --force-recreate app
     else
-        docker compose up -d --remove-orphans
+        docker compose up -d --no-deps --force-recreate app worker scheduler
     fi
 
     # Images des versions : on garde celle en service et les plus récentes, jusqu'à IMAGES_GARDEES.
-    docker images "$IMAGE" --format '{{.Tag}}' | grep '^bo-' | grep -vxF "$version" | tail -n +"$IMAGES_GARDEES" \
+    # Tri par numéro de version (et non par date de création de l'image, faussée par un étiquetage à la main).
+    docker images "$IMAGE" --format '{{.Tag}}' | grep '^bo-' | grep -vxF "$version" | sort -rV | tail -n +"$IMAGES_GARDEES" \
         | while read -r ancienne; do docker rmi "$IMAGE:$ancienne" >/dev/null || true; done || true
     docker image prune -f >/dev/null
     docker compose ps

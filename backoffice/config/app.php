@@ -30,6 +30,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Version du back-office
+    |--------------------------------------------------------------------------
+    |
+    | Tag de la version déployée (bo-AAAA.MM.JJ-N), gravé dans l'image Docker par
+    | deploy.sh ; affiché en haut du menu du BO. Vide en local.
+    |
+    */
+
+    'version' => env('APP_VERSION'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
     |
