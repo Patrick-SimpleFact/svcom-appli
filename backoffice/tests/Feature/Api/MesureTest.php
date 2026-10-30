@@ -6,10 +6,12 @@ use App\Mesure\ResumesQuotidiens;
 use App\Models\Admin;
 use App\Models\ClicSortant;
 use App\Models\EvenementApp;
+use App\Models\Source;
 use App\Models\Ville;
 use App\Support\Point;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ParametresSeeder;
+use Database\Seeders\SourcesSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -74,7 +76,11 @@ it('résume la journée par ville et au total, et se recalcule sans doublon', fu
 });
 
 it('supprime les mois de plus de 13 mois, chiffres résumés gardés', function () {
+    $this->seed(SourcesSeeder::class);
     $evenements = app(Evenements::class);
+    foreach (['2025-08-31 23:59', '2025-09-01 00:00'] as $quand) {
+        ClicSortant::create(['horodatage' => CarbonImmutable::parse($quand, 'UTC'), 'appareil_hash' => str_repeat('a', 64), 'source_id' => Source::first()->id, 'compte' => true]);
+    }
     foreach (['2025-08-15', '2025-09-15', '2025-10-15'] as $mois) {
         $evenements->assurerPartition(CarbonImmutable::parse($mois));
     }
@@ -84,7 +90,8 @@ it('supprime les mois de plus de 13 mois, chiffres résumés gardés', function 
 
     $partitions = collect(DB::select("select inhrelid::regclass::text as nom from pg_inherits where inhparent = 'evenements_app'::regclass"))->pluck('nom');
     expect($partitions)->not->toContain('evenements_app_2025_08')->toContain('evenements_app_2025_09')->toContain('evenements_app_2026_11')
-        ->and(DB::table('stats_quotidiennes')->where('jour', '2025-08-15')->exists())->toBeTrue();
+        ->and(DB::table('stats_quotidiennes')->where('jour', '2025-08-15')->exists())->toBeTrue()
+        ->and(ClicSortant::pluck('horodatage')->map->format('Y-m-d H:i')->all())->toBe(['2025-09-01 00:00']);
 });
 
 it('montre les événements reçus dans le back-office, sans position (M15)', function () {
