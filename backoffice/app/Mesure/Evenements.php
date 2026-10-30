@@ -99,4 +99,10 @@ class Evenements
             ->each(fn (string $nom) => DB::statement("drop table {$nom}"))
             ->values()->all();
     }
+
+    /** Supprime les clics vers les billetteries de plus de 13 mois, même limite ; leurs totaux sont déjà dans stats_quotidiennes. */
+    public function purgerClics(): int
+    {
+        return DB::table('clics_sortants')->where('horodatage', '<', now()->utc()->startOfMonth()->subMonths(self::MOIS_CONSERVATION))->delete();
+    }
 }

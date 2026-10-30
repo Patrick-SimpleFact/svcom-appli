@@ -9,13 +9,13 @@ use Illuminate\Console\Command;
 
 /**
  * Chaque nuit (SCHEMA §9) : résume la veille dans stats_quotidiennes, prépare la partition du mois suivant,
- * puis supprime les événements de plus de 13 mois.
+ * puis supprime les événements et les clics vers les billetteries de plus de 13 mois.
  */
 class MesureQuotidienneCommande extends Command
 {
     protected $signature = 'mesure:quotidienne {--jour= : jour à résumer (AAAA-MM-JJ), la veille par défaut}';
 
-    protected $description = 'Résume une journée de mesure et purge les événements de plus de 13 mois';
+    protected $description = 'Résume une journée de mesure et purge les événements et les clics de plus de 13 mois';
 
     public function handle(ResumesQuotidiens $resumes, Evenements $evenements): int
     {
@@ -28,6 +28,7 @@ class MesureQuotidienneCommande extends Command
         $evenements->assurerPartition(CarbonImmutable::now()->addMonth());
         $purgees = $evenements->purger();
         $this->info(count($purgees) === 0 ? 'Rien à purger.' : 'Mois supprimés : '.implode(', ', $purgees));
+        $this->info("{$evenements->purgerClics()} clic(s) de plus de 13 mois supprimé(s).");
 
         return self::SUCCESS;
     }
